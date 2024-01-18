@@ -1,0 +1,4 @@
+APP_PRODUCTION: true
+
+server:
+  port: 8080
