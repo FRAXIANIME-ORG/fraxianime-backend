@@ -1,4 +1,6 @@
 APP_PRODUCTION: true
 
+BASE_URL: https://animeflv.com.ru/anime/
+
 server:
   port: 8080

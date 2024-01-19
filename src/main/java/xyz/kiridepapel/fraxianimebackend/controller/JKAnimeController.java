@@ -1,7 +1,5 @@
 package xyz.kiridepapel.fraxianimebackend.controller;
 
-import java.util.List;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,34 +7,41 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.AnimeInfoDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.HomePageDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.SpecificChapterDTO;
-import xyz.kiridepapel.fraxianimebackend.service.JKAnimeService;
+import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.SpecificChapterDTO;
+import xyz.kiridepapel.fraxianimebackend.service.AnimeInfoService;
+import xyz.kiridepapel.fraxianimebackend.service.ZMethods;
+import xyz.kiridepapel.fraxianimebackend.service.HomePageService;
+import xyz.kiridepapel.fraxianimebackend.service.SpecificChapterService;
 
 @RestController
 @RequestMapping("/api/v1")
 @CrossOrigin(origins = { "https://fraxianime.vercel.app", "http://localhost:4200" }, allowedHeaders = "**")
 public class JKAnimeController {
   @Autowired
-  private JKAnimeService jKAnimeService;
+  private HomePageService homePageService;
+  @Autowired
+  private AnimeInfoService animeInfoService;
+  @Autowired
+  private SpecificChapterService specificChapterService;
 
   @GetMapping("/page/{page}")
   public ResponseEntity<?> homePage(@PathVariable("page") Integer page) {
     try {
-      String urlBase = "https://animeflv.com.ru/page/" + page + "/";
-      Document document = Jsoup.connect(urlBase).get();
+      String pageUrl = "https://animeflv.com.ru/page/" + page + "/";
+      Document document = Jsoup.connect(pageUrl).get();
 
       HomePageDTO animes = HomePageDTO.builder()
-        .lastChapters(this.jKAnimeService.lastChapters(document))
-        .allAnimes(this.jKAnimeService.allAnimes(document))
-        .emisionAnimes(this.jKAnimeService.emisionAnimes(document))
+        .lastChapters(this.homePageService.lastChapters(document))
+        .allAnimes(this.homePageService.allAnimes(document))
+        .emisionAnimes(this.homePageService.emisionAnimes(document))
         .build();
       
       if (
-        isNotNullOrEmpty(animes.getLastChapters()) &&
-        isNotNullOrEmpty(animes.getAllAnimes()) &&
-        isNotNullOrEmpty(animes.getEmisionAnimes())
+        ZMethods.isNotNullOrEmpty(animes.getLastChapters()) &&
+        ZMethods.isNotNullOrEmpty(animes.getAllAnimes()) &&
+        ZMethods.isNotNullOrEmpty(animes.getEmisionAnimes())
       ) {
         return new ResponseEntity<>(animes, HttpStatus.OK);
       } else {
@@ -50,7 +55,7 @@ public class JKAnimeController {
 
   @GetMapping("/{search}")
   public ResponseEntity<?> animeInfo(@PathVariable("search") String search) {
-    AnimeInfoDTO animeInfo = this.jKAnimeService.getAnimeInfo(search);
+    AnimeInfoDTO animeInfo = this.animeInfoService.getAnimeInfo(search);
     return new ResponseEntity<>(animeInfo, HttpStatus.OK);
   }
 
@@ -59,21 +64,16 @@ public class JKAnimeController {
     @PathVariable("name") String name,
     @PathVariable("chapter") Integer chapter) {
     
-    SpecificChapterDTO animeInfo = this.jKAnimeService.specificChapter(name, chapter);
+    SpecificChapterDTO animeInfo = this.specificChapterService.specificChapter(name, chapter);
     
-    if (isNotNullOrEmpty(animeInfo.getName()) && isNotNullOrEmpty(animeInfo.getIframeSrc())) {
+    if (
+      ZMethods.isNotNullOrEmpty(animeInfo.getName()) &&
+      ZMethods.isNotNullOrEmpty(animeInfo.getSrcOptions())
+    ) {
       return new ResponseEntity<>(animeInfo, HttpStatus.OK);
     } else {
       return new ResponseEntity<>("No se pudo obtener la información del anime.", HttpStatus.OK);
     }
-  }
-
-  private boolean isNotNullOrEmpty(List<?> list) {
-    return list != null && !list.isEmpty();
-  }
-
-  private boolean isNotNullOrEmpty(String str) {
-    return str != null && !str.isEmpty();
   }
 
 }

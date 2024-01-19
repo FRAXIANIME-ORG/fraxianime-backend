@@ -1,5 +1,12 @@
-{"properties": [{
-  "name": "APP_PRODUCTION",
-  "type": "java.lang.String",
-  "description": "A description for 'APP_PRODUCTION'"
-}]}
+{"properties": [
+  {
+    "name": "APP_PRODUCTION",
+    "type": "java.lang.String",
+    "description": "A description for 'APP_PRODUCTION'"
+  },
+  {
+    "name": "BASE_URL",
+    "type": "java.lang.String",
+    "description": "A description for 'BASE_URL'"
+  }
+]}

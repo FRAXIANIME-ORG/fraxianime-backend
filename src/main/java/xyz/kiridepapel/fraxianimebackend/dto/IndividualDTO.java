@@ -21,4 +21,14 @@ public class IndividualDTO {
         private String url;
     }
 
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class LinkDTO {
+        private String name;
+        private String url;
+    }
+
 }
