@@ -62,7 +62,7 @@ public class JKAnimeController {
   @GetMapping("/{name}/{chapter}")
   public ResponseEntity<?> specificChapter(
     @PathVariable("name") String name,
-    @PathVariable("chapter") Integer chapter) {
+    @PathVariable("chapter") String chapter) {
     
     SpecificChapterDTO animeInfo = this.specificChapterService.specificChapter(name, chapter);
     

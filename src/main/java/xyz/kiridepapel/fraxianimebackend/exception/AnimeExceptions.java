@@ -12,5 +12,11 @@ public class AnimeExceptions {
             super(message);
         }
     }
+    
+    public static class RepeatedChapter extends RuntimeException {
+        public RepeatedChapter(String message) {
+            super(message);
+        }
+    }
 
 }

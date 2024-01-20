@@ -12,38 +12,49 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.SpecificChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
 
 @Service
+@Log
 public class SpecificChapterService {
   @Value("${BASE_URL}")
   private String baseUrl;
 
-  public SpecificChapterDTO specificChapter(String inputName, Integer chapter) {
-    String urlBase = this.baseUrl;
-    String urlSpecificChapter = urlBase + (inputName + "-episodio-" + chapter);
-    String urlAnimeInfo = urlBase + inputName;
+  public SpecificChapterDTO specificChapter(String inputName, String chapter) {
+    try {
+      String urlBase = this.baseUrl;
+      String urlSpecificChapter = urlBase + (inputName + "-episodio-" + chapter);
+      String urlAnimeInfo = urlBase + inputName;
 
-    Document docSpecificChapter = null;
-    Document docAnimeInfo = null;
-    
-    docSpecificChapter = ZMethods.connectAnimeInfo(docSpecificChapter, urlSpecificChapter, "No se encontró el capitulo solicitado.");
-    docAnimeInfo = ZMethods.connectAnimeInfo(docAnimeInfo, urlAnimeInfo, "No se encontró el anime solicitado.");
+      if (chapter.contains("-")) {
+        chapter = String.valueOf(Integer.parseInt(chapter.split("-")[0]) + 1);
+      }
 
-    List<LinkDTO> srcOptions = this.getSrcOptions(docSpecificChapter);
-    List<LinkDTO> downloadOptions = this.getDownloadOptions(docSpecificChapter);
+      Document docSpecificChapter = null;
+      Document docAnimeInfo = null;
+      
+      docSpecificChapter = ZMethods.connectAnimeInfo(docSpecificChapter, urlSpecificChapter, "No se encontró el capitulo solicitado.");
+      docAnimeInfo = ZMethods.connectAnimeInfo(docAnimeInfo, urlAnimeInfo, "No se encontró el anime solicitado.");
 
-    SpecificChapterDTO animeInfo = SpecificChapterDTO.builder()
-      .name(docSpecificChapter.select(".entry-title").first().text().replace(("Episodio " + chapter), "").trim() + " - " + chapter)
-      .srcOptions(srcOptions)
-      .downloadOptions(downloadOptions)
-      .previousChapterUrl(this.previousChapterUrl(urlAnimeInfo, chapter))
-      .nextChapterUrl(this.nextChapterUrl(urlAnimeInfo, chapter, this.getNumberOfChapters(docAnimeInfo, chapter)))
-      .build();
+      List<LinkDTO> srcOptions = this.getSrcOptions(docSpecificChapter);
+      List<LinkDTO> downloadOptions = this.getDownloadOptions(docSpecificChapter);
 
-    return animeInfo;
+      SpecificChapterDTO animeInfo = SpecificChapterDTO.builder()
+        .name(docSpecificChapter.select(".entry-title").first().text().replace(("Episodio " + chapter), "").trim() + " - " + chapter)
+        .srcOptions(srcOptions)
+        .downloadOptions(downloadOptions)
+        .previousChapterUrl(this.previousChapterUrl(urlAnimeInfo, chapter))
+        .nextChapterUrl(this.nextChapterUrl(urlAnimeInfo, chapter, this.getNumberOfChapters(docAnimeInfo, chapter)))
+        .build();
+
+      return animeInfo;
+    } catch (Exception e) {
+      log.info("No se encontró el capitulo solicitado: " + e.getMessage());
+      throw new ChapterNotFound("No se encontró el capitulo solicitado.");
+    }
   }
 
   private List<LinkDTO> getSrcOptions(Document docSpecificChapter) {
@@ -103,12 +114,12 @@ public class SpecificChapterService {
     }
   }
 
-  private int getNumberOfChapters(Document document, Integer actualChapter) {
+  private int getNumberOfChapters(Document document, String actualChapter) {
     Element element = document.select(".fa-play-circle").first();
 
     // Si la pagina no tiene capitulos, retorna que la cantidad de capitulos es la misma que el capitulo actual
     if (element == null) {
-      return actualChapter;
+      return Integer.parseInt(actualChapter);
     }
 
     String lastCap = element.select("a h3").text();
@@ -127,34 +138,38 @@ public class SpecificChapterService {
     }
   }
 
-  private String previousChapterUrl(String urlAnimeInfo, int actualChapter) {;
-    if (actualChapter > 1) {
-      return (urlAnimeInfo + "/" + (actualChapter - 1)).replace(this.baseUrl, "");
-    } else if (actualChapter == 1) {
+  private String previousChapterUrl(String urlAnimeInfo, String actualChapter) {;
+    int actualChapterInt = Integer.parseInt(actualChapter);
+
+    if (actualChapterInt > 1) {
+      return (urlAnimeInfo + "/" + (actualChapterInt - 1)).replace(this.baseUrl, "");
+    } else if (actualChapterInt == 1) {
       return null;
     } else {
       throw new ChapterNotFound("No se encontró el capitulo solicitado.");
     }
   }
 
-  private String nextChapterUrl(String urlAnimeInfo, int actualChapter, int chapters) {
+  private String nextChapterUrl(String urlAnimeInfo, String actualChapter, int chapters) {
+    int actualChapterInt = Integer.parseInt(actualChapter);
+
     // Si la pagina no tiene capitulos, retorna el link
     // del siguiente capitulo pero con esto al final: #notsecure
     int chaptersModified = chapters;
     if (chapters == 0) {
-      chaptersModified = actualChapter + 1;
+      chaptersModified = actualChapterInt + 1;
     }
 
     // La pagina puede no tener capitulos porque animeflv.com.ru a veces
     // se buggea y no muestra los capitulos en la pagina del anime xd
-    if (actualChapter < chaptersModified) {
-      String nextChapterUrl = (urlAnimeInfo + "/" + (actualChapter + 1)).replace(this.baseUrl, "");
+    if (actualChapterInt < chaptersModified) {
+      String nextChapterUrl = (urlAnimeInfo + "/" + (actualChapterInt + 1)).replace(this.baseUrl, "");
       if (chapters == 0) {
         return nextChapterUrl + "#notsecure";
       } else {
         return nextChapterUrl;
       }
-    } else if (actualChapter == chaptersModified) {
+    } else if (actualChapterInt == chaptersModified) {
       return null;
     } else {
       throw new ChapterNotFound("No se encontró el capitulo solicitado.");

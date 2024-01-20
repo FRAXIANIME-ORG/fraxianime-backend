@@ -9,10 +9,12 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 
 @Service
+@Log
 public class AnimeInfoService {
   @Value("${BASE_URL}")
   private String baseUrl;
@@ -39,21 +41,37 @@ public class AnimeInfoService {
   private List<AnimeDTO> getChapters(Document document, String chaptersImgUrl) {
     Elements elements = document.select(".fa-play-circle");
     List<AnimeDTO> chapters = new ArrayList<>();
+    String aux = "";
 
     for (Element element : elements) {
-      String url = element.select("a").attr("href")
-        .replace(this.baseUrl, "")
-        .replace("-episodio-", "/").trim();
-      String chapter = "Capitulo " + this.getChapterNumberFromUrl(url);
-      
-      if (ZMethods.isNotNullOrEmpty(url)) {
-        AnimeDTO anime = AnimeDTO.builder()
-          .url(url)
-          .chapter(chapter)
-          .imgUrl(chaptersImgUrl)
-          .build();
+      try {
+        String url = element.select("a").attr("href")
+          .replace(this.baseUrl, "")
+          .replace("-episodio-", "/").trim();
+          
+        String chapter = "Capitulo " + this.getChapterNumberFromUrl(url, false);
+
+        if (aux == chapter) {
+          chapter = "Capitulo " + (this.getChapterNumberFromUrl(url + "-1", true));
+        }
+
+        log.info("url: " + url);
+        log.info("chapter: " + chapter);
+        log.info("--------------------");
         
-        chapters.add(anime);
+        if (ZMethods.isNotNullOrEmpty(url)) {
+          AnimeDTO anime = AnimeDTO.builder()
+            .url(url)
+            .chapter(chapter)
+            .imgUrl(chaptersImgUrl)
+            .build();
+          
+          chapters.add(anime);
+        }
+
+        aux = chapter;
+      } catch (Exception e) {
+        log.info("Error: " + e.getMessage());
       }
     }
 
@@ -71,8 +89,14 @@ public class AnimeInfoService {
     return genres;
   }
 
-  private int getChapterNumberFromUrl(String uri) {
-    return Integer.parseInt(uri.replaceAll(".*/(\\d+)", "$1"));
+  private String getChapterNumberFromUrl(String uri, boolean bypassProtection) {
+    String supossedNumber = uri.replaceAll(".*/(\\d+)", "$1");
+
+    if (supossedNumber.contains("-") && !bypassProtection) {
+      return String.valueOf((Integer.parseInt(supossedNumber.split("-")[0]) + 1));
+    }
+    
+    return supossedNumber;
   }
     
 }
