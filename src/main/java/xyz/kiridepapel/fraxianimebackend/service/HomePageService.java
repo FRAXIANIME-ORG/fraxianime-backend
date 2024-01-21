@@ -4,33 +4,39 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LastAnimeInfoDTO;
+import lombok.extern.java.Log;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LastAnimeDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDataDTO;
 
 @Service
+@Log
 public class HomePageService {
-  @Value("${PROVEEDOR_ALL_URL}")
-  private String proveedorAllUrl;
+  @Value("${PROVEEDOR_JKANIME_URL}")
+  private String proveedorJkanimeUrl;
 
-  public List<ChapterDTO> sliderAnimes(Document document) {
+  public List<ChapterDataDTO> sliderAnimes(Document document) {
     Elements elements = document.select(".hero__items");
-    List<ChapterDTO> sliderAnimes = new ArrayList<>();
+    List<ChapterDataDTO> sliderAnimes = new ArrayList<>();
     
     for (Element element : elements) {
-      ChapterDTO anime = ChapterDTO.builder()
+      ChapterDataDTO anime = ChapterDataDTO.builder()
         .name(element.select(".hero__text h2").text())
         .imgUrl(element.attr("data-setbg"))
-        .url(element.select(".hero__text a").attr("href").replace(proveedorAllUrl, ""))
+        .url(element.select(".hero__text a").attr("href").replace(proveedorJkanimeUrl, ""))
         .build();
 
       sliderAnimes.add(anime);
@@ -39,15 +45,15 @@ public class HomePageService {
     return sliderAnimes;
   }
 
-  public List<LastAnimeInfoDTO> ovasOnasSpecials(Document document) {
+  public List<LastAnimeDataDTO> ovasOnasSpecials(Document document) {
     Elements elements = document.select(".solopc").last().select(".anime__item");
-    List<LastAnimeInfoDTO> ovasOnasSpecials = new ArrayList<>();
+    List<LastAnimeDataDTO> ovasOnasSpecials = new ArrayList<>();
 
     for (Element element : elements) {
-      LastAnimeInfoDTO anime = LastAnimeInfoDTO.builder()
+      LastAnimeDataDTO anime = LastAnimeDataDTO.builder()
         .name(element.select(".anime__item__text a").text())
         .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
-        .url(element.select("a").attr("href").replace(proveedorAllUrl, ""))
+        .url(element.select("a").attr("href").replace(proveedorJkanimeUrl, ""))
         .type(element.select(".anime__item__text ul li").text())
         .build();
 
@@ -57,9 +63,9 @@ public class HomePageService {
     return ovasOnasSpecials;
   }
 
-  public List<ChapterDTO> genericProgramming(Document document, char type) {
+  public List<ChapterDataDTO> genericProgramming(Document document, Document docCompare, char type) {
     Elements elements = document.select(".anime_programing a.bloqq");
-    List<ChapterDTO> lastChapters = new ArrayList<>();
+    List<ChapterDataDTO> lastChapters = new ArrayList<>();
     String formattedDate;
 
     if (type == 'a') {
@@ -90,42 +96,48 @@ public class HomePageService {
         formattedDate = dateText;
       }
 
-      ChapterDTO anime = ChapterDTO.builder()
+      ChapterDataDTO anime = ChapterDataDTO.builder()
         .name(element.select(".anime__sidebar__comment__item__text h5").text())
         .imgUrl(element.select(".anime__sidebar__comment__item__pic img").attr("src"))
-        .chapter(element.select(".anime__sidebar__comment__item__text h6").text())
+        .chapter(element.select(".anime__sidebar__comment__item__text h6").text().replace("Episodio", "Capitulo"))
         .date(formattedDate)
-        .url(element.attr("href").replace(proveedorAllUrl, ""))
+        .url(element.attr("href").replace(proveedorJkanimeUrl, ""))
         .build();
 
       lastChapters.add(anime);
     }
 
+    if (type == 'a') {
+      lastChapters = this.genericProgrammingConfirmed(lastChapters, docCompare, 'a');
+    } else if (type == 'd') {
+      lastChapters = this.genericProgrammingConfirmed(lastChapters, docCompare, 'd');
+    }
+
     return lastChapters;
   }
 
-  public List<TopDTO> topAnimes(Document document) {
+  public List<TopDataDTO> topAnimes(Document document) {
     Element data = document.select(".destacados").last().select(".container div").first();
-    List<TopDTO> topAnimes = new ArrayList<>(10);
+    List<TopDataDTO> topAnimes = new ArrayList<>(10);
 
     Element firstTop = data.child(2);
-    TopDTO firstAnime = TopDTO.builder()
+    TopDataDTO firstAnime = TopDataDTO.builder()
       .name(firstTop.select(".comment h5").text())
       .imgUrl(firstTop.select(".anime__item__pic").attr("data-setbg"))
       .likes(Integer.parseInt(firstTop.select(".vc").text().trim()))
       .position(Integer.parseInt(firstTop.select(".ep").text().trim()))
-      .url(firstTop.select("a").attr("href").replace(proveedorAllUrl, ""))
+      .url(firstTop.select("a").attr("href").replace(proveedorJkanimeUrl, ""))
       .build();
     topAnimes.add(firstAnime);
 
     Elements restTop = data.child(3).select("a");
     for (Element element : restTop) {
-      TopDTO anime = TopDTO.builder()
+      TopDataDTO anime = TopDataDTO.builder()
         .name(element.select(".comment h5").text())
         .imgUrl(element.select(".anime__item__pic__fila4").attr("data-setbg"))
         .likes(Integer.parseInt(element.select(".vc").text()))
         .position(Integer.parseInt(element.select(".anime__item__pic__fila4 div").first().text().trim()))
-        .url(element.attr("href").replace(proveedorAllUrl, ""))
+        .url(element.attr("href").replace(proveedorJkanimeUrl, ""))
         .build();
 
       topAnimes.add(anime);
@@ -134,15 +146,15 @@ public class HomePageService {
     return topAnimes;
   }
 
-  public List<LastAnimeInfoDTO> latestAddedAnimes(Document document) {
+  public List<LastAnimeDataDTO> latestAddedAnimes(Document document) {
     Elements elements = document.select(".trending__anime .anime__item");
-    List<LastAnimeInfoDTO> latestAddedAnimes = new ArrayList<>();
+    List<LastAnimeDataDTO> latestAddedAnimes = new ArrayList<>();
 
     for (Element element : elements) {
-      LastAnimeInfoDTO anime = LastAnimeInfoDTO.builder()
+      LastAnimeDataDTO anime = LastAnimeDataDTO.builder()
         .name(element.select(".anime__item__text h5 a").text())
         .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
-        .url(element.select("a").attr("href").replace(proveedorAllUrl, ""))
+        .url(element.select("a").attr("href").replace(proveedorJkanimeUrl, ""))
         .state(element.select(".anime__item__text ul li").first().text())
         .type(element.select(".anime__item__text ul li").last().text())
         .build();
@@ -160,14 +172,76 @@ public class HomePageService {
     for (Element element : elements) {
       LinkDTO anime = LinkDTO.builder()
         .name(element.select("a").text())
-        .url(element.select("a").attr("href").replace(proveedorAllUrl, ""))
+        .url(element.select("a").attr("href").replace(proveedorJkanimeUrl, ""))
         .build();
 
       latestAddedList.add(anime);
     }
 
     return latestAddedList;
-
   }
-    
+
+  public List<ChapterDataDTO> genericProgrammingConfirmed(List<ChapterDataDTO> list, Document docCompare, char type) {
+    List<ChapterDataDTO> listToCompare = new ArrayList<>();
+
+    // Compara la lista de animes de JKAnime con la lista de últimos animes agregados de AnimeLife
+    Elements elementsToCompareLastAdded = docCompare.body().select(".excstf").first().select(".bs");
+    for (Element element : elementsToCompareLastAdded) {
+      ChapterDataDTO anime = ChapterDataDTO.builder()
+      .name(element.select(".tt").first().childNodes().stream()
+        .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
+        .map(Node::toString)
+        .collect(Collectors.joining()).trim())
+      .chapter(element.select(".epx").text().replace("Ep 0", "Capitulo ").replace("Ep ", "Capitulo ").trim())
+      .build();
+
+      anime.setName(this.specialNameCases(anime.getName()));
+      listToCompare.add(anime);
+    }
+
+    // Compara la lista de animes de JKAnime con la lista de series en emisión de AnimeLife
+    Elements elementsToCompareEmisionSeries = docCompare.body().select(".ongoingseries ul li");
+    for (Element element : elementsToCompareEmisionSeries) {
+      ChapterDataDTO anime = ChapterDataDTO.builder()
+      .name(this.specialNameCases(element.select(".l").text().trim()))
+      .chapter(element.select(".r").text().replace("Episodios 0", "Capitulo ").replace("Episodios ", "Capitulo ").trim())
+      .build();
+      listToCompare.add(anime);
+    }
+
+    // Establece el estado de disponibilidad de cada anime de la lista de JKAnime
+    // comparando con la lista última de animes agregados y de series en emisión de AnimeLife
+    for (ChapterDataDTO item : list) {
+      boolean matchFound = listToCompare.stream()
+        .anyMatch(compareItem ->
+          compareItem.getName().equals(item.getName()) &&
+          compareItem.getChapter().equals(item.getChapter())
+        );
+      
+      item.setState(matchFound);
+
+      // Si state es false, se elimina el item de la lista
+      if (type == 'a' && !matchFound) {
+        log.info("Elemento no disponible: " + item.getName() + " - " + item.getChapter());
+        // list.remove(item);
+      }
+    }
+
+    return list;
+  }
+  
+  
+  public String specialNameCases(String inputName) {
+    Map<String, String> specialCases = new HashMap<>();
+
+    specialCases.put("Solo Leveling", "Ore dake Level Up na Ken");
+
+    for (Map.Entry<String, String> entry : specialCases.entrySet()) {
+        if (inputName.contains(entry.getKey())) {
+            return entry.getValue();
+        }
+    }
+
+    return inputName;
+  }
 }

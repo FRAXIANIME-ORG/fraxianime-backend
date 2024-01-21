@@ -10,17 +10,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 
 @Service
 @Log
-public class AnimeInfoService {
-  @Value("${PROVEEDOR_LIMITED_URL}")
-  private String proveedorLimitedUrl;
+public class AnimeService {
+  @Value("${PROVEEDOR_ANIMEFLV_URL}")
+  private String proveedorAnimeFlvUrl;
 
   public AnimeInfoDTO getAnimeInfo(String search) {
-    String urlBase = this.proveedorLimitedUrl;
+    String urlBase = this.proveedorAnimeFlvUrl;
     String urlAnimeInfo = urlBase + search.replaceAll("/\\d+$", "");
 
     Document docAnimeInfo = null;
@@ -38,15 +38,15 @@ public class AnimeInfoService {
     return animeInfo;
   }
 
-  private List<ChapterDTO> getChapters(Document document, String chaptersImgUrl) {
+  private List<ChapterDataDTO> getChapters(Document document, String chaptersImgUrl) {
     Elements elements = document.select(".fa-play-circle");
-    List<ChapterDTO> chapters = new ArrayList<>();
+    List<ChapterDataDTO> chapters = new ArrayList<>();
     String aux = "";
 
     for (Element element : elements) {
       try {
         String url = element.select("a").attr("href")
-          .replace(this.proveedorLimitedUrl, "")
+          .replace(this.proveedorAnimeFlvUrl, "")
           .replace("-episodio-", "/").trim();
           
         String chapter = "Capitulo " + this.getChapterNumberFromUrl(url, false);
@@ -54,13 +54,9 @@ public class AnimeInfoService {
         if (aux == chapter) {
           chapter = "Capitulo " + (this.getChapterNumberFromUrl(url + "-1", true));
         }
-
-        log.info("url: " + url);
-        log.info("chapter: " + chapter);
-        log.info("--------------------");
         
         if (ZMethods.isNotNullOrEmpty(url)) {
-          ChapterDTO anime = ChapterDTO.builder()
+          ChapterDataDTO anime = ChapterDataDTO.builder()
             .url(url)
             .chapter(chapter)
             .imgUrl(chaptersImgUrl)

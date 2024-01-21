@@ -1,6 +1,9 @@
 package xyz.kiridepapel.fraxianimebackend.service;
 
+import java.util.Base64;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -16,6 +19,23 @@ public class ZMethods {
 
   public static boolean isNotNullOrEmpty(String str) {
     return str != null && !str.isEmpty();
+  }
+
+  public static String decodeBase64(String encodedString, boolean isIframe) {
+    if (!isIframe) {
+      return new String(Base64.getDecoder().decode(encodedString));
+    } else {
+      String decodedString = new String(Base64.getDecoder().decode(encodedString));
+
+      Pattern pattern = Pattern.compile("<iframe[^>]+src\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>", Pattern.CASE_INSENSITIVE);
+      Matcher matcher = pattern.matcher(decodedString);
+
+      if (matcher.find()) {
+          return matcher.group(1);
+      } else {
+          return decodedString;
+      }
+    }
   }
 
   public static Document connectAnimeInfo(Document docAnimeInfo, String urlAnimeInfo, String errorMessage) {

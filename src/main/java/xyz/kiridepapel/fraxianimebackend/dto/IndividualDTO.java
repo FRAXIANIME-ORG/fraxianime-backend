@@ -13,12 +13,15 @@ public class IndividualDTO {
     @AllArgsConstructor
     @Builder
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class ChapterDTO {
+    public static class ChapterDataDTO {
         private String name;
         private String imgUrl;
         private String chapter;
         private String date;
         private String url;
+        private Boolean state;
+        // Available
+        // Unavailable
     }
 
     @Data
@@ -26,7 +29,7 @@ public class IndividualDTO {
     @AllArgsConstructor
     @Builder
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class TopDTO {
+    public static class TopDataDTO {
         private String name;
         private String imgUrl;
         private Integer likes;
@@ -39,7 +42,7 @@ public class IndividualDTO {
     @AllArgsConstructor
     @Builder
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class LastAnimeInfoDTO {
+    public static class LastAnimeDataDTO {
         private String name;
         private String imgUrl;
         private String url;

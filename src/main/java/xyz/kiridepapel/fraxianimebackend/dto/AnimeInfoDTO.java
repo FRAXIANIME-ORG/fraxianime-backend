@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 
 @Data
 @NoArgsConstructor
@@ -19,6 +19,6 @@ public class AnimeInfoDTO {
     private String name;
     private String sinopsis;
     private String imgUrl;
-    private List<ChapterDTO> chapters;
+    private List<ChapterDataDTO> chapters;
     private List<String> genres;
 }

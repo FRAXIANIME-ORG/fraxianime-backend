@@ -6,4 +6,5 @@ public class SecurityExceptions {
             super(message);
         }
     }
+    
 }
