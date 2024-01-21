@@ -10,17 +10,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 
 @Service
 @Log
 public class AnimeInfoService {
-  @Value("${BASE_URL}")
-  private String baseUrl;
+  @Value("${PROVEEDOR_LIMITED_URL}")
+  private String proveedorLimitedUrl;
 
   public AnimeInfoDTO getAnimeInfo(String search) {
-    String urlBase = this.baseUrl;
+    String urlBase = this.proveedorLimitedUrl;
     String urlAnimeInfo = urlBase + search.replaceAll("/\\d+$", "");
 
     Document docAnimeInfo = null;
@@ -38,15 +38,15 @@ public class AnimeInfoService {
     return animeInfo;
   }
 
-  private List<AnimeDTO> getChapters(Document document, String chaptersImgUrl) {
+  private List<ChapterDTO> getChapters(Document document, String chaptersImgUrl) {
     Elements elements = document.select(".fa-play-circle");
-    List<AnimeDTO> chapters = new ArrayList<>();
+    List<ChapterDTO> chapters = new ArrayList<>();
     String aux = "";
 
     for (Element element : elements) {
       try {
         String url = element.select("a").attr("href")
-          .replace(this.baseUrl, "")
+          .replace(this.proveedorLimitedUrl, "")
           .replace("-episodio-", "/").trim();
           
         String chapter = "Capitulo " + this.getChapterNumberFromUrl(url, false);
@@ -60,7 +60,7 @@ public class AnimeInfoService {
         log.info("--------------------");
         
         if (ZMethods.isNotNullOrEmpty(url)) {
-          AnimeDTO anime = AnimeDTO.builder()
+          ChapterDTO anime = ChapterDTO.builder()
             .url(url)
             .chapter(chapter)
             .imgUrl(chaptersImgUrl)

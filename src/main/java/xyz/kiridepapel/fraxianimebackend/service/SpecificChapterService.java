@@ -20,12 +20,12 @@ import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFou
 @Service
 @Log
 public class SpecificChapterService {
-  @Value("${BASE_URL}")
-  private String baseUrl;
+  @Value("${PROVEEDOR_LIMITED_URL}")
+  private String proveedorLimitedUrl;
 
   public SpecificChapterDTO specificChapter(String inputName, String chapter) {
     try {
-      String urlBase = this.baseUrl;
+      String urlBase = this.proveedorLimitedUrl;
       String urlSpecificChapter = urlBase + (inputName + "-episodio-" + chapter);
       String urlAnimeInfo = urlBase + inputName;
 
@@ -142,7 +142,7 @@ public class SpecificChapterService {
     int actualChapterInt = Integer.parseInt(actualChapter);
 
     if (actualChapterInt > 1) {
-      return (urlAnimeInfo + "/" + (actualChapterInt - 1)).replace(this.baseUrl, "");
+      return (urlAnimeInfo + "/" + (actualChapterInt - 1)).replace(this.proveedorLimitedUrl, "");
     } else if (actualChapterInt == 1) {
       return null;
     } else {
@@ -163,7 +163,7 @@ public class SpecificChapterService {
     // La pagina puede no tener capitulos porque animeflv.com.ru a veces
     // se buggea y no muestra los capitulos en la pagina del anime xd
     if (actualChapterInt < chaptersModified) {
-      String nextChapterUrl = (urlAnimeInfo + "/" + (actualChapterInt + 1)).replace(this.baseUrl, "");
+      String nextChapterUrl = (urlAnimeInfo + "/" + (actualChapterInt + 1)).replace(this.proveedorLimitedUrl, "");
       if (chapters == 0) {
         return nextChapterUrl + "#notsecure";
       } else {

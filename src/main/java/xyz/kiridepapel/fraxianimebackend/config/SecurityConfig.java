@@ -26,6 +26,7 @@ public class SecurityConfig {
                 configuration.setAllowedOrigins(Arrays.asList(ALLOWED_ORIGINS));
                 configuration.setAllowedMethods(Arrays.asList(HttpMethod.GET.name()));
                 configuration.setAllowedHeaders(Arrays.asList("*"));
+                // "Accept", "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Datetime", "Authorization",
                 return configuration;
             }))
             .exceptionHandling(exception -> exception.authenticationEntryPoint(protectedEntryPoint))

@@ -1,5 +1,8 @@
 package xyz.kiridepapel.fraxianimebackend.service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,93 +12,162 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LastAnimeInfoDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDTO;
 
 @Service
 public class HomePageService {
-  @Value("${BASE_URL}")
-  private String baseUrl;
+  @Value("${PROVEEDOR_ALL_URL}")
+  private String proveedorAllUrl;
 
-  public List<AnimeDTO> lastChapters(Document document) {
-    Elements elements = document.select(".ht_grid_1_4");
-    List<AnimeDTO> lastChapters = new ArrayList<>();
+  public List<ChapterDTO> sliderAnimes(Document document) {
+    Elements elements = document.select(".hero__items");
+    List<ChapterDTO> sliderAnimes = new ArrayList<>();
+    
+    for (Element element : elements) {
+      ChapterDTO anime = ChapterDTO.builder()
+        .name(element.select(".hero__text h2").text())
+        .imgUrl(element.attr("data-setbg"))
+        .url(element.select(".hero__text a").attr("href").replace(proveedorAllUrl, ""))
+        .build();
+
+      sliderAnimes.add(anime);
+    }
+
+    return sliderAnimes;
+  }
+
+  public List<LastAnimeInfoDTO> ovasOnasSpecials(Document document) {
+    Elements elements = document.select(".solopc").last().select(".anime__item");
+    List<LastAnimeInfoDTO> ovasOnasSpecials = new ArrayList<>();
 
     for (Element element : elements) {
-      String imgUrl = element.select(".thumbnail-wrap img").attr("src");
-      String chapter = element.select(".ep-number").text().replace("Episodio", "Capitulo");
-      String name = element.select(".entry-title").text().replace(".", "")
-        .replaceAll(" Episodio \\d+", "").trim();
-      String url = element.select(".thumbnail-link").attr("href")
-        .replace(this.baseUrl, "")
-        .replace("-episodio-", "/");
-      
-      if (
-        ZMethods.isNotNullOrEmpty(imgUrl) && ZMethods.isNotNullOrEmpty(chapter) &&
-        ZMethods.isNotNullOrEmpty(name) && ZMethods.isNotNullOrEmpty(url)
-      ) {
-        AnimeDTO anime = AnimeDTO.builder()
-          .imgUrl(imgUrl)
-          .name(name)
-          .chapter(chapter)
-          .url(url)
-          .build();
-        
-        lastChapters.add(anime);
+      LastAnimeInfoDTO anime = LastAnimeInfoDTO.builder()
+        .name(element.select(".anime__item__text a").text())
+        .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
+        .url(element.select("a").attr("href").replace(proveedorAllUrl, ""))
+        .type(element.select(".anime__item__text ul li").text())
+        .build();
+
+      ovasOnasSpecials.add(anime);
+    }
+
+    return ovasOnasSpecials;
+  }
+
+  public List<ChapterDTO> genericProgramming(Document document, char type) {
+    Elements elements = document.select(".anime_programing a.bloqq");
+    List<ChapterDTO> lastChapters = new ArrayList<>();
+    String formattedDate;
+
+    if (type == 'a') {
+      elements = document.select(".anime_programing a.bloqq");
+    } else if (type == 'd') {
+      elements = document.select(".donghuas_programing a.bloqq");
+    }
+
+    for (Element element : elements) {
+      String dateText = element.select(".anime__sidebar__comment__item__text span").text();
+
+      if (dateText.equals("Hoy") || dateText.equals("Ayer")) {
+        // Manejar el caso de que la fecha sea Hoy o Ayer
+        formattedDate = dateText;
+      } else if (dateText.matches("\\d{2}/\\d{2}")) {
+        // Manejar el caso de que la fecha sea DIA/MES
+        String currentYear = String.valueOf(LocalDate.now().getYear());
+        LocalDate date = LocalDate.parse((dateText + "/" + currentYear), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        long daysBetween = ChronoUnit.DAYS.between(date, LocalDate.now());
+
+        if (daysBetween <= 7) {
+          formattedDate = "Hace " + daysBetween + " días";
+        } else {
+          formattedDate = dateText;
+        }
+      } else { 
+        // Manejar otros casos si los hay
+        formattedDate = dateText;
       }
+
+      ChapterDTO anime = ChapterDTO.builder()
+        .name(element.select(".anime__sidebar__comment__item__text h5").text())
+        .imgUrl(element.select(".anime__sidebar__comment__item__pic img").attr("src"))
+        .chapter(element.select(".anime__sidebar__comment__item__text h6").text())
+        .date(formattedDate)
+        .url(element.attr("href").replace(proveedorAllUrl, ""))
+        .build();
+
+      lastChapters.add(anime);
     }
 
     return lastChapters;
   }
 
-  public List<AnimeDTO> allAnimes(Document document) {
-    Elements elements = document.select(".ht_grid_1_5");
-    List<AnimeDTO> allAnimes = new ArrayList<>();
+  public List<TopDTO> topAnimes(Document document) {
+    Element data = document.select(".destacados").last().select(".container div").first();
+    List<TopDTO> topAnimes = new ArrayList<>(10);
 
-    for (Element element : elements) {
-      String imgUrl = element.select(".anime-image").attr("src");
-      String name = element.select(".entry-title").text().replace(".", "").trim();
-      String url = element.select(".thumbnail-link").attr("href")
-        .replace(this.baseUrl, "")
-        .replace("-episodio-", "/");
-      
-      if (
-        ZMethods.isNotNullOrEmpty(imgUrl) && ZMethods.isNotNullOrEmpty(name) &&
-        ZMethods.isNotNullOrEmpty(url)
-      ) {
-        AnimeDTO anime = AnimeDTO.builder()
-          .imgUrl(imgUrl)
-          .name(name)
-          .url(url)
-          .build();
-        
-        allAnimes.add(anime);
-      }
+    Element firstTop = data.child(2);
+    TopDTO firstAnime = TopDTO.builder()
+      .name(firstTop.select(".comment h5").text())
+      .imgUrl(firstTop.select(".anime__item__pic").attr("data-setbg"))
+      .likes(Integer.parseInt(firstTop.select(".vc").text().trim()))
+      .position(Integer.parseInt(firstTop.select(".ep").text().trim()))
+      .url(firstTop.select("a").attr("href").replace(proveedorAllUrl, ""))
+      .build();
+    topAnimes.add(firstAnime);
+
+    Elements restTop = data.child(3).select("a");
+    for (Element element : restTop) {
+      TopDTO anime = TopDTO.builder()
+        .name(element.select(".comment h5").text())
+        .imgUrl(element.select(".anime__item__pic__fila4").attr("data-setbg"))
+        .likes(Integer.parseInt(element.select(".vc").text()))
+        .position(Integer.parseInt(element.select(".anime__item__pic__fila4 div").first().text().trim()))
+        .url(element.attr("href").replace(proveedorAllUrl, ""))
+        .build();
+
+      topAnimes.add(anime);
     }
 
-    return allAnimes;
+    return topAnimes;
   }
 
-  public List<AnimeDTO> emisionAnimes(Document document) {
-    Elements elements = document.select("#left-menu li");
-    List<AnimeDTO> emisionAnimes = new ArrayList<>();
+  public List<LastAnimeInfoDTO> latestAddedAnimes(Document document) {
+    Elements elements = document.select(".trending__anime .anime__item");
+    List<LastAnimeInfoDTO> latestAddedAnimes = new ArrayList<>();
 
     for (Element element : elements) {
-      String name = element.select("a").attr("title").replace(".", "").trim();
-      String url = element.select("a").attr("href")
-        .replace(this.baseUrl, "")
-        .replace("-episodio-", "/");
+      LastAnimeInfoDTO anime = LastAnimeInfoDTO.builder()
+        .name(element.select(".anime__item__text h5 a").text())
+        .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
+        .url(element.select("a").attr("href").replace(proveedorAllUrl, ""))
+        .state(element.select(".anime__item__text ul li").first().text())
+        .type(element.select(".anime__item__text ul li").last().text())
+        .build();
 
-      if (ZMethods.isNotNullOrEmpty(name) && ZMethods.isNotNullOrEmpty(url)) {
-        AnimeDTO anime = AnimeDTO.builder()
-          .name(name)
-          .url(url)
-          .build();
-        
-        emisionAnimes.add(anime);
-      }
+      latestAddedAnimes.add(anime);
     }
 
-    return emisionAnimes;
+    return latestAddedAnimes;
+  }
+
+  public List<LinkDTO> latestAddedList(Document document) {
+    Elements elements = document.select(".trending_div .side-menu li");
+    List<LinkDTO> latestAddedList = new ArrayList<>();
+
+    for (Element element : elements) {
+      LinkDTO anime = LinkDTO.builder()
+        .name(element.select("a").text())
+        .url(element.select("a").attr("href").replace(proveedorAllUrl, ""))
+        .build();
+
+      latestAddedList.add(anime);
+    }
+
+    return latestAddedList;
+
   }
     
 }

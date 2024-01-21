@@ -1,6 +1,7 @@
 APP_PRODUCTION: true
 
-BASE_URL: https://animeflv.com.ru/anime/
+PROVEEDOR_LIMITED_URL: https://animeflv.com.ru/anime/
+PROVEEDOR_ALL_URL: https://jkanime.bz/
 
 server:
   port: 8080

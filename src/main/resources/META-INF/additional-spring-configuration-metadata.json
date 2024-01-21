@@ -5,8 +5,8 @@
     "description": "A description for 'APP_PRODUCTION'"
   },
   {
-    "name": "BASE_URL",
+    "name": "PROVEEDOR_URL",
     "type": "java.lang.String",
-    "description": "A description for 'BASE_URL'"
+    "description": "A description for 'PROVEEDOR_URL'"
   }
 ]}

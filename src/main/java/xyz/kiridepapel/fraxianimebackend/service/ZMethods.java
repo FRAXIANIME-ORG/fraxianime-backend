@@ -20,7 +20,6 @@ public class ZMethods {
 
   public static Document connectAnimeInfo(Document docAnimeInfo, String urlAnimeInfo, String errorMessage) {
     try {
-      log.info("urlAnimeInfo 1: " + urlAnimeInfo);
       return docAnimeInfo = Jsoup.connect(urlAnimeInfo).get();
       // Si one-piece/1076 no existe
     } catch (Exception e) {
