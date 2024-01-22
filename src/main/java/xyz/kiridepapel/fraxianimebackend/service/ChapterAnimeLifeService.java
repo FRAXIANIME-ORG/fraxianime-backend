@@ -144,7 +144,9 @@ public class ChapterAnimeLifeService {
     String regex = "https://(?:www\\.)?([^\\.]+)";
     Pattern pattern = java.util.regex.Pattern.compile(regex);
     Matcher matcher = pattern.matcher(url);
-
+    // https://www.animeflv.net
+    // Animeflv
+    
     if (matcher.find()) {
         String provider = matcher.group(1);
         return provider.substring(0, 1).toUpperCase() + provider.substring(1);

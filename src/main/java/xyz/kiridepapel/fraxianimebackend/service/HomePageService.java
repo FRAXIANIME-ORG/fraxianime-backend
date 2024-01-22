@@ -87,7 +87,11 @@ public class HomePageService {
         long daysBetween = ChronoUnit.DAYS.between(date, LocalDate.now());
 
         if (daysBetween <= 7) {
-          formattedDate = "Hace " + daysBetween + " días";
+          if (daysBetween == 1) {
+            formattedDate = "Ayer";
+          } else {
+            formattedDate = "Hace " + daysBetween + " días";
+          }
         } else {
           formattedDate = dateText;
         }
@@ -183,9 +187,18 @@ public class HomePageService {
 
   public List<ChapterDataDTO> genericProgrammingConfirmed(List<ChapterDataDTO> list, Document docCompare, char type) {
     List<ChapterDataDTO> listToCompare = new ArrayList<>();
+    
+    log.info("Animes JKAnime:");
 
-    // Compara la lista de animes de JKAnime con la lista de últimos animes agregados de AnimeLife
+    for (ChapterDataDTO anime : list) {
+      // anime.setChapter(this.specialChapterCases(anime.getName(), anime.getChapter()));
+      log.info(anime.getName() + " - " + anime.getChapter());
+    }
+
+    // Compara la lista de animes de JKAnime con la lista de últimos agregados de AnimeLife
     Elements elementsToCompareLastAdded = docCompare.body().select(".excstf").first().select(".bs");
+    log.info("Ultimos animes agregados:");
+
     for (Element element : elementsToCompareLastAdded) {
       ChapterDataDTO anime = ChapterDataDTO.builder()
       .name(element.select(".tt").first().childNodes().stream()
@@ -195,18 +208,34 @@ public class HomePageService {
       .chapter(element.select(".epx").text().replace("Ep 0", "Capitulo ").replace("Ep ", "Capitulo ").trim())
       .build();
 
+      String typez = element.select(".typez").text().trim();
+      if (!typez.equals("TV")) {
+        anime.setChapter(typez);
+      }
+
       anime.setName(this.specialNameCases(anime.getName()));
+      anime.setChapter(this.specialChapterCases(anime.getName(), anime.getChapter()));
       listToCompare.add(anime);
+
+      log.info("Elemento no disponible de Último animes agregados: " + anime.getName() + " - " + anime.getChapter());
     }
 
     // Compara la lista de animes de JKAnime con la lista de series en emisión de AnimeLife
     Elements elementsToCompareEmisionSeries = docCompare.body().select(".ongoingseries ul li");
+    log.info("Series en emision:");
+
     for (Element element : elementsToCompareEmisionSeries) {
       ChapterDataDTO anime = ChapterDataDTO.builder()
-      .name(this.specialNameCases(element.select(".l").text().trim()))
+      .name(element.select(".l").text().trim())
       .chapter(element.select(".r").text().replace("Episodios 0", "Capitulo ").replace("Episodios ", "Capitulo ").trim())
       .build();
+
+      anime.setName(this.specialNameCases(anime.getName()));
+      anime.setChapter(this.specialChapterCases(anime.getName(), anime.getChapter()));
+
       listToCompare.add(anime);
+
+      log.info("Elemento no disponible de Series en emision: " + anime.getName() + " - " + anime.getChapter());
     }
 
     // Establece el estado de disponibilidad de cada anime de la lista de JKAnime
@@ -214,7 +243,7 @@ public class HomePageService {
     for (ChapterDataDTO item : list) {
       boolean matchFound = listToCompare.stream()
         .anyMatch(compareItem ->
-          compareItem.getName().equals(item.getName()) &&
+          compareItem.getName().startsWith(item.getName()) &&
           compareItem.getChapter().equals(item.getChapter())
         );
       
@@ -231,17 +260,46 @@ public class HomePageService {
   }
   
   
-  public String specialNameCases(String inputName) {
+  private String specialNameCases(String inputName) {
     Map<String, String> specialCases = new HashMap<>();
 
     specialCases.put("Solo Leveling", "Ore dake Level Up na Ken");
 
     for (Map.Entry<String, String> entry : specialCases.entrySet()) {
-        if (inputName.contains(entry.getKey())) {
-            return entry.getValue();
-        }
+      if (inputName.contains(entry.getKey())) {
+        return entry.getValue();
+      }
     }
 
     return inputName;
+  }
+
+  // Este metodo lo que hace es que si el nombre del anime contiene el nombre de la key del map, entonces
+  // se compara el capitulo con el valor de la key del map, si son iguales, entonces se devuelve el valor
+  // del map que corresponde a la key del map
+  private String specialChapterCases(String inputName, String inputChapter) {
+    Map<String, Map<Integer, Integer>> specialCases = new HashMap<>();
+    String chapter = inputChapter.replace("Capitulo ", "").trim();
+
+    specialCases.put("Kaitakuki: Around 40 Onsen Mania no Tensei Saki wa, Nonbiri Onsen Tengoku deshita", Map.of(1, 2, 2, 1));
+
+    log.info("---------");
+
+    for (Map.Entry<String, Map<Integer, Integer>> entry : specialCases.entrySet()) {
+      if (inputName.contains(entry.getKey())) {
+        log.info("1");
+        log.info("chapter: " + chapter);
+        log.info("entry.getValue().get(1): " + entry.getValue().get(1));
+        log.info("entry.getValue().get(2): " + entry.getValue().get(2));
+        if (chapter.equals(String.valueOf(entry.getValue().get(1)))) {
+          log.info("2");
+          return String.valueOf("Capitulo " + entry.getValue().get(2));
+        }
+      }
+    }
+
+    log.info("---------");
+
+    return inputChapter;
   }
 }
