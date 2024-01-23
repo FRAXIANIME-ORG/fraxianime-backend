@@ -1,5 +1,8 @@
 package xyz.kiridepapel.fraxianimebackend.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.service.AnimeService;
 import xyz.kiridepapel.fraxianimebackend.service.HomePageService;
@@ -37,18 +41,12 @@ public class JKAnimeController {
   @GetMapping("/test")
   public ResponseEntity<?> test() {
     try {
-      Document document = Jsoup.connect("https://jkanime.org/zhen-hun-jie/20/").get();
-      Element element = document.body().select(".contenido .container .row").first();
-      // element = element.select(".contenido").first();
-      // Element element = document.body().select(".breadcrumb-option").first();
-      // Element element = document.body().select(".contenido").first();
-      // Elements elements  = document.select(".breadcrumb-option");
+      Document document = Jsoup.connect("https://jkanime.org/one-piece/").get();
+      Element element = document.body().select(".contenido").first();
 
-      log.info("element: " + element);
+      AnimeInfoDTO animeInfo = this.animeService.getAnimeInfo(document);
 
-      // log.info("3331362d31303931: " + chapterService.decodeBase64("PGlmcmFtZSB3aWR0aD0iNjQwIiBoZWlnaHQ9IjM2MCIgc3JjPSJodHRwczovL3Nob3J0Lmluay9FZTY3V05ROFEiIGZyYW1lYm9yZGVyPSIwIiBzY3JvbGxpbmc9IjAiIGFsbG93ZnVsbHNjcmVlbj48L2lmcmFtZT4="));
-
-      return new ResponseEntity<>("element: " + element, HttpStatus.OK);
+      return new ResponseEntity<>(animeInfo, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>("Ocurrió un error: " + e.getMessage(), HttpStatus.valueOf(500));
     }
@@ -91,8 +89,13 @@ public class JKAnimeController {
 
   @GetMapping("/{search}")
   public ResponseEntity<?> animeInfo(@PathVariable("search") String search) {
-    AnimeInfoDTO animeInfo = this.animeService.getAnimeInfo(search);
-    return new ResponseEntity<>(animeInfo, HttpStatus.OK);
+    try {
+      Document document = Jsoup.connect(this.proveedorJkAnimeUrl + search).get();
+      AnimeInfoDTO animeInfo = this.animeService.getAnimeInfo(document);
+      return new ResponseEntity<>(animeInfo, HttpStatus.OK);
+    } catch (Exception e) {
+      return new ResponseEntity<>("Ocurrió un error: " + e.getMessage(), HttpStatus.valueOf(500));
+    }
   }
 
   @GetMapping("/{name}/{chapter}")

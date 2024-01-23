@@ -98,9 +98,18 @@ public class ChapterAnimeLifeService {
         list.add(link);
       }
   
-      LinkDTO first = list.get(0);
-      list.remove(0);
-      list.add(first);
+      for(int i = 0; i < list.size(); i++) {
+        if (list.get(i).getName().equals("YourUpload")) {
+          LinkDTO link = list.get(i);
+          list.remove(i);
+          list.add(0, link);
+        }
+        if (list.get(i).getName().equals("VidGuard")) {
+          LinkDTO link = list.get(i);
+          list.remove(i);
+          list.add(0, link);
+        }
+      }
   
       return list;
     } catch (Exception e) {
@@ -209,6 +218,10 @@ public class ChapterAnimeLifeService {
       "one-piece",
       "one-punch-man",
       "horimiya",
+      "chuunibyou-demo-koi-ga-shitai",
+      "chuunibyou-demo-koi-ga-shitai-ren",
+      "",
+      "",
       "",
       ""
     };

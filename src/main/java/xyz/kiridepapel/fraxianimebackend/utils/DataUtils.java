@@ -18,12 +18,12 @@ public class DataUtils {
     try {
       return Jsoup.connect(urlAnimeInfo).get();
     } catch (Exception e) {
-      // String urlWithoutZero = urlAnimeInfo.replaceAll("-0(\\d+)$", "-$1");
-      // try { 
-      //   return Jsoup.connect(urlWithoutZero).get();
-      // } catch (Exception ex) {
+      String urlWithoutZero = urlAnimeInfo.replaceAll("-0(\\d+)$", "-$1");
+      try { 
+        return Jsoup.connect(urlWithoutZero).get();
+      } catch (Exception ex) {
         throw new AnimeNotFound(errorMessage);
-      // }
+      }
     }
   }
 
