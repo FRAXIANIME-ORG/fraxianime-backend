@@ -16,12 +16,11 @@ public class IndividualDTO {
     public static class ChapterDataDTO {
         private String name;
         private String imgUrl;
+        private String type;
         private String chapter;
         private String date;
         private String url;
         private Boolean state;
-        // Available
-        // Unavailable
     }
 
     @Data

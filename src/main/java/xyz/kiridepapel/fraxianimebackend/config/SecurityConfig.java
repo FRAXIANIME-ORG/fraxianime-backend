@@ -16,7 +16,7 @@ public class SecurityConfig {
 
     @Autowired
     private ProtectedEntryPoint protectedEntryPoint;
-    
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http

@@ -23,7 +23,7 @@ public class ChapterDTO {
     private Boolean havePreviousChapter;
     private Boolean haveNextChapter;
     private String nextChapterDate;
-    private String state;
+    private Boolean inEmision;
 
     // External
     private int lastChapterNumber;

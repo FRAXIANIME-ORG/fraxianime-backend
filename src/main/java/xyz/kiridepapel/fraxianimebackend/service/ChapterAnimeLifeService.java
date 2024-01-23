@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +21,8 @@ import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
+import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
 @Log
@@ -31,27 +32,33 @@ public class ChapterAnimeLifeService {
 
   public ChapterDTO chapter(String inputName, String chapter) {
     try {
-      String urlRequest = proveedorAnimeLifeUrl + this.specialUrlCases(inputName);
-      urlRequest = this.specialChapterCases(urlRequest, inputName, chapter);
-
-      Document docChapter = null;
-      docChapter = ZMethods.connectAnimeInfo(docChapter, urlRequest, "No se encontró el capitulo solicitado.");
+      String urlRequest = proveedorAnimeLifeUrl + AnimeUtils.specialNameOrUrlCases(inputName, 'c');
+      urlRequest += "-" + chapter;
+      urlRequest = specialChapterCases(urlRequest, inputName, chapter);
+      
+      Document docChapter = DataUtils.connectAnimeInfo(urlRequest, "No se encontró el capitulo solicitado.");
 
       List<LinkDTO> srcOptions = this.getSrcOptions(docChapter);
       Elements nearChapters = docChapter.body().select(".naveps .nvs");
 
       ChapterDTO chapterInfo = ChapterDTO.builder()
-        .name(docChapter.select(".ts-breadcrumb li").get(1).select("span").text().trim())
+        .name(AnimeUtils.specialNameOrUrlCases(docChapter.select(".ts-breadcrumb li").get(1).select("span").text().trim(), 'c'))
         .actualChapterNumber(chapter)
         .srcOptions(srcOptions)
         .downloadOptions(this.getDownloadOptions(docChapter))
         .havePreviousChapter(this.havePreviousChapter(nearChapters))
         .haveNextChapter(this.haveNextChapter(nearChapters))
-        .state(docChapter.body().select(".det").first().select("span i").text().trim())
         .build();
       
       if (!chapterInfo.getHaveNextChapter()) {
         chapterInfo.setNextChapterDate(String.valueOf(this.parseDate(docChapter.body().select(".year .updated").text().trim(), 7)));
+      }
+
+      String state = docChapter.body().select(".det").first().select("span i").text().trim();
+      if (state.equals("Completada")) {
+        chapterInfo.setInEmision(false);
+      } else {
+        chapterInfo.setInEmision(true);
       }
 
       Element lastChapter = docChapter.body().select(".episodelist ul li").first().select("a").first();
@@ -67,7 +74,6 @@ public class ChapterAnimeLifeService {
 
       return chapterInfo;
     } catch (Exception e) {
-      log.info("Error 2: " + e.getMessage());
       throw new ChapterNotFound("No se encontró el capitulo solicitado.");
     }
   }
@@ -77,19 +83,19 @@ public class ChapterAnimeLifeService {
       List<LinkDTO> list = new ArrayList<>();
       Elements srcs = docChapter.body().select(".mirror option");
       srcs.remove(0); // Elimina el primer elemento: "Seleccionar servidor"
-  
+
       for (Element element : srcs) {
-          String url = ZMethods.decodeBase64(element.attr("value"), true);
-  
-          if (url.startsWith("//")) {
-            url = "https://" + url.substring(2);
-          }
-  
-          LinkDTO link = new LinkDTO();
-          link.setName(element.text().trim());
-          link.setUrl(url);
-          
-          list.add(link);
+        String url = DataUtils.decodeBase64(element.attr("value"), true);
+
+        if (url.startsWith("//")) {
+          url = "https://" + url.substring(2);
+        }
+
+        LinkDTO link = new LinkDTO();
+        link.setName(element.text().trim());
+        link.setUrl(url);
+        
+        list.add(link);
       }
   
       LinkDTO first = list.get(0);
@@ -180,64 +186,47 @@ public class ChapterAnimeLifeService {
         return null;
     }
 
-    // Definir el formato de la fecha de entrada en español
     DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
-    // Formateador para la fecha de salida
     DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM", new Locale("es", "ES"));
 
     try {
-      // Convertir la cadena de fecha de entrada a LocalDate
       LocalDate currentDate = LocalDate.parse(date, inputFormatter);
-      // Sumar 7 días para obtener la fecha del próximo capítulo
       LocalDate nextChapterDate = currentDate.plusDays(daysToSum);
-      // Convertir la fecha del próximo capítulo a String en el formato deseado
       return nextChapterDate.format(outputFormatter);
     } catch (DateTimeParseException e) {
-      // Manejar la excepción si la cadena de fecha no es válida
       log.severe("Formato de fecha inválido: " + e.getMessage());
       return null;
     }
   }
-
-  public String specialUrlCases(String inputName) {
-    if (inputName.isEmpty() || inputName == null) {
-      throw new ChapterNotFound("El nombre del anime no puede estar vacio.");
-    }
-
-    Map<String, String> specialCases = new HashMap<>();
-
-    specialCases.put("ore-dake-level-up-na-ken", "solo-leveling");
-
-    for (Map.Entry<String, String> entry : specialCases.entrySet()) {
-        if (inputName.contains(entry.getKey())) {
-            return entry.getValue();
-        }
-    }
-
-    return inputName;
-  }
-
+  
   private String specialChapterCases(String urlRequest, String inputName, String chapter) {
-    if (inputName.isEmpty() || inputName == null || chapter == null) {
-      throw new ChapterNotFound("El nombre del anime y el capitulo son obligatorios.");
+    if (inputName == null || inputName.isEmpty() || chapter == null) {
+      throw new ChapterNotFound("El nombre del anime y el capítulo son obligatorios.");
     }
 
     Map<String, String> specialCases = new HashMap<>();
-    // Por defecto, los primeros 9 episodios de TODOS los animes siguen esta regla: -0X
-    // Pero hay algunos animes que tienen una regla especial para los primeros 9 episodios: -X
-    specialCases.put("one-piece", "-");
+    String[] animes = {
+      "one-piece",
+      "one-punch-man",
+      "horimiya",
+      "",
+      ""
+    };
 
-    // Si el capitulo es un número, las otras opciones son: OVA, ONA, Pelicula, Especial, etc.
+    for (String anime : animes) {
+      if (!anime.isEmpty() && anime != null) {
+        specialCases.put(anime, "-");
+      }
+    }
+
     if (chapter.matches("\\d+")) {
-      for (Entry<String, String> entry : specialCases.entrySet()) {
-        if (Integer.parseInt(chapter) < 10) {
-          if (entry.getKey().equals(inputName)) {
-            urlRequest += entry.getValue() + chapter;
-          } else {
-            urlRequest += "-0" + chapter;
-          }
+      int chapterNumber = Integer.parseInt(chapter);
+      if (chapterNumber < 10) {
+        if (specialCases.containsKey(inputName)) {
+          // Remplaza la parte final de la URL con la regla especial
+          urlRequest = urlRequest.replaceAll("-\\d+$", specialCases.get(inputName) + chapterNumber);
         } else {
-          urlRequest += "-" + chapter;
+          urlRequest = urlRequest.replaceAll("-\\d+$", "-0" + chapterNumber);
         }
       }
     }

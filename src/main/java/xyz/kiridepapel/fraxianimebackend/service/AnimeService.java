@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
+import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 
 @Service
@@ -23,8 +25,7 @@ public class AnimeService {
     String urlBase = this.proveedorAnimeFlvUrl;
     String urlAnimeInfo = urlBase + search.replaceAll("/\\d+$", "");
 
-    Document docAnimeInfo = null;
-    docAnimeInfo = ZMethods.connectAnimeInfo(docAnimeInfo, urlAnimeInfo, "No se encontró el anime solicitado.");
+    Document docAnimeInfo = DataUtils.connectAnimeInfo(urlAnimeInfo, "No se encontró el anime solicitado.");
     
     String chaptersImgUrl = docAnimeInfo.select(".lazy").attr("src");
     AnimeInfoDTO animeInfo = AnimeInfoDTO.builder()
@@ -55,7 +56,7 @@ public class AnimeService {
           chapter = "Capitulo " + (this.getChapterNumberFromUrl(url + "-1", true));
         }
         
-        if (ZMethods.isNotNullOrEmpty(url)) {
+        if (AnimeUtils.isNotNullOrEmpty(url)) {
           ChapterDataDTO anime = ChapterDataDTO.builder()
             .url(url)
             .chapter(chapter)

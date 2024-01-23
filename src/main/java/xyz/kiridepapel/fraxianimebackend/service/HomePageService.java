@@ -16,17 +16,18 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LastAnimeDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDataDTO;
+import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 
 @Service
-@Log
 public class HomePageService {
   @Value("${PROVEEDOR_JKANIME_URL}")
   private String proveedorJkanimeUrl;
+  @Value("${PROVEEDOR_ANIMELIFE_URL}")
+  private String proveedorAnimeLifeUrl;
 
   public List<ChapterDataDTO> sliderAnimes(Document document) {
     Elements elements = document.select(".hero__items");
@@ -62,59 +63,77 @@ public class HomePageService {
 
     return ovasOnasSpecials;
   }
+  
+  public List<ChapterDataDTO> animesProgramming(Document animeLifeDoc, Document jkanimeDoc) {
+    Elements elementsAnimeLife = animeLifeDoc.body().select(".excstf").first().select(".bs");
+    Elements elementsJkAnime = jkanimeDoc.body().select(".listadoanime-home .anime_programing a");
 
-  public List<ChapterDataDTO> genericProgramming(Document document, Document docCompare, char type) {
-    Elements elements = document.select(".anime_programing a.bloqq");
     List<ChapterDataDTO> lastChapters = new ArrayList<>();
-    String formattedDate;
 
-    if (type == 'a') {
-      elements = document.select(".anime_programing a.bloqq");
-    } else if (type == 'd') {
-      elements = document.select(".donghuas_programing a.bloqq");
+    Map<String, LinkDTO> animesJkanimes = new HashMap<>();
+
+    for (Element eJkanime : elementsJkAnime) {
+      String name = eJkanime.select("h5").first().text().trim();
+      LinkDTO data = LinkDTO.builder()
+        .name(eJkanime.select(".anime__sidebar__comment__item__text span").first().text().trim())
+        .url(eJkanime.select(".anime__sidebar__comment__item__pic img").attr("src").trim())
+        .build();
+      animesJkanimes.put(name, data);
     }
 
-    for (Element element : elements) {
-      String dateText = element.select(".anime__sidebar__comment__item__text span").text();
+    for (Element eAnimeLife : elementsAnimeLife) {
+      ChapterDataDTO anime = ChapterDataDTO.builder()
+        .name(eAnimeLife.select(".tt").first().childNodes().stream()
+          .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
+          .map(Node::toString)
+          .collect(Collectors.joining()).trim())
+        .imgUrl(eAnimeLife.select("img").attr("src").trim())
+        .chapter(eAnimeLife.select(".epx").text().replace("Ep 0", "Capitulo ").replace("Ep ", "Capitulo ").trim())
+        .type(eAnimeLife.select(".typez").text().trim())
+        .date(null)
+        .url(this.changeFormatUrl(eAnimeLife.select(".bsx a").attr("href"), proveedorAnimeLifeUrl))
+        .state(true)
+        .build();
 
-      if (dateText.equals("Hoy") || dateText.equals("Ayer")) {
-        // Manejar el caso de que la fecha sea Hoy o Ayer
-        formattedDate = dateText;
-      } else if (dateText.matches("\\d{2}/\\d{2}")) {
-        // Manejar el caso de que la fecha sea DIA/MES
-        String currentYear = String.valueOf(LocalDate.now().getYear());
-        LocalDate date = LocalDate.parse((dateText + "/" + currentYear), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        long daysBetween = ChronoUnit.DAYS.between(date, LocalDate.now());
+      String animeName = AnimeUtils.specialNameOrUrlCases(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')), 'h');
+      anime.setName(AnimeUtils.specialNameOrUrlCases(animeName, 'h'));
+      anime.setUrl(AnimeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
 
-        if (daysBetween <= 7) {
-          if (daysBetween == 1) {
-            formattedDate = "Ayer";
-          } else {
-            formattedDate = "Hace " + daysBetween + " días";
-          }
-        } else {
-          formattedDate = dateText;
-        }
-      } else { 
-        // Manejar otros casos si los hay
-        formattedDate = dateText;
+      if (animesJkanimes.containsKey(animeName)) {
+        anime.setDate(this.getFormattedDate(animesJkanimes.get(animeName).getName()));
+        anime.setImgUrl(animesJkanimes.get(animeName).getUrl());
       }
+    
+      lastChapters.add(anime);
+    }
 
+    return lastChapters;
+  }
+
+  public List<ChapterDataDTO> donghuasProgramming(Document document) {
+    Elements elements = document.select(".donghuas_programing a.bloqq");
+    List<ChapterDataDTO> lastChapters = new ArrayList<>();
+
+    for (Element element : elements) {
       ChapterDataDTO anime = ChapterDataDTO.builder()
         .name(element.select(".anime__sidebar__comment__item__text h5").text())
         .imgUrl(element.select(".anime__sidebar__comment__item__pic img").attr("src"))
         .chapter(element.select(".anime__sidebar__comment__item__text h6").text().replace("Episodio", "Capitulo"))
-        .date(formattedDate)
-        .url(element.attr("href").replace(proveedorJkanimeUrl, ""))
+        .type("Donghua")
+        .date(this.getFormattedDate(element.select(".anime__sidebar__comment__item__text span").text()))
+        .url(element.select("a").attr("href").replace(proveedorJkanimeUrl, ""))
+        .state(true)
         .build();
+      
+      // Quitar el "/" final de la url
+      if (anime.getUrl().endsWith("/")) {
+        anime.setUrl(anime.getUrl().substring(0, anime.getUrl().length() - 1));
+      }
+      
+      anime.setName(AnimeUtils.specialNameOrUrlCases(anime.getName(), 'h'));
+      anime.setUrl(AnimeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
 
       lastChapters.add(anime);
-    }
-
-    if (type == 'a') {
-      lastChapters = this.genericProgrammingConfirmed(lastChapters, docCompare, 'a');
-    } else if (type == 'd') {
-      lastChapters = this.genericProgrammingConfirmed(lastChapters, docCompare, 'd');
     }
 
     return lastChapters;
@@ -185,121 +204,50 @@ public class HomePageService {
     return latestAddedList;
   }
 
-  public List<ChapterDataDTO> genericProgrammingConfirmed(List<ChapterDataDTO> list, Document docCompare, char type) {
-    List<ChapterDataDTO> listToCompare = new ArrayList<>();
-    
-    log.info("Animes JKAnime:");
+  private String getFormattedDate(String dateText) {
+    if (dateText.equals("Hoy") || dateText.equals("Ayer")) {
+      // Manejar el caso de que la fecha sea Hoy o Ayer
+      return dateText;
+    } else if (dateText.matches("\\d{2}/\\d{2}")) {
+      // Manejar el caso de que la fecha sea DIA/MES
+      String currentYear = String.valueOf(LocalDate.now().getYear());
+      LocalDate date = LocalDate.parse((dateText + "/" + currentYear), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+      long daysBetween = ChronoUnit.DAYS.between(date, LocalDate.now());
 
-    for (ChapterDataDTO anime : list) {
-      // anime.setChapter(this.specialChapterCases(anime.getName(), anime.getChapter()));
-      log.info(anime.getName() + " - " + anime.getChapter());
-    }
-
-    // Compara la lista de animes de JKAnime con la lista de últimos agregados de AnimeLife
-    Elements elementsToCompareLastAdded = docCompare.body().select(".excstf").first().select(".bs");
-    log.info("Ultimos animes agregados:");
-
-    for (Element element : elementsToCompareLastAdded) {
-      ChapterDataDTO anime = ChapterDataDTO.builder()
-      .name(element.select(".tt").first().childNodes().stream()
-        .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
-        .map(Node::toString)
-        .collect(Collectors.joining()).trim())
-      .chapter(element.select(".epx").text().replace("Ep 0", "Capitulo ").replace("Ep ", "Capitulo ").trim())
-      .build();
-
-      String typez = element.select(".typez").text().trim();
-      if (!typez.equals("TV")) {
-        anime.setChapter(typez);
-      }
-
-      anime.setName(this.specialNameCases(anime.getName()));
-      anime.setChapter(this.specialChapterCases(anime.getName(), anime.getChapter()));
-      listToCompare.add(anime);
-
-      log.info("Elemento no disponible de Último animes agregados: " + anime.getName() + " - " + anime.getChapter());
-    }
-
-    // Compara la lista de animes de JKAnime con la lista de series en emisión de AnimeLife
-    Elements elementsToCompareEmisionSeries = docCompare.body().select(".ongoingseries ul li");
-    log.info("Series en emision:");
-
-    for (Element element : elementsToCompareEmisionSeries) {
-      ChapterDataDTO anime = ChapterDataDTO.builder()
-      .name(element.select(".l").text().trim())
-      .chapter(element.select(".r").text().replace("Episodios 0", "Capitulo ").replace("Episodios ", "Capitulo ").trim())
-      .build();
-
-      anime.setName(this.specialNameCases(anime.getName()));
-      anime.setChapter(this.specialChapterCases(anime.getName(), anime.getChapter()));
-
-      listToCompare.add(anime);
-
-      log.info("Elemento no disponible de Series en emision: " + anime.getName() + " - " + anime.getChapter());
-    }
-
-    // Establece el estado de disponibilidad de cada anime de la lista de JKAnime
-    // comparando con la lista última de animes agregados y de series en emisión de AnimeLife
-    for (ChapterDataDTO item : list) {
-      boolean matchFound = listToCompare.stream()
-        .anyMatch(compareItem ->
-          compareItem.getName().startsWith(item.getName()) &&
-          compareItem.getChapter().equals(item.getChapter())
-        );
-      
-      item.setState(matchFound);
-
-      // Si state es false, se elimina el item de la lista
-      if (type == 'a' && !matchFound) {
-        log.info("Elemento no disponible: " + item.getName() + " - " + item.getChapter());
-        // list.remove(item);
-      }
-    }
-
-    return list;
-  }
-  
-  
-  private String specialNameCases(String inputName) {
-    Map<String, String> specialCases = new HashMap<>();
-
-    specialCases.put("Solo Leveling", "Ore dake Level Up na Ken");
-
-    for (Map.Entry<String, String> entry : specialCases.entrySet()) {
-      if (inputName.contains(entry.getKey())) {
-        return entry.getValue();
-      }
-    }
-
-    return inputName;
-  }
-
-  // Este metodo lo que hace es que si el nombre del anime contiene el nombre de la key del map, entonces
-  // se compara el capitulo con el valor de la key del map, si son iguales, entonces se devuelve el valor
-  // del map que corresponde a la key del map
-  private String specialChapterCases(String inputName, String inputChapter) {
-    Map<String, Map<Integer, Integer>> specialCases = new HashMap<>();
-    String chapter = inputChapter.replace("Capitulo ", "").trim();
-
-    specialCases.put("Kaitakuki: Around 40 Onsen Mania no Tensei Saki wa, Nonbiri Onsen Tengoku deshita", Map.of(1, 2, 2, 1));
-
-    log.info("---------");
-
-    for (Map.Entry<String, Map<Integer, Integer>> entry : specialCases.entrySet()) {
-      if (inputName.contains(entry.getKey())) {
-        log.info("1");
-        log.info("chapter: " + chapter);
-        log.info("entry.getValue().get(1): " + entry.getValue().get(1));
-        log.info("entry.getValue().get(2): " + entry.getValue().get(2));
-        if (chapter.equals(String.valueOf(entry.getValue().get(1)))) {
-          log.info("2");
-          return String.valueOf("Capitulo " + entry.getValue().get(2));
+      if (daysBetween <= 7) {
+        if (daysBetween == 1) {
+          return "Ayer";
+        } else {
+          return "Hace " + daysBetween + " días";
         }
+      } else {
+        return dateText;
       }
+    } else { 
+      // Manejar otros casos si los hay
+      return dateText;
     }
-
-    log.info("---------");
-
-    return inputChapter;
   }
+
+  private String changeFormatUrl(String url, String proveedorUrl) {
+    // Divide la URL en partes
+    String[] urlParts = url.split("/");
+    // Divide la última parte de la URL en partes
+    String[] lastPart = urlParts[urlParts.length - 1].split("-");
+    // Obtiene el último número de la última parte de la URL
+    String lastPartNumber = lastPart[lastPart.length - 1];
+    // Obtiene el último número de la última parte de la URL sin la extensión
+    String lastPartNumberWithoutExtension = lastPartNumber.split("\\.")[0];
+    // Quita los ceros a la izquierda del número
+    if (lastPartNumberWithoutExtension.startsWith("0")) {
+      lastPartNumberWithoutExtension = lastPartNumberWithoutExtension.substring(1);
+    }
+    // Construye la nueva URL
+    String newUrl = String.join("-", lastPart).replace("-" + lastPartNumber, "/" + lastPartNumberWithoutExtension);
+    // Quita el proveedor de la URL
+    newUrl = newUrl.replace(proveedorUrl, "");
+
+    return newUrl;
+  }
+
 }
