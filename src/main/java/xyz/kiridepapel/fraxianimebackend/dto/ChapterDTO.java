@@ -17,7 +17,7 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ChapterDTO {
     private String name;
-    private String actualChapterNumber;
+    private Integer actualChapterNumber;
     private List<LinkDTO> srcOptions;
     private List<LinkDTO> downloadOptions;
     private Boolean havePreviousChapter;
@@ -26,7 +26,7 @@ public class ChapterDTO {
     private Boolean inEmision;
 
     // External
-    private int lastChapterNumber;
+    private Integer lastChapterNumber;
     private String lastChapterImg;
     private String lastChapterDate;
 }

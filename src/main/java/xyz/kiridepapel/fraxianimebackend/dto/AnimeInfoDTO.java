@@ -20,16 +20,15 @@ public class AnimeInfoDTO {
     private String name;
     private String imgUrl;
     private String sinopsis;
-	private Integer likes;
-
+	private String trailer;
     private Map<String, Object> data;
-    private Map<String, Object> alternativeTitles;
 
-	private String ytTrailerId;
+    private Integer lastChapterNumber;
+    private String nextChapterDate;
+
     private List<LastAnimeDataDTO> recomendations;
+
+    
 	// private Integer lastChapterNumber;
-	
-    // private List<ChapterDataDTO> chapters;
-    // private List<String> genres;
 
 }

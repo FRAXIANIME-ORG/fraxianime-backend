@@ -1,12 +1,8 @@
 package xyz.kiridepapel.fraxianimebackend.service;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,7 +13,6 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
@@ -25,7 +20,6 @@ import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
-@Log
 public class ChapterAnimeLifeService {
   @Value("${PROVEEDOR_ANIMELIFE_URL}")
   private String proveedorAnimeLifeUrl;
@@ -43,7 +37,7 @@ public class ChapterAnimeLifeService {
 
       ChapterDTO chapterInfo = ChapterDTO.builder()
         .name(AnimeUtils.specialNameOrUrlCases(docChapter.select(".ts-breadcrumb li").get(1).select("span").text().trim(), 'c'))
-        .actualChapterNumber(chapter)
+        .actualChapterNumber(Integer.parseInt(chapter))
         .srcOptions(srcOptions)
         .downloadOptions(this.getDownloadOptions(docChapter))
         .havePreviousChapter(this.havePreviousChapter(nearChapters))
@@ -51,7 +45,7 @@ public class ChapterAnimeLifeService {
         .build();
       
       if (!chapterInfo.getHaveNextChapter()) {
-        chapterInfo.setNextChapterDate(String.valueOf(this.parseDate(docChapter.body().select(".year .updated").text().trim(), 7)));
+        chapterInfo.setNextChapterDate(String.valueOf(AnimeUtils.parseDate(docChapter.body().select(".year .updated").text().trim(), 7)));
       }
 
       String state = docChapter.body().select(".det").first().select("span i").text().trim();
@@ -70,7 +64,7 @@ public class ChapterAnimeLifeService {
       chapterInfo.setLastChapterImg(chapterImg);
       // Fecha de salida del último capitulo
       String chapterDate = docChapter.body().select(".updated").text();
-      chapterInfo.setLastChapterDate(this.parseDate(chapterDate, 0));
+      chapterInfo.setLastChapterDate(AnimeUtils.parseDate(chapterDate, 0));
 
       return chapterInfo;
     } catch (Exception e) {
@@ -187,24 +181,6 @@ public class ChapterAnimeLifeService {
       return true;
     } else {
       return false;
-    }
-  }
-
-  private String parseDate(String date, int daysToSum) {
-    if (date == null || date.isEmpty()) {
-        return null;
-    }
-
-    DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
-    DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM", new Locale("es", "ES"));
-
-    try {
-      LocalDate currentDate = LocalDate.parse(date, inputFormatter);
-      LocalDate nextChapterDate = currentDate.plusDays(daysToSum);
-      return nextChapterDate.format(outputFormatter);
-    } catch (DateTimeParseException e) {
-      log.severe("Formato de fecha inválido: " + e.getMessage());
-      return null;
     }
   }
   
