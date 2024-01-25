@@ -26,7 +26,7 @@ public class ChapterAnimeLifeService {
 
   public ChapterDTO chapter(String inputName, String chapter) {
     try {
-      String urlRequest = proveedorAnimeLifeUrl + AnimeUtils.specialNameOrUrlCases(inputName, 'c');
+      String urlRequest = proveedorAnimeLifeUrl + AnimeUtils.specialNameOrUrlCases(inputName, 'p');
       urlRequest += "-" + chapter;
       urlRequest = specialChapterCases(urlRequest, inputName, chapter);
       
@@ -58,7 +58,7 @@ public class ChapterAnimeLifeService {
       Element lastChapter = docChapter.body().select(".episodelist ul li").first().select("a").first();
       // Número del último capitulo
       String chapterNumber = lastChapter.select(".playinfo span").text().split(" - ")[0].replace("Eps ", "");
-      chapterInfo.setLastChapterNumber(Integer.parseInt(chapterNumber));
+      chapterInfo.setLastChapter(Integer.parseInt(chapterNumber));
       // Imagen del último capitulo
       String chapterImg = lastChapter.select("img").attr("src");
       chapterInfo.setLastChapterImg(chapterImg);

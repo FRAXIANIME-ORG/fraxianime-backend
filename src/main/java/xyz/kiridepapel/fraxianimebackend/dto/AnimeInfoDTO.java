@@ -18,17 +18,17 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LastAnimeDataDTO;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AnimeInfoDTO {
     private String name;
+    private String alternativeName;
     private String imgUrl;
     private String sinopsis;
 	private String trailer;
+
     private Map<String, Object> data;
 
-    private Integer lastChapterNumber;
     private String nextChapterDate;
+    private Integer firstChapter;
+    private Integer lastChapter;
 
     private List<LastAnimeDataDTO> recomendations;
-
-    
-	// private Integer lastChapterNumber;
 
 }

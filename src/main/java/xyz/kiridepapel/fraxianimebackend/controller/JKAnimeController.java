@@ -1,8 +1,5 @@
 package xyz.kiridepapel.fraxianimebackend.controller;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -15,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.service.AnimeJkAnimeService;
 import xyz.kiridepapel.fraxianimebackend.service.HomePageService;
@@ -44,9 +40,9 @@ public class JKAnimeController {
       Document document = Jsoup.connect("https://jkanime.org/one-piece/").get();
       Element element = document.body().select(".contenido").first();
 
-      AnimeInfoDTO animeInfo = this.animeService.getAnimeInfo(document);
+      // AnimeInfoDTO animeInfo = this.animeService.getAnimeInfo(document);
 
-      return new ResponseEntity<>(animeInfo, HttpStatus.OK);
+      return new ResponseEntity<>(element, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>("Ocurrió un error: " + e.getMessage(), HttpStatus.valueOf(500));
     }
@@ -55,17 +51,17 @@ public class JKAnimeController {
   @GetMapping("/animes")
   public ResponseEntity<?> homePage() {
     try {
-      Document jkanime = Jsoup.connect(proveedorJkAnimeUrl).get();
-      Document animeLife = Jsoup.connect(proveedorAnimeLifeUrl).get();
+      Document docJkanime = Jsoup.connect(this.proveedorJkAnimeUrl).get();
+      Document docAnimelife = Jsoup.connect(this.proveedorAnimeLifeUrl).get();
 
       HomePageDTO animes = HomePageDTO.builder()
-        .sliderAnimes(this.homePageService.sliderAnimes(jkanime))
-        .ovasOnasSpecials(this.homePageService.ovasOnasSpecials(jkanime))
-        .animesProgramming(this.homePageService.animesProgramming(animeLife, jkanime))
-        .donghuasProgramming(this.homePageService.donghuasProgramming(jkanime))
-        .topAnimes(this.homePageService.topAnimes(jkanime))
-        .latestAddedAnimes(this.homePageService.latestAddedAnimes(jkanime))
-        .latestAddedList(this.homePageService.latestAddedList(jkanime))
+        .sliderAnimes(this.homePageService.sliderAnimes(docJkanime))
+        .ovasOnasSpecials(this.homePageService.ovasOnasSpecials(docJkanime))
+        .animesProgramming(this.homePageService.animesProgramming(docAnimelife, docJkanime))
+        .donghuasProgramming(this.homePageService.donghuasProgramming(docJkanime))
+        .topAnimes(this.homePageService.topAnimes(docJkanime))
+        .latestAddedAnimes(this.homePageService.latestAddedAnimes(docJkanime))
+        .latestAddedList(this.homePageService.latestAddedList(docJkanime))
         .build();
       
       if (
@@ -91,9 +87,11 @@ public class JKAnimeController {
   public ResponseEntity<?> animeInfo(@PathVariable("search") String search) {
     log.info("search: " + this.proveedorAnimeLifeUrl + "anime/" +  search);
     try {
-      Document document = Jsoup.connect(this.proveedorAnimeLifeUrl + "anime/" +  search).get();
+      // Document docJkanime = Jsoup.connect(this.proveedorJkAnimeUrl + search).get();
+      Document docAnimelife = Jsoup.connect(this.proveedorAnimeLifeUrl + "anime/" + search).get();
 
-      AnimeInfoDTO animeInfo = this.animeService.getAnimeInfo(document);
+      // AnimeInfoDTO animeInfo = this.animeService.getAnimeInfo(docAnimelife, docJkanime, search);
+      AnimeInfoDTO animeInfo = this.animeService.getAnimeInfo(docAnimelife, search);
       
       return new ResponseEntity<>(animeInfo, HttpStatus.OK);
     } catch (Exception e) {

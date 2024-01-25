@@ -26,7 +26,7 @@ public class ChapterDTO {
     private Boolean inEmision;
 
     // External
-    private Integer lastChapterNumber;
+    private Integer lastChapter;
     private String lastChapterImg;
     private String lastChapterDate;
 }

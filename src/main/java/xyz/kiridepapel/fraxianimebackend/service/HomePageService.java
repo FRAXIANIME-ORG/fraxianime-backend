@@ -64,9 +64,9 @@ public class HomePageService {
     return ovasOnasSpecials;
   }
   
-  public List<ChapterDataDTO> animesProgramming(Document animeLifeDoc, Document jkanimeDoc) {
-    Elements elementsAnimeLife = animeLifeDoc.body().select(".excstf").first().select(".bs");
-    Elements elementsJkAnime = jkanimeDoc.body().select(".listadoanime-home .anime_programing a");
+  public List<ChapterDataDTO> animesProgramming(Document docAnimeLife, Document docJkanime) {
+    Elements elementsAnimeLife = docAnimeLife.body().select(".excstf").first().select(".bs");
+    Elements elementsJkAnime = docJkanime.body().select(".listadoanime-home .anime_programing a");
 
     List<ChapterDataDTO> lastChapters = new ArrayList<>();
 
