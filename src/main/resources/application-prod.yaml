@@ -1,11 +1,13 @@
 APP_PRODUCTION: true
 
-PROVEEDOR_JKANIME_URL: https://jkanime.org/
-
-# From Data Chapters
-PROVEEDOR_ANIMELIFE_URL: https://animelife.net/
-PROVEEDOR_ANIMEYT_URL: https://animeyt.es/
-PROVEEDOR_ANIMEFLV_URL: https://animeflv.com.ru/anime/
+# PROVIDER 1
+PROVIDER_JKANIME_URL: https://jkanime.org/
+# PROVIDER 2
+PROVIDER_ANIMELIFE_URL: https://animelife.net/
+# PROVIDER 3 (no usado)
+PROVIDER_ANIMEYT_URL: https://animeyt.es/
+# PROVIDER 4 (no usado)
+PROVIDER_ANIMEFLV_URL: https://animeflv.com.ru/anime/
 
 server:
   port: 8080

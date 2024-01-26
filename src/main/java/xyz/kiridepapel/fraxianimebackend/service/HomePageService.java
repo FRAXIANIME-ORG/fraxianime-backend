@@ -24,10 +24,10 @@ import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 
 @Service
 public class HomePageService {
-  @Value("${PROVEEDOR_JKANIME_URL}")
-  private String proveedorJkanimeUrl;
-  @Value("${PROVEEDOR_ANIMELIFE_URL}")
-  private String proveedorAnimeLifeUrl;
+  @Value("${PROVIDER_JKANIME_URL}")
+  private String providerJkanimeUrl;
+  @Value("${PROVIDER_ANIMELIFE_URL}")
+  private String providerAnimeLifeUrl;
 
   public List<ChapterDataDTO> sliderAnimes(Document document) {
     Elements elements = document.select(".hero__items");
@@ -37,7 +37,7 @@ public class HomePageService {
       ChapterDataDTO anime = ChapterDataDTO.builder()
         .name(element.select(".hero__text h2").text())
         .imgUrl(element.attr("data-setbg"))
-        .url(element.select(".hero__text a").attr("href").replace(proveedorJkanimeUrl, ""))
+        .url(element.select(".hero__text a").attr("href").replace(providerJkanimeUrl, ""))
         .build();
 
       sliderAnimes.add(anime);
@@ -54,7 +54,7 @@ public class HomePageService {
       LastAnimeDataDTO anime = LastAnimeDataDTO.builder()
         .name(element.select(".anime__item__text a").text())
         .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
-        .url(element.select("a").attr("href").replace(proveedorJkanimeUrl, ""))
+        .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
         .type(element.select(".anime__item__text ul li").text())
         .build();
 
@@ -91,7 +91,7 @@ public class HomePageService {
         .chapter(eAnimeLife.select(".epx").text().replace("Ep 0", "Capitulo ").replace("Ep ", "Capitulo ").trim())
         .type(eAnimeLife.select(".typez").text().trim())
         .date(null)
-        .url(this.changeFormatUrl(eAnimeLife.select(".bsx a").attr("href"), proveedorAnimeLifeUrl))
+        .url(this.changeFormatUrl(eAnimeLife.select(".bsx a").attr("href"), providerAnimeLifeUrl))
         .state(true)
         .build();
 
@@ -121,7 +121,7 @@ public class HomePageService {
         .chapter(element.select(".anime__sidebar__comment__item__text h6").text().replace("Episodio", "Capitulo"))
         .type("Donghua")
         .date(this.getFormattedDate(element.select(".anime__sidebar__comment__item__text span").text()))
-        .url(element.select("a").attr("href").replace(proveedorJkanimeUrl, ""))
+        .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
         .state(true)
         .build();
       
@@ -149,7 +149,7 @@ public class HomePageService {
       .imgUrl(firstTop.select(".anime__item__pic").attr("data-setbg"))
       .likes(Integer.parseInt(firstTop.select(".vc").text().trim()))
       .position(Integer.parseInt(firstTop.select(".ep").text().trim()))
-      .url(firstTop.select("a").attr("href").replace(proveedorJkanimeUrl, ""))
+      .url(firstTop.select("a").attr("href").replace(providerJkanimeUrl, ""))
       .build();
     topAnimes.add(firstAnime);
 
@@ -160,7 +160,7 @@ public class HomePageService {
         .imgUrl(element.select(".anime__item__pic__fila4").attr("data-setbg"))
         .likes(Integer.parseInt(element.select(".vc").text()))
         .position(Integer.parseInt(element.select(".anime__item__pic__fila4 div").first().text().trim()))
-        .url(element.attr("href").replace(proveedorJkanimeUrl, ""))
+        .url(element.attr("href").replace(providerJkanimeUrl, ""))
         .build();
 
       topAnimes.add(anime);
@@ -177,7 +177,7 @@ public class HomePageService {
       LastAnimeDataDTO anime = LastAnimeDataDTO.builder()
         .name(element.select(".anime__item__text h5 a").text())
         .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
-        .url(element.select("a").attr("href").replace(proveedorJkanimeUrl, ""))
+        .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
         .state(element.select(".anime__item__text ul li").first().text())
         .type(element.select(".anime__item__text ul li").last().text())
         .build();
@@ -195,7 +195,7 @@ public class HomePageService {
     for (Element element : elements) {
       LinkDTO anime = LinkDTO.builder()
         .name(element.select("a").text())
-        .url(element.select("a").attr("href").replace(proveedorJkanimeUrl, ""))
+        .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
         .build();
 
       latestAddedList.add(anime);
@@ -229,7 +229,7 @@ public class HomePageService {
     }
   }
 
-  private String changeFormatUrl(String url, String proveedorUrl) {
+  private String changeFormatUrl(String url, String providerUrl) {
     // Divide la URL en partes
     String[] urlParts = url.split("/");
     // Divide la última parte de la URL en partes
@@ -245,7 +245,7 @@ public class HomePageService {
     // Construye la nueva URL
     String newUrl = String.join("-", lastPart).replace("-" + lastPartNumber, "/" + lastPartNumberWithoutExtension);
     // Quita el proveedor de la URL
-    newUrl = newUrl.replace(proveedorUrl, "");
+    newUrl = newUrl.replace(providerUrl, "");
 
     return newUrl;
   }

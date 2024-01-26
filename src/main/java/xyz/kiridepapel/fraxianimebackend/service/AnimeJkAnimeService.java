@@ -2,195 +2,191 @@ package xyz.kiridepapel.fraxianimebackend.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
-import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
+import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
-@Log
 public class AnimeJkAnimeService {
-  @Value("${PROVEEDOR_ANIMELIFE_URL}")
-  private String proveedorAnimeLifeUrl;
+  @Value("${PROVIDER_JKANIME_URL}")
+  private String providerJkanimeUrl;
 
   private Map<String, String> specialKeys = Map.ofEntries(
-    Map.entry("Publicado el", "emited"),
-    Map.entry("Publicado", "emited"),
-    Map.entry("Duracion", "duration"),
-    Map.entry("Tipo", "type"),
-    Map.entry("Director", "director"),
-    Map.entry("Censura", "censured"),
-    Map.entry("Reparto", "cast"),
-    Map.entry("Actualizado el", "lastUpdate"),
-    Map.entry("Año", "year"),
-    Map.entry("Estado", "status"),
-    Map.entry("Episodios", "chapters"),
-    Map.entry("Estudio", "studio")
+    Map.entry("Sinónimos", "synonyms"),
+    Map.entry("Sinonimos", "synonyms"),
+    Map.entry("sinonimos", "synonyms"),
+    Map.entry("Inglés", "english"),
+    Map.entry("Ingles", "english"),
+    Map.entry("ingles", "english"),
+    Map.entry("Japonés", "japanese"),
+    Map.entry("Japones", "japanese"),
+    Map.entry("japones", "japanese"),
+    Map.entry("Coreano", "corean"),
+    Map.entry("coreano", "corean")
   );
 
-  // public AnimeInfoDTO getAnimeInfo(Document docAnimeLife, Document docJkanime, String search) {
-  public AnimeInfoDTO getAnimeInfo(Document docAnimeLife, String search) {
-    try {
-      Element contenido = docAnimeLife.body().select(".wrapper").first();
+  private Map<String, String> specialHistory = Map.ofEntries(
+    Map.entry("Precuela", "prequel"),
+    Map.entry("Predecesor", "prequel"),
+    Map.entry("Secuela", "sequel"),
+    Map.entry("Version alternativa", "alternativeVersion"),
+    Map.entry("Version completa", "completeVersion"),
+    Map.entry("Adicional", "additional"),
+    Map.entry("Resumen", "summary"),
+    Map.entry("Personaje incluido", "includedCharacters")
+  );
 
-      if (contenido == null) {
-        throw new AnimeNotFound("Contenido del anime no disponible.");
-      }
+  public AnimeInfoDTO getAnimeInfo(AnimeInfoDTO animeInfo, Document docJkanime, String search) {
+    Element mainJkanime = docJkanime.body().select(".contenido").first();
+    Elements keys = docJkanime.select(".anime__details__text .anime__details__widget .aninfo ul li");
 
-      String trailer = contenido.select(".trailerbutton").attr("href").replace("watch?v=", "embed/");
-      if (trailer.isEmpty()) {
-        trailer = null;
-      }
+    // Obtener la información del anime de jkanime
+    String alternativeName = mainJkanime.select(".anime__details__title span").first().text().trim();
+    String jkanimeImgUrl = mainJkanime.select(".anime__details__pic").first().attr("data-setbg").trim();
+    String synopsis = mainJkanime.select(".sinopsis").text().trim();
+    Integer likes = Integer.parseInt(mainJkanime.select(".anime__details__content .vot").first().text().trim());
+    String duration = this.getSpecificKey(keys, "Duracion").replace("por episodio", "").trim();
+    String quality = this.getSpecificKey(keys, "Calidad");
+    Map<String, Object> alternativeTitles = this.getAlternativeTitles(docJkanime);
+    Map<String, Object> history = this.getHistory(docJkanime);
+    String trailer = mainJkanime.select(".animeTrailer").attr("data-yt");
 
-      AnimeInfoDTO animeInfo = AnimeInfoDTO.builder()
-        .name(AnimeUtils.specialNameOrUrlCases(contenido.select(".entry-title").text().trim(), 'h'))
-        .alternativeName(contenido.select(".entry-title").text().trim())
-        .imgUrl(contenido.select(".thumbook img").attr("src").trim())
-        .sinopsis(contenido.select(".synp p").text().trim())
-        .trailer(trailer)
-        .data(this.getAnimeData(docAnimeLife))
-        // .recomendations(this.getRecomendations(docAnimeLife));
-        .build();
-
-      animeInfo = this.getChaptersInfo(animeInfo, docAnimeLife, search);
-
-      animeInfo.setData(this.specialDataKeys(animeInfo.getData()));
-
-      return animeInfo;
-    } catch (Exception e) {
-      log.warning("Error al obtener la información del anime: " + e.getMessage());
-      throw new AnimeNotFound("Anime no encontrado.");
+    // Asignar la nueva información si es válida
+    if (this.isValidData(alternativeName)) {
+      animeInfo.setAlternativeName(alternativeName);
     }
+    if (this.isValidData(jkanimeImgUrl)) {
+      animeInfo.setImgUrl(jkanimeImgUrl);
+    }
+    if (this.isValidData(synopsis)) {
+      animeInfo.setSinopsis(synopsis);
+    }
+    if (this.isValidData(likes)) {
+      animeInfo.setLikes(likes);
+    }
+    if (this.isValidData(duration) && !duration.equals("Desconocido")) {
+      animeInfo.getData().put("Duracion", duration);
+    }
+    if (this.isValidData(quality)) {
+      animeInfo.getData().put("quality", quality);
+    }
+    if (this.isValidData(alternativeTitles)) {
+      animeInfo.setAlternativeTitles(DataUtils.specialDataKeys(alternativeTitles, this.specialKeys));
+    }
+    if (this.isValidData(history)) {
+      animeInfo.setHistory(DataUtils.specialDataKeys(history, this.specialHistory));
+    }
+    if (this.isValidData(trailer)) {
+      animeInfo.setTrailer("https://www.youtube.com/embed/" + trailer);
+    }
+
+    return animeInfo;
   }
 
-  private Map<String, Object> getAnimeData(Document docAnimeLife) {
-    try {
-      Map<String, Object> data = new HashMap<>();
+  private Map<String, Object> getAlternativeTitles(Document docJkanime) {
+    Map<String, Object> alternativeTitles = new HashMap<>();
+    Elements elements = docJkanime.select(".related_div");
 
-      for (Element item : docAnimeLife.select(".info-content .spe span")) {
-        Elements links = item.select("a");
-        String key = item.text().split(":")[0].trim().replace(" en", " el");
+    String currentKey = null;
+    StringBuilder currentValue = new StringBuilder();
 
-        if (links.size() == 0 || links == null || links.isEmpty()) {
-          if (item.select("time").size() > 0) {
-            // Si hay un time, usar el text() como value
-            String value = item.select("time").text();
-            data.put(key, value);
-          } else {
-            // Si no hay un time, usar el texto luego de los ":" como value
-            String[] values = item.text().split(":");
-            if (values.length > 1) {
-              String value = values[1].trim();
-              if (value.equals("TV")) {
-                value = "Anime";
-              }
-              data.put(key, value);
+    for (Element element : elements) {
+      for (Node node : element.childNodes()) {
+        if (node instanceof Element && "b".equals(((Element) node).tag().getName())) {
+          if (currentKey != null && currentValue.length() > 0) {
+            String name = currentValue.toString().trim();
+            if (!name.isEmpty()) {
+              name = name.substring(0, 1).toUpperCase() + name.substring(1);
+              alternativeTitles.put(currentKey, name);
             }
+            currentValue.setLength(0);
           }
+          currentKey = node.childNodes().isEmpty() ? "" : node.childNode(0).toString().trim();
         } else {
-          List<LinkDTO> subData = new ArrayList<>();
-          for (Element link : links) {
-            subData.add(LinkDTO.builder()
-              .name(link.text().trim())
-              .url(link.attr("href").replace(this.proveedorAnimeLifeUrl, ""))
-              .build());
+          currentValue.append(node.toString());
+        }
+      }
+    }
+
+    if (currentKey != null && currentValue.length() > 0) {
+      alternativeTitles.put(currentKey, currentValue.toString().trim());
+    }
+
+    return alternativeTitles;
+  }
+
+  private Map<String, Object> getHistory(Document docJkanime) {
+    Elements allChilds = docJkanime.body().select(".aninfo").last().children();
+    Map<String, Object> history = new LinkedHashMap<>();
+    String currentKey = null;
+    List<String> currentLinks = null;
+
+    // Si hay elementos en el contenedor
+    if (allChilds != null && !allChilds.isEmpty()) {
+      for (Element item : allChilds) {
+        // Verificar si el elemento es un <h5>
+        if (item.tagName().equals("h5")) {
+          // Si ya se ha establecido un <h5>, guardar la lista anterior en el mapa
+          if (currentKey != null) {
+            history.put(currentKey, currentLinks);
           }
-          data.put(key, subData);
+          // Inicializar una nueva lista para el nuevo <h5>
+          currentKey = item.text();
+          currentLinks = new ArrayList<>();
+        // Verificar si el elemento es un <a>
+        } else if (item.tagName().equals("a") && currentLinks != null) {
+          // Añadir el texto del enlace a la lista actual
+          currentLinks.add(item.text());
         }
       }
 
-      // Modificar la duración
-      if (data.containsKey("Duracion")) {
-        String duration = data.get("Duracion").toString();
-        if (duration.contains("pero")) {
-          duration = duration.replace(" pero ep.", "");
+      // Agregar la última lista al mapa, si existe
+      if (currentKey != null) {
+        if (!currentKey.contains("Trailer")) {
+          history.put(currentKey, currentLinks);
         }
-        data.put("Duracion", duration);
-      } else {
-        data.put("Duracion", "25 min.");
       }
+    }
+
+    return history;
+  }
+
+  private String getSpecificKey(Elements keys, String key) {
+    String realValue = "";
+
+    for (Element li : keys) {
+      String realKey = li.text().split(":")[0].trim();
+      Elements links = li.select("a");
       
-      // Establecer los géneros disponibles
-      List<LinkDTO> genres = new ArrayList<>();
-      for(Element genre : docAnimeLife.select(".genxed a")) {
-        genres.add(LinkDTO.builder()
-          .name(genre.text().trim())
-          .url(genre.attr("href").replace(this.proveedorAnimeLifeUrl, ""))
-          .build());
-      }
-      data.put("genres", genres);
-
-      return data;
-    } catch (Exception e) {
-      log.info("Error al obtener la información del anime: " + e.getMessage());
-      throw new AnimeNotFound("Anime no encontrado.");
-    }
-  }
-
-  private AnimeInfoDTO getChaptersInfo(AnimeInfoDTO animeInfo, Document docAnimeLife, String search) {
-    try {
-      // Establecer la fecha del próximo capítulo
-      if (animeInfo.getData().get("Estado").equals("En emisión")) {
-        animeInfo.setNextChapterDate(AnimeUtils.parseDate(animeInfo.getData().get("Actualizado el").toString(), 7));
-      }
-
-      // Establecer la información del primer y último capítulo
-      Element chapters = docAnimeLife.body().select(".lastend").first();
-      if (chapters != null) {
-        String firstStr = chapters.select(".epcurfirst").text()
-          .replace("Episode", "")
-          .replace("Episodio", "").trim();
-        String lastStr = chapters.select(".epcurlast").text()
-          .replace("Episode", "")
-          .replace("Episodio", "").trim();
-        
-        if (firstStr.isEmpty() || firstStr.isEmpty()) {
-          animeInfo.setFirstChapter(null);
-          animeInfo.setLastChapter(null);
-        }
-
-        if (!firstStr.isEmpty() && firstStr.startsWith("0")) {
-          log.info("real first: " + firstStr + " - " + firstStr.substring(1));
-          animeInfo.setFirstChapter(Integer.parseInt(firstStr.substring(1)));
-        } else {
-          animeInfo.setFirstChapter(Integer.parseInt(firstStr));
-        }
-        if (!firstStr.isEmpty() && firstStr.startsWith("0")) {
-          log.info("real last: " + lastStr + " - " + lastStr.substring(1));
-          animeInfo.setLastChapter(Integer.parseInt(lastStr.substring(1)));
-        } else {
-          animeInfo.setLastChapter(Integer.parseInt(lastStr));
+      if (realKey.contains(key)) {
+        if (links.isEmpty()) {
+          return li.text().substring(li.text().indexOf(":") + 1).trim();
         }
       }
-
-      return animeInfo;
-    } catch (Exception e) {
-      throw new AnimeNotFound("Error obteniendo la información de los capítulos del anime.");
-    }
-  }
-
-  private Map<String, Object> specialDataKeys(Map<String, Object> originalMap) {
-    Map<String, Object> newMap = new HashMap<>();
-
-    for (Map.Entry<String, Object> entry : originalMap.entrySet()) {
-      String newKey = this.specialKeys.getOrDefault(entry.getKey(), entry.getKey());
-      newMap.put(newKey, entry.getValue());
     }
 
-    newMap.put("language", "Japonés");
-    newMap.put("quality", "720p");
-
-    return newMap;
+    return realValue;
   }
 
+  // Validaciones
+  private boolean isValidData(String data) {
+    return data != null && !data.isEmpty() && !data.isBlank();
+  }
+  private boolean isValidData(Map<String, Object> data) {
+    return data != null && !data.isEmpty();
+  }
+  private boolean isValidData(Integer data) {
+    return data != null && data >= 0;
+  }
+    
 }

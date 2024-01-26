@@ -15,56 +15,47 @@ import org.springframework.stereotype.Service;
 
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
+import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
 public class ChapterAnimeLifeService {
-  @Value("${PROVEEDOR_ANIMELIFE_URL}")
-  private String proveedorAnimeLifeUrl;
+  @Value("${PROVIDER_ANIMELIFE_URL}")
+  private String providerAnimeLifeUrl;
 
   public ChapterDTO chapter(String inputName, String chapter) {
     try {
-      String urlRequest = proveedorAnimeLifeUrl + AnimeUtils.specialNameOrUrlCases(inputName, 'p');
+      String urlRequest = providerAnimeLifeUrl + AnimeUtils.specialNameOrUrlCases(inputName, 'p');
       urlRequest += "-" + chapter;
       urlRequest = specialChapterCases(urlRequest, inputName, chapter);
       
-      Document docChapter = DataUtils.connectAnimeInfo(urlRequest, "No se encontró el capitulo solicitado.");
+      Document docAnimeLife = DataUtils.connect(urlRequest, "No se encontró el capitulo solicitado.", true);
 
-      List<LinkDTO> srcOptions = this.getSrcOptions(docChapter);
-      Elements nearChapters = docChapter.body().select(".naveps .nvs");
+      List<LinkDTO> srcOptions = this.getSrcOptions(docAnimeLife);
+      Elements nearChapters = docAnimeLife.body().select(".naveps .nvs");
 
       ChapterDTO chapterInfo = ChapterDTO.builder()
-        .name(AnimeUtils.specialNameOrUrlCases(docChapter.select(".ts-breadcrumb li").get(1).select("span").text().trim(), 'c'))
-        .actualChapterNumber(Integer.parseInt(chapter))
+        .name(AnimeUtils.specialNameOrUrlCases(docAnimeLife.select(".ts-breadcrumb li").get(1).select("span").text().trim(), 'c'))
         .srcOptions(srcOptions)
-        .downloadOptions(this.getDownloadOptions(docChapter))
+        .downloadOptions(this.getDownloadOptions(docAnimeLife))
         .havePreviousChapter(this.havePreviousChapter(nearChapters))
         .haveNextChapter(this.haveNextChapter(nearChapters))
         .build();
       
       if (!chapterInfo.getHaveNextChapter()) {
-        chapterInfo.setNextChapterDate(String.valueOf(AnimeUtils.parseDate(docChapter.body().select(".year .updated").text().trim(), 7)));
+        chapterInfo.setNextChapterDate(AnimeUtils.parseDate(docAnimeLife.body().select(".year .updated").text().trim(), 7));
       }
 
-      String state = docChapter.body().select(".det").first().select("span i").text().trim();
+      String state = docAnimeLife.body().select(".det").first().select("span i").text().trim();
       if (state.equals("Completada")) {
         chapterInfo.setInEmision(false);
       } else {
         chapterInfo.setInEmision(true);
       }
 
-      Element lastChapter = docChapter.body().select(".episodelist ul li").first().select("a").first();
-      // Número del último capitulo
-      String chapterNumber = lastChapter.select(".playinfo span").text().split(" - ")[0].replace("Eps ", "");
-      chapterInfo.setLastChapter(Integer.parseInt(chapterNumber));
-      // Imagen del último capitulo
-      String chapterImg = lastChapter.select("img").attr("src");
-      chapterInfo.setLastChapterImg(chapterImg);
-      // Fecha de salida del último capitulo
-      String chapterDate = docChapter.body().select(".updated").text();
-      chapterInfo.setLastChapterDate(AnimeUtils.parseDate(chapterDate, 0));
+      chapterInfo = this.setFirstAndLastChapters(chapterInfo, docAnimeLife, chapter);
 
       return chapterInfo;
     } catch (Exception e) {
@@ -72,10 +63,10 @@ public class ChapterAnimeLifeService {
     }
   }
 
-  private List<LinkDTO> getSrcOptions(Document docChapter) {
+  private List<LinkDTO> getSrcOptions(Document docAnimeLife) {
     try {
       List<LinkDTO> list = new ArrayList<>();
-      Elements srcs = docChapter.body().select(".mirror option");
+      Elements srcs = docAnimeLife.body().select(".mirror option");
       srcs.remove(0); // Elimina el primer elemento: "Seleccionar servidor"
 
       for (Element element : srcs) {
@@ -111,9 +102,9 @@ public class ChapterAnimeLifeService {
     }
   }
 
-  private List<LinkDTO> getDownloadOptions(Document docChapter) {
+  private List<LinkDTO> getDownloadOptions(Document docAnimeLife) {
     try {
-      Element element = docChapter.body().select(".iconx").first().select("a").first();
+      Element element = docAnimeLife.body().select(".iconx").first().select("a").first();
       if (element != null) {
         List<LinkDTO> list = new ArrayList<>();
     
@@ -126,7 +117,7 @@ public class ChapterAnimeLifeService {
     
         return list;
       } else {
-        Elements elements = docChapter.body().select(".bixbox .soraurlx a");
+        Elements elements = docAnimeLife.body().select(".bixbox .soraurlx a");
         if (elements != null) {
           List<LinkDTO> list = new ArrayList<>();
     
@@ -146,6 +137,35 @@ public class ChapterAnimeLifeService {
       }
     } catch (Exception e) {
       throw new ChapterNotFound("Ocurrió un error al obtener los servidores de descarga.");
+    }
+  }
+
+  private ChapterDTO setFirstAndLastChapters(ChapterDTO chapterInfo, Document docAnimeLife, String chapter) {
+    try {
+      Element itemFirstChapter = docAnimeLife.body().select(".episodelist ul li").last();
+      Element itemLastChapter = docAnimeLife.body().select(".episodelist ul li").first();
+
+      if (itemFirstChapter != null && itemLastChapter != null) {
+        // Ambos (img)
+        String chapterImg = itemFirstChapter.select(".thumbnel img").attr("src").replace("?resize=130,130", "");
+        // Ambos (número)
+        String firstChapter = itemFirstChapter.select(".playinfo h4").text().replace(chapterInfo.getName(), "").trim();
+        String lastChapter = itemLastChapter.select(".playinfo h4").text().replace(chapterInfo.getName(), "").trim();
+        // Último capítulo (fecha)
+        String lastChapterDate = itemLastChapter.select(".playinfo span").text();
+        String[] chapterDateArray = lastChapterDate.split(" - ");
+        lastChapterDate = chapterDateArray[chapterDateArray.length - 1];
+  
+        chapterInfo.setChapterImg(chapterImg);
+        chapterInfo.setActualChapter(Integer.parseInt(chapter));
+        chapterInfo.setFirstChapter(Integer.parseInt(firstChapter));
+        chapterInfo.setLastChapter(Integer.parseInt(lastChapter));
+        chapterInfo.setLastChapterDate(lastChapterDate);
+      }
+
+      return chapterInfo;
+    } catch (Exception e) {
+      throw new AnimeNotFound("Error obteniendo la información de los capítulos del anime.");
     }
   }
 

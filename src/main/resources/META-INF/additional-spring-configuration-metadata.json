@@ -6,24 +6,24 @@
       "description": "A description for 'APP_PRODUCTION'"
     },
     {
-      "name": "PROVEEDOR_JKANIME_URL",
+      "name": "PROVIDER_JKANIME_URL",
       "type": "java.lang.String",
-      "description": "A description for 'PROVEEDOR_JKANIME_URL'"
+      "description": "A description for 'PROVIDER_JKANIME_URL'"
     },
     {
-      "name": "PROVEEDOR_ANIMELIFE_URL",
+      "name": "PROVIDER_ANIMELIFE_URL",
       "type": "java.lang.String",
-      "description": "A description for 'PROVEEDOR_ANIMELIFE_URL'"
+      "description": "A description for 'PROVIDER_ANIMELIFE_URL'"
     },
     {
-      "name": "PROVEEDOR_ANIMEYT_URL",
+      "name": "PROVIDER_ANIMEYT_URL",
       "type": "java.lang.String",
-      "description": "A description for 'PROVEEDOR_ANIMEYT_URL'"
+      "description": "A description for 'PROVIDER_ANIMEYT_URL'"
     },
     {
-      "name": "PROVEEDOR_ANIMEFLV_URL",
+      "name": "PROVIDER_ANIMEFLV_URL",
       "type": "java.lang.String",
-      "description": "A description for 'PROVEEDOR_ANIMEFLV_URL'"
+      "description": "A description for 'PROVIDER_ANIMEFLV_URL'"
     }
   ]
 }
