@@ -10,6 +10,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
@@ -22,6 +23,8 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 @Service
 @Log
 public class AnimeAnimeLifeService {
+  @Value("${PROVIDER_JKANIME_URL}")
+  private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
 
@@ -45,9 +48,13 @@ public class AnimeAnimeLifeService {
     Map.entry("Episodios", "chapters"),
     Map.entry("Estudio", "studio")
   );
-
-  public AnimeInfoDTO getAnimeInfo(Document docAnimeLife, Document docJkanime, String search) {
+  
+  @Cacheable("anime")
+  public AnimeInfoDTO animeInfo(String search) {
     try {
+      Document docJkanime = DataUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + search), 1);
+      Document docAnimeLife = DataUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + search), 2);
+
       Element mainAnimeLife = docAnimeLife.body().select(".wrapper").first();
 
       if (mainAnimeLife == null) {

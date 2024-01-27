@@ -56,7 +56,7 @@ public class DataUtils {
 
   public Document chapterSearchConnect(String urlChapter, Integer chapter, String errorMessage) {
     try {
-      log.info("Last request url: " + urlChapter);
+      log.info("[] Last request url: " + urlChapter);
       return Jsoup.connect(urlChapter).get();
     } catch (Exception x) {
       if (chapter == 0) {
@@ -66,13 +66,13 @@ public class DataUtils {
         // Si no se encontró, se intenta sin el 0: one-piece-04 -> one-piece-4
         try { 
           String newUrl = AnimeUtils.urlChapterWithoutZero(urlChapter);
-          log.info("> Trying without zero: " + newUrl);
+          log.info("[] Trying without zero: " + newUrl);
           return Jsoup.connect(newUrl).get();
         } catch (Exception xx) {
           // Si no se encontró, se intenta con guion y restando uno al capitulo: one-piece-04 -> one-piece-03-3
           try {
             String newUrl = AnimeUtils.urlChapterWithScript(urlChapter);
-            log.info("> Trying (<chapter> - 1)-2: " + newUrl);
+            log.info("[] Trying (<chapter> - 1)-2: " + newUrl);
             return Jsoup.connect(newUrl).get();
           } catch (Exception xxx) {
             throw new AnimeNotFound(errorMessage);

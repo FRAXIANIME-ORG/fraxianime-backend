@@ -1,5 +1,6 @@
 package xyz.kiridepapel.fraxianimebackend.dto;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -15,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AnimeInfoDTO {
+public class AnimeInfoDTO implements Serializable {
     private String name;
     private String alternativeName;
     private String imgUrl;

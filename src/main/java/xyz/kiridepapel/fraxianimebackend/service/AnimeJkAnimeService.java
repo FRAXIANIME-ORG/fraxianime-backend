@@ -20,7 +20,6 @@ import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 public class AnimeJkAnimeService {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
-
   private Map<String, String> specialKeys = Map.ofEntries(
     Map.entry("Sinónimos", "synonyms"),
     Map.entry("Sinonimos", "synonyms"),
@@ -34,7 +33,6 @@ public class AnimeJkAnimeService {
     Map.entry("Coreano", "corean"),
     Map.entry("coreano", "corean")
   );
-
   private Map<String, String> specialHistory = Map.ofEntries(
     Map.entry("Precuela", "prequel"),
     Map.entry("Predecesor", "prequel"),

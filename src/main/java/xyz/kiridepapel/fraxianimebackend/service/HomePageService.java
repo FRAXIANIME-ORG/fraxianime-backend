@@ -15,14 +15,17 @@ import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
+import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LastAnimeDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDataDTO;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
 @Log
@@ -31,9 +34,28 @@ public class HomePageService {
   private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
-
   @Autowired
-  private AnimeUtils animeUtils;
+  private DataUtils dataUtils;
+  @Autowired
+  AnimeUtils animeUtils;
+
+  @Cacheable(value = "home", key="'animes'")
+  public HomePageDTO homePage() {
+    Document docJkanime = this.dataUtils.simpleConnect(this.providerJkanimeUrl, "Proveedor 1 inactivo");
+    Document docAnimelife = this.dataUtils.simpleConnect(this.providerAnimeLifeUrl, "Proveedor 2 inactivo");
+
+    HomePageDTO animes = HomePageDTO.builder()
+      .sliderAnimes(this.sliderAnimes(docJkanime))
+      .ovasOnasSpecials(this.ovasOnasSpecials(docJkanime))
+      .animesProgramming(this.animesProgramming(docAnimelife, docJkanime))
+      .donghuasProgramming(this.donghuasProgramming(docJkanime))
+      .topAnimes(this.topAnimes(docJkanime))
+      .latestAddedAnimes(this.latestAddedAnimes(docJkanime))
+      .latestAddedList(this.latestAddedList(docJkanime))
+      .build();
+    
+    return animes;
+  }
 
   public List<ChapterDataDTO> sliderAnimes(Document document) {
     Elements elements = document.select(".hero__items");

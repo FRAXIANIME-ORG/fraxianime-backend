@@ -5,18 +5,17 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
-import lombok.extern.java.Log;
-
 @Service
-@Log
+@SuppressWarnings("null")
 public class AnimeUtils {
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
-
-  // Anime url: one-piece-0X -> one-piece-X
   private List<String> animesWithoutZeroCases = List.of(
+    // Anime url: one-piece-0X -> one-piece-X
     "shigatsu-wa-kimi-no-uso",
     "one-piece",
     "kimetsu-no-yaiba",
@@ -26,25 +25,12 @@ public class AnimeUtils {
     "chuunibyou-demo-koi-ga-shitai-ren",
     "bakemonogatari"
   );
-
-  // Chapter url: one-piece-04 -> one-piece-03-2
   private List<String> chapterScriptCases = List.of(
+    // Chapter url: one-piece-04 -> one-piece-03-2
     "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin-04"
   );
 
-  public static Map<String, Object> specialDataKeys(Map<String, Object> originalMap, Map<String, String> specialKeys) {
-    Map<String, Object> newMap = new HashMap<>();
-
-    for (Map.Entry<String, Object> entry : originalMap.entrySet()) {
-      String newKey = specialKeys.getOrDefault(entry.getKey(), entry.getKey());
-      newMap.put(newKey, entry.getValue());
-    }
-
-    return newMap;
-  }
-  
-  // ? Animes
-  public String specialNameOrUrlCases(String urlName, char type) {
+  public String specialNameOrUrlCases(String name, char type) {
     Map<String, String> specialCases = new HashMap<>();
 
     // Map<String, String> map2 = Map.ofEntries(
@@ -71,45 +57,60 @@ public class AnimeUtils {
       specialCases.put("ore-dake-level-up-na-ken", "solo-leveling"); // 1
       specialCases.put("chiyu-mahou-no-machigatta-tsukaikata", "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin"); // 2
     }
+    // Casos especiales
+    if (type == 'e') { // Episode: Mi capítulo -> Proveedor capítulo (Lista de capítulos en el proveedor tienen su nombre original)
+      specialCases.put("Ore dake Level Up na Ken", "Solo Leveling"); // 1
+      specialCases.put("Chiyu Mahou no Machigatta Tsukaikata", "Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin"); // 2
+    }
 
     for (Map.Entry<String, String> entry : specialCases.entrySet()) {
-      if (urlName.contains(entry.getKey())) {
-        return urlName.replace(entry.getKey(), entry.getValue());
+      if (name.contains(entry.getKey())) {
+        return name.replace(entry.getKey(), entry.getValue());
       }
     }
 
-    return urlName;
+    return name;
   }
 
   public String specialChapterCases(String urlChapter, String inputName, Integer chapter) {
     urlChapter = urlChapter + "-" + String.format("%02d", chapter); // chapter-05
-
-    // one-piece-04 -> one-piece-4
-    if (chapter < 10) {
-      if (this.animesWithoutZeroCases.contains(inputName)) {
-        urlChapter = urlChapterWithoutZero(urlChapter);
-      }
+    if (this.animesWithoutZeroCases.contains(inputName) && chapter < 10) {
+      urlChapter = urlChapterWithoutZero(urlChapter);
     }
-
-    // anime-13 -> anime-12-2
     if (this.chapterScriptCases.contains(urlChapter.replace(this.providerAnimeLifeUrl, ""))) {
       urlChapter = urlChapterWithScript(urlChapter);
     }
-
     return urlChapter;
   }
 
-  // one-piece-04 -> one-piece-4
+  // Convierte: one-piece-04 -> one-piece-4
   public static String urlChapterWithoutZero(String urlChapter) {
     String urlWithoutZero = urlChapter.replaceAll("-0(\\d+)$", "-$1");
     return urlWithoutZero;
   }
 
-  public static String urlChapterWithScript(String urlChapter) { // 4, //3-2
+  // Convierte: anime-13 -> anime-12-2
+  public static String urlChapterWithScript(String urlChapter) {
     int number = Integer.parseInt(urlChapter.replaceAll("^.*-(\\d+)$", "$1")) - 1;
     String urlWithScript = urlChapter.replaceAll("-(\\d+)$", "-" + String.format("%02d", number) + "-2");
     return urlWithScript;
   }
+  
+  // Busca en caché
+  public <T> T searchFromCache(CacheManager cacheManager, String cacheName, String cacheKey, Class<T> type) {
+    Cache cache = cacheManager.getCache(cacheName);
+    T chapterCache = cache != null ? cache.get(cacheKey, type) : null;
+    return chapterCache != null ? chapterCache : null;
+  }
 
-
+  // Recorre un mapa y cambia las claves por las que se le indiquen
+  public static Map<String, Object> specialDataKeys(Map<String, Object> originalMap, Map<String, String> specialKeys) {
+    Map<String, Object> newMap = new HashMap<>();
+    for (Map.Entry<String, Object> entry : originalMap.entrySet()) {
+      String newKey = specialKeys.getOrDefault(entry.getKey(), entry.getKey());
+      newMap.put(newKey, entry.getValue());
+    }
+    return newMap;
+  }
+  
 }

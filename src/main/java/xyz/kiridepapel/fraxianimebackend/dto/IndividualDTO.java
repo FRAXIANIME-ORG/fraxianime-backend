@@ -1,5 +1,7 @@
 package xyz.kiridepapel.fraxianimebackend.dto;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.AllArgsConstructor;
@@ -13,7 +15,7 @@ public class IndividualDTO {
     @AllArgsConstructor
     @Builder
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class ChapterDataDTO {
+    public static class ChapterDataDTO implements Serializable {
         private String name;
         private String imgUrl;
         private String type;
@@ -28,7 +30,7 @@ public class IndividualDTO {
     @AllArgsConstructor
     @Builder
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class TopDataDTO {
+    public static class TopDataDTO implements Serializable {
         private String name;
         private String imgUrl;
         private Integer likes;
@@ -41,7 +43,7 @@ public class IndividualDTO {
     @AllArgsConstructor
     @Builder
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class LastAnimeDataDTO {
+    public static class LastAnimeDataDTO implements Serializable {
         private String name;
         private String imgUrl;
         private String url;
@@ -54,7 +56,7 @@ public class IndividualDTO {
     @AllArgsConstructor
     @Builder
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class LinkDTO {
+    public static class LinkDTO implements Serializable {
         private String name;
         private String url;
     }

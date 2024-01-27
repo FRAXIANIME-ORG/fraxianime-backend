@@ -44,6 +44,12 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Database -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+
 		<!-- Extras -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>

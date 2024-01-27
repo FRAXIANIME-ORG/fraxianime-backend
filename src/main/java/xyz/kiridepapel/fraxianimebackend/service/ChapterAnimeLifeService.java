@@ -1,6 +1,9 @@
 package xyz.kiridepapel.fraxianimebackend.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,6 +13,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
@@ -23,40 +28,65 @@ import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 public class ChapterAnimeLifeService {
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
-
+  @Autowired
+  private CacheManager cacheManager;
   @Autowired
   private AnimeUtils animeUtils;
+  @Autowired
+  private DataUtils dataUtils;
 
-  public ChapterDTO chapter(Document docAnimeLife, String name, Integer chapter) {
+  // Este método lo usa el sistema para guardar la información de los últimos 9 capítulos salidos automáticamente
+  @Cacheable(value = "chapter", key = "#url.concat('/').concat(#chapter)")
+  public ChapterDTO cacheChapter(String url, Integer chapter) {
+    return this.constructChapter(url, chapter);
+  }
+
+  // Obtener la información de un capítulo, desde caché si existe o desde la web si no existe
+  public ChapterDTO constructChapter(String url, Integer chapter) {
+    ChapterDTO chapterCache = this.animeUtils.searchFromCache(cacheManager, "chapter", (url + "/" + chapter), ChapterDTO.class);
+    if (chapterCache != null) {
+      return chapterCache;
+    }
+
+    // Lógica para obtener el ChapterDTO si no está en caché (no se almacena en caché)
+    String modifiedUrlChapter = this.providerAnimeLifeUrl + this.animeUtils.specialNameOrUrlCases(url, 's');
+    modifiedUrlChapter = this.animeUtils.specialChapterCases(modifiedUrlChapter, url, chapter);
+    return this.findChapter(modifiedUrlChapter, chapter);
+  }
+
+  public ChapterDTO findChapter(String modifiedUrlChapter, Integer chapter) {
     try {
-
-      List<LinkDTO> srcOptions = this.getSrcOptions(docAnimeLife);
+      Document docAnimeLife = this.dataUtils.chapterSearchConnect(modifiedUrlChapter, chapter, "1 No se encontró el capitulo solicitado.");
+      // Obtiene los capítulos cercanos para determinar si hay capítulos anteriores o siguientes
       Elements nearChapters = docAnimeLife.body().select(".naveps .nvs");
 
       ChapterDTO chapterInfo = ChapterDTO.builder()
         .name(this.animeUtils.specialNameOrUrlCases(docAnimeLife.select(".ts-breadcrumb li").get(1).select("span").text().trim(), 'n'))
-        .srcOptions(srcOptions)
+        .srcOptions(this.getSrcOptions(docAnimeLife))
         .downloadOptions(this.getDownloadOptions(docAnimeLife))
         .havePreviousChapter(this.havePreviousChapter(nearChapters))
         .haveNextChapter(this.haveNextChapter(nearChapters))
         .build();
       
+      // Si no tiene siguiente capítulo, se obtiene la fecha de emisión del último capítulo y se le suma 7 días
       if (!chapterInfo.getHaveNextChapter()) {
         chapterInfo.setNextChapterDate(DataUtils.parseDate(docAnimeLife.body().select(".year .updated").text().trim(), 7));
       }
 
+      // Establece el estado del ánime (en emisión o completado)
       String state = docAnimeLife.body().select(".det").first().select("span i").text().trim();
       if (state.equals("Completada")) {
         chapterInfo.setInEmision(false);
-      } else {
+      } else if (state.equals("En emisión")) {
         chapterInfo.setInEmision(true);
       }
-
+      
+      // Establece la información de los capítulos cercanos al actual (anterior y siguiente)
       chapterInfo = this.setFirstAndLastChapters(chapterInfo, docAnimeLife, chapter);
 
       return chapterInfo;
     } catch (Exception e) {
-      throw new ChapterNotFound("No se encontró el capitulo solicitado.");
+      throw new ChapterNotFound("2 No se encontró el capitulo solicitado.");
     }
   }
 
@@ -64,34 +94,38 @@ public class ChapterAnimeLifeService {
     try {
       List<LinkDTO> list = new ArrayList<>();
       Elements srcs = docAnimeLife.body().select(".mirror option");
+
       srcs.remove(0); // Elimina el primer elemento: "Seleccionar servidor"
 
-      for (Element element : srcs) {
-        String url = DataUtils.decodeBase64(element.attr("value"), true);
+      for (Element src : srcs) {
+        String url = DataUtils.decodeBase64(src.attr("value"), true);
 
         if (url.startsWith("//")) {
           url = "https://" + url.substring(2);
         }
 
         LinkDTO link = new LinkDTO();
-        link.setName(element.text().trim());
+        link.setName(src.text().trim());
         link.setUrl(url);
         
         list.add(link);
       }
   
-      for(int i = 0; i < list.size(); i++) {
-        if (list.get(i).getName().equals("YourUpload")) {
-          LinkDTO link = list.get(i);
-          list.remove(i);
-          list.add(0, link);
-        }
-        if (list.get(i).getName().equals("VidGuard")) {
-          LinkDTO link = list.get(i);
-          list.remove(i);
-          list.add(0, link);
-        }
-      }
+      // Ordena los servidores de reproducción
+      Comparator<LinkDTO> comparator = (src1, src2) -> {
+        List<String> order = Arrays.asList("YourUpload", "VidGuard");
+        int index1 = order.indexOf(src1.getName());
+        int index2 = order.indexOf(src2.getName());
+
+        if (index1 == -1) index1 = Integer.MAX_VALUE;
+        if (index2 == -1) index2 = Integer.MAX_VALUE;
+
+        return index1 - index2;
+      };
+      Collections.sort(list, comparator);
+      
+      // Elimita los servidores de reproducción malogrados
+      list.removeIf(src -> src.getUrl().contains("<center>"));
   
       return list;
     } catch (Exception e) {
@@ -141,18 +175,22 @@ public class ChapterAnimeLifeService {
     try {
       Element itemFirstChapter = docAnimeLife.body().select(".episodelist ul li").last();
       Element itemLastChapter = docAnimeLife.body().select(".episodelist ul li").first();
+      // El nombre del ánime puede estar modificado en casos especiales
+      String chapterNameModified = this.animeUtils.specialNameOrUrlCases(chapterInfo.getName(), 'e');
 
       if (itemFirstChapter != null && itemLastChapter != null) {
         // Ambos (img)
         String chapterImg = itemFirstChapter.select(".thumbnel img").attr("src").replace("?resize=130,130", "");
+        
         // Ambos (número)
-        String firstChapter = itemFirstChapter.select(".playinfo h4").text().replace(chapterInfo.getName(), "").trim();
-        String lastChapter = itemLastChapter.select(".playinfo h4").text().replace(chapterInfo.getName(), "").trim();
+        String firstChapter = itemFirstChapter.select(".playinfo h4").text().replace(chapterNameModified, "").trim();
+        String lastChapter = itemLastChapter.select(".playinfo h4").text().replace(chapterNameModified, "").trim();
+
         // Último capítulo (fecha)
         String lastChapterDate = itemLastChapter.select(".playinfo span").text();
         String[] chapterDateArray = lastChapterDate.split(" - ");
         lastChapterDate = chapterDateArray[chapterDateArray.length - 1];
-  
+        
         chapterInfo.setChapterImg(chapterImg);
         chapterInfo.setActualChapter(chapter);
         chapterInfo.setFirstChapter(Integer.parseInt(firstChapter));
@@ -180,11 +218,13 @@ public class ChapterAnimeLifeService {
   }
 
   private boolean havePreviousChapter(Elements nearChapters) {
+    
     Element previousChapter = nearChapters.first().select("a").first();
     return previousChapter != null ? true : false;
   }
 
   private boolean haveNextChapter(Elements nearChapters) {
+
     Element nextChapter = nearChapters.last().select("a").first();
     return nextChapter != null ? true : false;
   }

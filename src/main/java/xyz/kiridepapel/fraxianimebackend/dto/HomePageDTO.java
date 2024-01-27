@@ -1,5 +1,6 @@
 package xyz.kiridepapel.fraxianimebackend.dto;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -18,7 +19,7 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDataDTO;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class HomePageDTO {
+public class HomePageDTO implements Serializable {
     List<ChapterDataDTO> sliderAnimes;
     List<LastAnimeDataDTO> ovasOnasSpecials;
     List<ChapterDataDTO> animesProgramming;

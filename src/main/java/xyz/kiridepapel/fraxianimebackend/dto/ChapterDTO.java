@@ -1,5 +1,6 @@
 package xyz.kiridepapel.fraxianimebackend.dto;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -15,7 +16,7 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ChapterDTO {
+public class ChapterDTO implements Serializable {
     private String name;
     private List<LinkDTO> srcOptions;
     private List<LinkDTO> downloadOptions;

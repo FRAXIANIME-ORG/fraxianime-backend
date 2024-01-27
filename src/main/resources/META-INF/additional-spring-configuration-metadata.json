@@ -1,9 +1,39 @@
 {
   "properties": [
     {
+      "name": "REDIS_HOST",
+      "type": "java.lang.String",
+      "description": "A description for 'REDIS_HOST'"
+    },
+    {
+      "name": "REDIS_PORT",
+      "type": "java.lang.String",
+      "description": "A description for 'REDIS_PORT'"
+    },
+    {
+      "name": "REDIS_PASSWORD",
+      "type": "java.lang.String",
+      "description": "A description for 'REDIS_PASSWORD'"
+    },
+    {
       "name": "APP_PRODUCTION",
       "type": "java.lang.String",
       "description": "A description for 'APP_PRODUCTION'"
+    },
+    {
+      "name": "DEFAULT_CACHE_TIME",
+      "type": "java.lang.String",
+      "description": "A description for 'DEFAULT_CACHE_TIME'"
+    },
+    {
+      "name": "LAST_CHAPTERS_CACHE_TIME",
+      "type": "java.lang.String",
+      "description": "A description for 'LAST_CHAPTERS_CACHE_TIME'"
+    },
+    {
+      "name": "APP_CANT_LAST_CHAPTERS",
+      "type": "java.lang.String",
+      "description": "A description for 'APP_CANT_LAST_CHAPTERS'"
     },
     {
       "name": "PROVIDER_JKANIME_URL",

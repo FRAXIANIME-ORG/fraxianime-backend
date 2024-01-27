@@ -22,7 +22,7 @@ import xyz.kiridepapel.fraxianimebackend.service.ChapterAnimeLifeService;
 @CrossOrigin(origins = { "https://fraxianime.vercel.app", "http://localhost:4200" }, allowedHeaders = "**")
 public class JKAnimeController {
   @Value("${PROVIDER_JKANIME_URL}")
-  private String providerJkAnimeUrl;
+  private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
   @Autowired
@@ -32,18 +32,12 @@ public class JKAnimeController {
   @Autowired
   private ChapterAnimeLifeService chapterService;
   @Autowired
-  private DataUtils dataUtils;
-  @Autowired
   AnimeUtils animeUtils;
   
   @GetMapping("/test")
   public ResponseEntity<?> test() {
     try {
       Document document = Jsoup.connect("https://fraxianime.vercel.app").get();
-      // Element element = document.body().select(".contenido").first();
-
-      // AnimeInfoDTO animeInfo = this.animeService.getAnimeInfo(document);
-
       return new ResponseEntity<>(document, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>("Ocurrió un error: " + e.getMessage(), HttpStatus.valueOf(500));
@@ -52,18 +46,7 @@ public class JKAnimeController {
   
   @GetMapping("/animes")
   public ResponseEntity<?> homePage() {
-    Document docJkanime = this.dataUtils.simpleConnect(this.providerJkAnimeUrl, "Proveedor 1 inactivo");
-    Document docAnimelife = this.dataUtils.simpleConnect(this.providerAnimeLifeUrl, "Proveedor 2 inactivo");
-
-    HomePageDTO animes = HomePageDTO.builder()
-      .sliderAnimes(this.homePageService.sliderAnimes(docJkanime))
-      .ovasOnasSpecials(this.homePageService.ovasOnasSpecials(docJkanime))
-      .animesProgramming(this.homePageService.animesProgramming(docAnimelife, docJkanime))
-      .donghuasProgramming(this.homePageService.donghuasProgramming(docJkanime))
-      .topAnimes(this.homePageService.topAnimes(docJkanime))
-      .latestAddedAnimes(this.homePageService.latestAddedAnimes(docJkanime))
-      .latestAddedList(this.homePageService.latestAddedList(docJkanime))
-      .build();
+    HomePageDTO animes = this.homePageService.homePage();
     
     if (
       DataUtils.isNotNullOrEmpty(animes.getSliderAnimes()) &&
@@ -82,10 +65,7 @@ public class JKAnimeController {
 
   @GetMapping("/{search}")
   public ResponseEntity<?> animeInfo(@PathVariable("search") String search) {
-    Document docJkanime = DataUtils.tryConnectOrReturnNull((this.providerJkAnimeUrl + search), 1);
-    Document docAnimelife = DataUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + search), 2);
-
-    AnimeInfoDTO animeInfo = this.animeService.getAnimeInfo(docAnimelife, docJkanime, search);
+    AnimeInfoDTO animeInfo = this.animeService.animeInfo(search);
 
     if (DataUtils.isNotNullOrEmpty(animeInfo)) {
       return new ResponseEntity<>(animeInfo, HttpStatus.OK);
@@ -94,24 +74,19 @@ public class JKAnimeController {
     }
   }
 
-  @GetMapping("/{name}/{chapter}")
+  @GetMapping("/{chapterUrl}/{chapter}")
   public ResponseEntity<?> chapter(
-    @PathVariable("name") String name,
+    @PathVariable("chapterUrl") String chapterUrl,
     @PathVariable("chapter") Integer chapter) {
 
     if (chapter < 0) {
       return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.OK);
     }
-
-    String urlChapter = this.providerAnimeLifeUrl + this.animeUtils.specialNameOrUrlCases(name, 's');
-    urlChapter = this.animeUtils.specialChapterCases(urlChapter, name, chapter);
-
-    Document docAnimeLife = this.dataUtils.chapterSearchConnect(urlChapter, chapter, "No se encontró el capitulo solicitado.");
     
-    ChapterDTO animeInfo = this.chapterService.chapter(docAnimeLife, name, chapter);
+    ChapterDTO chapterInfo = this.chapterService.constructChapter(chapterUrl, chapter);
 
-    if (DataUtils.isNotNullOrEmpty(animeInfo)) {
-      return new ResponseEntity<>(animeInfo, HttpStatus.OK);
+    if (DataUtils.isNotNullOrEmpty(chapterInfo)) {
+      return new ResponseEntity<>(chapterInfo, HttpStatus.OK);
     } else {
       return new ResponseEntity<>("Ocurrió un error al recuperar los datos del capítulo solicitado.", HttpStatus.OK);
     }

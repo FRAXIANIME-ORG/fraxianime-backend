@@ -5,6 +5,7 @@ target/
 !**/src/test/**/target/
 
 # My
+.env
 src/main/resources/application.yaml
 /logs/
 
