@@ -28,6 +28,9 @@ public class AnimeAnimeLifeService {
   @Autowired
   private AnimeJkAnimeService jkAnimeService;
 
+  @Autowired
+  private AnimeUtils animeUtils;
+
   private Map<String, String> specialKeys = Map.ofEntries(
     Map.entry("Publicado el", "emited"),
     Map.entry("Publicado", "emited"),
@@ -57,7 +60,7 @@ public class AnimeAnimeLifeService {
       }
 
       AnimeInfoDTO animeInfo = AnimeInfoDTO.builder()
-        .name(AnimeUtils.specialNameOrUrlCases(mainAnimeLife.select(".entry-title").text().trim(), 'h'))
+        .name(this.animeUtils.specialNameOrUrlCases(mainAnimeLife.select(".entry-title").text().trim(), 'n'))
         .alternativeName(mainAnimeLife.select(".entry-title").text().trim())
         .imgUrl(mainAnimeLife.select(".thumbook img").attr("src").trim())
         .sinopsis(mainAnimeLife.select(".synp p").text().trim())
@@ -75,7 +78,7 @@ public class AnimeAnimeLifeService {
       }
 
       // Modificar las keys obtenidas en data (español) -> (inglés)
-      animeInfo.setData(DataUtils.specialDataKeys(animeInfo.getData(), this.specialKeys));
+      animeInfo.setData(AnimeUtils.specialDataKeys(animeInfo.getData(), this.specialKeys));
 
       return animeInfo;
     } catch (Exception e) {
@@ -159,7 +162,7 @@ public class AnimeAnimeLifeService {
     try {
       // Establecer la fecha del próximo capítulo
       if (animeInfo.getData().get("Estado").equals("En emisión")) {
-        animeInfo.setNextChapterDate(AnimeUtils.parseDate(animeInfo.getData().get("Actualizado el").toString(), 7));
+        animeInfo.setNextChapterDate(DataUtils.parseDate(animeInfo.getData().get("Actualizado el").toString(), 7));
       }
       
       // Establecer la información del primer y último capítulo

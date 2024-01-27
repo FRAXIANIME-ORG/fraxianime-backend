@@ -13,9 +13,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LastAnimeDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
@@ -23,11 +25,15 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDataDTO;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 
 @Service
+@Log
 public class HomePageService {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
+
+  @Autowired
+  private AnimeUtils animeUtils;
 
   public List<ChapterDataDTO> sliderAnimes(Document document) {
     Elements elements = document.select(".hero__items");
@@ -95,9 +101,9 @@ public class HomePageService {
         .state(true)
         .build();
 
-      String animeName = AnimeUtils.specialNameOrUrlCases(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')), 'h');
-      anime.setName(AnimeUtils.specialNameOrUrlCases(animeName, 'h'));
-      anime.setUrl(AnimeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
+      String animeName = this.animeUtils.specialNameOrUrlCases(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')), 'h');
+      anime.setName(this.animeUtils.specialNameOrUrlCases(animeName, 'h'));
+      anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
 
       if (animesJkanimes.containsKey(animeName)) {
         anime.setDate(this.getFormattedDate(animesJkanimes.get(animeName).getName()));
@@ -130,8 +136,8 @@ public class HomePageService {
         anime.setUrl(anime.getUrl().substring(0, anime.getUrl().length() - 1));
       }
       
-      anime.setName(AnimeUtils.specialNameOrUrlCases(anime.getName(), 'h'));
-      anime.setUrl(AnimeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
+      anime.setName(this.animeUtils.specialNameOrUrlCases(anime.getName(), 'h'));
+      anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
 
       lastChapters.add(anime);
     }
@@ -230,22 +236,23 @@ public class HomePageService {
   }
 
   private String changeFormatUrl(String url, String providerUrl) {
-    // Divide la URL en partes
-    String[] urlParts = url.split("/");
-    // Divide la última parte de la URL en partes
-    String[] lastPart = urlParts[urlParts.length - 1].split("-");
-    // Obtiene el último número de la última parte de la URL
-    String lastPartNumber = lastPart[lastPart.length - 1];
-    // Obtiene el último número de la última parte de la URL sin la extensión
-    String lastPartNumberWithoutExtension = lastPartNumber.split("\\.")[0];
-    // Quita los ceros a la izquierda del número
-    if (lastPartNumberWithoutExtension.startsWith("0")) {
-      lastPartNumberWithoutExtension = lastPartNumberWithoutExtension.substring(1);
+    String newUrl = url.replace(providerUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
+    // Verifica si la URL termina con el patrón -xx-2
+    if (url.matches(".*-\\d{2}-2/?$")) {
+      // Extrae el número y lo incrementa
+      String numberPart = url.replaceAll("^.*-(\\d{2})-2/?$", "$1");
+      try {
+          int number = Integer.parseInt(numberPart) + 1;
+          newUrl = url.replaceFirst("-\\d{2}-2/?$", "/" + number);
+          return newUrl.replace(providerUrl, "");
+      } catch (NumberFormatException e) {
+          log.warning("Error parsing number from URL: " + url);
+      }
+    } else {
+      // Si no termina con -xx-2, solo elimina los ceros a la izquierda
+      newUrl = url.replace(providerUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
+      return newUrl;
     }
-    // Construye la nueva URL
-    String newUrl = String.join("-", lastPart).replace("-" + lastPartNumber, "/" + lastPartNumberWithoutExtension);
-    // Quita el proveedor de la URL
-    newUrl = newUrl.replace(providerUrl, "");
 
     return newUrl;
   }

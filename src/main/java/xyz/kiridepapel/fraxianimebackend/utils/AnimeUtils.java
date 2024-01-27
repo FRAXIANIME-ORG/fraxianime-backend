@@ -1,57 +1,75 @@
 package xyz.kiridepapel.fraxianimebackend.utils;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import lombok.extern.java.Log;
+
+@Service
+@Log
 public class AnimeUtils {
-  // ? Generic
-  public static boolean isNotNullOrEmpty(List<?> list) {
-    return list != null && !list.isEmpty();
-  }
+  @Value("${PROVIDER_ANIMELIFE_URL}")
+  private String providerAnimeLifeUrl;
 
-  public static boolean isNotNullOrEmpty(String str) {
-    return str != null && !str.isEmpty();
-  }
+  // Anime url: one-piece-0X -> one-piece-X
+  private List<String> animesWithoutZeroCases = List.of(
+    "shigatsu-wa-kimi-no-uso",
+    "one-piece",
+    "kimetsu-no-yaiba",
+    "one-punch-man",
+    "horimiya",
+    "chuunibyou-demo-koi-ga-shitai",
+    "chuunibyou-demo-koi-ga-shitai-ren",
+    "bakemonogatari"
+  );
 
-  public static boolean isNotNullOrEmpty(Object obj) {
-    return obj != null;
-  }
+  // Chapter url: one-piece-04 -> one-piece-03-2
+  private List<String> chapterScriptCases = List.of(
+    "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin-04"
+  );
 
-  public static String parseDate(String date, int daysToModify) {
-    if (date == null || date.isEmpty()) {
-        return null;
+  public static Map<String, Object> specialDataKeys(Map<String, Object> originalMap, Map<String, String> specialKeys) {
+    Map<String, Object> newMap = new HashMap<>();
+
+    for (Map.Entry<String, Object> entry : originalMap.entrySet()) {
+      String newKey = specialKeys.getOrDefault(entry.getKey(), entry.getKey());
+      newMap.put(newKey, entry.getValue());
     }
 
-    DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
-    DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
-    
-    LocalDate currentDate = LocalDate.parse(date, inputFormatter);
-    LocalDate nextChapterDate = currentDate.plusDays(daysToModify);
-
-    return nextChapterDate.format(outputFormatter);
+    return newMap;
   }
   
   // ? Animes
-  public static String specialNameOrUrlCases(String urlName, char type) {
+  public String specialNameOrUrlCases(String urlName, char type) {
     Map<String, String> specialCases = new HashMap<>();
 
-    // h = Home to Anime
-    if (type == 'h') {
-      // Lo que llega del proveedor de la página de inicio, lo que será devuelto al usuario
-      specialCases.put("Solo Leveling", "Ore dake Level Up na Ken"); // Name
-      specialCases.put("solo-leveling", "ore-dake-level-up-na-ken"); // Url
+    // Map<String, String> map2 = Map.ofEntries(
+    //   Map.entry("providerUrl", "solo-leveling"),
+    //   Map.entry("myName", "Ore dake Level Up na Ken"),
+    //   Map.entry("myUrl", "ore-dake-level-up-na-ken")
+    // );
+
+    // Map<String, Map<String, String>> map1 = Map.ofEntries(
+    //   Map.entry("Solo Leveling", map2)
+    // );
+
+    if (type == 'h') { // Home: Proveedor página de inicio -> Mi página de inicio
+      specialCases.put("Solo Leveling", "Ore dake Level Up na Ken"); // 1
+      specialCases.put("solo-leveling", "ore-dake-level-up-na-ken"); // 1
+      specialCases.put("Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin", "Chiyu Mahou no Machigatta Tsukaikata"); // 2
+      specialCases.put("chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin", "chiyu-mahou-no-machigatta-tsukaikata"); // 2
     }
-    // c = Chapter to Provider Chapter 1: Lo que llega del proveedor al buscar un capítulo, lo que será devuelto al usuario
-    if (type == 'c') {
-      specialCases.put("Solo Leveling", "Ore dake Level Up na Ken"); // Name
+    if (type == 'n') { // Name: Proveedor anime, capítulo -> Mi anime, capítulo
+      specialCases.put("Solo Leveling", "Ore dake Level Up na Ken"); // 1
+      specialCases.put("Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin", "Chiyu Mahou no Machigatta Tsukaikata"); // 2
     }
-    // p = Provider Chapter to Chapter 2: Lo que llega del usuario al buscar un capítulo, lo que será enviado al proveedor para buscar el capítulo
-    if (type == 'p') {
-      specialCases.put("ore-dake-level-up-na-ken", "solo-leveling"); // Url
+    if (type == 's') { // Search: Usuario busca -> Proveedor busca
+      specialCases.put("ore-dake-level-up-na-ken", "solo-leveling"); // 1
+      specialCases.put("chiyu-mahou-no-machigatta-tsukaikata", "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin"); // 2
     }
 
     for (Map.Entry<String, String> entry : specialCases.entrySet()) {
@@ -62,5 +80,36 @@ public class AnimeUtils {
 
     return urlName;
   }
+
+  public String specialChapterCases(String urlChapter, String inputName, Integer chapter) {
+    urlChapter = urlChapter + "-" + String.format("%02d", chapter); // chapter-05
+
+    // one-piece-04 -> one-piece-4
+    if (chapter < 10) {
+      if (this.animesWithoutZeroCases.contains(inputName)) {
+        urlChapter = urlChapterWithoutZero(urlChapter);
+      }
+    }
+
+    // anime-13 -> anime-12-2
+    if (this.chapterScriptCases.contains(urlChapter.replace(this.providerAnimeLifeUrl, ""))) {
+      urlChapter = urlChapterWithScript(urlChapter);
+    }
+
+    return urlChapter;
+  }
+
+  // one-piece-04 -> one-piece-4
+  public static String urlChapterWithoutZero(String urlChapter) {
+    String urlWithoutZero = urlChapter.replaceAll("-0(\\d+)$", "-$1");
+    return urlWithoutZero;
+  }
+
+  public static String urlChapterWithScript(String urlChapter) { // 4, //3-2
+    int number = Integer.parseInt(urlChapter.replaceAll("^.*-(\\d+)$", "$1")) - 1;
+    String urlWithScript = urlChapter.replaceAll("-(\\d+)$", "-" + String.format("%02d", number) + "-2");
+    return urlWithScript;
+  }
+
 
 }

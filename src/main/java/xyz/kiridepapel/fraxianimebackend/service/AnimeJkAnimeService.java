@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
-import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 
 @Service
 public class AnimeJkAnimeService {
@@ -81,10 +81,10 @@ public class AnimeJkAnimeService {
       animeInfo.getData().put("quality", quality);
     }
     if (this.isValidData(alternativeTitles)) {
-      animeInfo.setAlternativeTitles(DataUtils.specialDataKeys(alternativeTitles, this.specialKeys));
+      animeInfo.setAlternativeTitles(AnimeUtils.specialDataKeys(alternativeTitles, this.specialKeys));
     }
     if (this.isValidData(history)) {
-      animeInfo.setHistory(DataUtils.specialDataKeys(history, this.specialHistory));
+      animeInfo.setHistory(AnimeUtils.specialDataKeys(history, this.specialHistory));
     }
     if (this.isValidData(trailer)) {
       animeInfo.setTrailer("https://www.youtube.com/embed/" + trailer);

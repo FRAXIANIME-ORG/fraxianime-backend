@@ -31,6 +31,10 @@ public class JKAnimeController {
   private AnimeAnimeLifeService animeService;
   @Autowired
   private ChapterAnimeLifeService chapterService;
+  @Autowired
+  private DataUtils dataUtils;
+  @Autowired
+  AnimeUtils animeUtils;
   
   @GetMapping("/test")
   public ResponseEntity<?> test() {
@@ -48,8 +52,8 @@ public class JKAnimeController {
   
   @GetMapping("/animes")
   public ResponseEntity<?> homePage() {
-    Document docJkanime = DataUtils.connect(this.providerJkAnimeUrl, "Proveedor 1 inactivo", false);
-    Document docAnimelife = DataUtils.connect(this.providerAnimeLifeUrl, "Proveedor 2 inactivo", false);
+    Document docJkanime = this.dataUtils.simpleConnect(this.providerJkAnimeUrl, "Proveedor 1 inactivo");
+    Document docAnimelife = this.dataUtils.simpleConnect(this.providerAnimeLifeUrl, "Proveedor 2 inactivo");
 
     HomePageDTO animes = HomePageDTO.builder()
       .sliderAnimes(this.homePageService.sliderAnimes(docJkanime))
@@ -62,13 +66,13 @@ public class JKAnimeController {
       .build();
     
     if (
-      AnimeUtils.isNotNullOrEmpty(animes.getSliderAnimes()) &&
-      AnimeUtils.isNotNullOrEmpty(animes.getOvasOnasSpecials()) &&
-      AnimeUtils.isNotNullOrEmpty(animes.getAnimesProgramming()) &&
-      AnimeUtils.isNotNullOrEmpty(animes.getDonghuasProgramming()) &&
-      AnimeUtils.isNotNullOrEmpty(animes.getTopAnimes()) &&
-      AnimeUtils.isNotNullOrEmpty(animes.getLatestAddedAnimes()) &&
-      AnimeUtils.isNotNullOrEmpty(animes.getLatestAddedList())
+      DataUtils.isNotNullOrEmpty(animes.getSliderAnimes()) &&
+      DataUtils.isNotNullOrEmpty(animes.getOvasOnasSpecials()) &&
+      DataUtils.isNotNullOrEmpty(animes.getAnimesProgramming()) &&
+      DataUtils.isNotNullOrEmpty(animes.getDonghuasProgramming()) &&
+      DataUtils.isNotNullOrEmpty(animes.getTopAnimes()) &&
+      DataUtils.isNotNullOrEmpty(animes.getLatestAddedAnimes()) &&
+      DataUtils.isNotNullOrEmpty(animes.getLatestAddedList())
     ) {
       return new ResponseEntity<>(animes, HttpStatus.OK);
     } else {
@@ -83,7 +87,7 @@ public class JKAnimeController {
 
     AnimeInfoDTO animeInfo = this.animeService.getAnimeInfo(docAnimelife, docJkanime, search);
 
-    if (AnimeUtils.isNotNullOrEmpty(animeInfo)) {
+    if (DataUtils.isNotNullOrEmpty(animeInfo)) {
       return new ResponseEntity<>(animeInfo, HttpStatus.OK);
     } else {
       return new ResponseEntity<>("Ocurrió un error al recuperar los datos del ánime solicitado.", HttpStatus.OK);
@@ -93,11 +97,20 @@ public class JKAnimeController {
   @GetMapping("/{name}/{chapter}")
   public ResponseEntity<?> chapter(
     @PathVariable("name") String name,
-    @PathVariable("chapter") String chapter) {
-    
-    ChapterDTO animeInfo = this.chapterService.chapter(name, chapter);
+    @PathVariable("chapter") Integer chapter) {
 
-    if (AnimeUtils.isNotNullOrEmpty(animeInfo)) {
+    if (chapter < 0) {
+      return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.OK);
+    }
+
+    String urlChapter = this.providerAnimeLifeUrl + this.animeUtils.specialNameOrUrlCases(name, 's');
+    urlChapter = this.animeUtils.specialChapterCases(urlChapter, name, chapter);
+
+    Document docAnimeLife = this.dataUtils.chapterSearchConnect(urlChapter, chapter, "No se encontró el capitulo solicitado.");
+    
+    ChapterDTO animeInfo = this.chapterService.chapter(docAnimeLife, name, chapter);
+
+    if (DataUtils.isNotNullOrEmpty(animeInfo)) {
       return new ResponseEntity<>(animeInfo, HttpStatus.OK);
     } else {
       return new ResponseEntity<>("Ocurrió un error al recuperar los datos del capítulo solicitado.", HttpStatus.OK);

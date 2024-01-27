@@ -1,15 +1,14 @@
 package xyz.kiridepapel.fraxianimebackend.service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -25,19 +24,17 @@ public class ChapterAnimeLifeService {
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
 
-  public ChapterDTO chapter(String inputName, String chapter) {
+  @Autowired
+  private AnimeUtils animeUtils;
+
+  public ChapterDTO chapter(Document docAnimeLife, String name, Integer chapter) {
     try {
-      String urlRequest = providerAnimeLifeUrl + AnimeUtils.specialNameOrUrlCases(inputName, 'p');
-      urlRequest += "-" + chapter;
-      urlRequest = specialChapterCases(urlRequest, inputName, chapter);
-      
-      Document docAnimeLife = DataUtils.connect(urlRequest, "No se encontró el capitulo solicitado.", true);
 
       List<LinkDTO> srcOptions = this.getSrcOptions(docAnimeLife);
       Elements nearChapters = docAnimeLife.body().select(".naveps .nvs");
 
       ChapterDTO chapterInfo = ChapterDTO.builder()
-        .name(AnimeUtils.specialNameOrUrlCases(docAnimeLife.select(".ts-breadcrumb li").get(1).select("span").text().trim(), 'c'))
+        .name(this.animeUtils.specialNameOrUrlCases(docAnimeLife.select(".ts-breadcrumb li").get(1).select("span").text().trim(), 'n'))
         .srcOptions(srcOptions)
         .downloadOptions(this.getDownloadOptions(docAnimeLife))
         .havePreviousChapter(this.havePreviousChapter(nearChapters))
@@ -45,7 +42,7 @@ public class ChapterAnimeLifeService {
         .build();
       
       if (!chapterInfo.getHaveNextChapter()) {
-        chapterInfo.setNextChapterDate(AnimeUtils.parseDate(docAnimeLife.body().select(".year .updated").text().trim(), 7));
+        chapterInfo.setNextChapterDate(DataUtils.parseDate(docAnimeLife.body().select(".year .updated").text().trim(), 7));
       }
 
       String state = docAnimeLife.body().select(".det").first().select("span i").text().trim();
@@ -140,7 +137,7 @@ public class ChapterAnimeLifeService {
     }
   }
 
-  private ChapterDTO setFirstAndLastChapters(ChapterDTO chapterInfo, Document docAnimeLife, String chapter) {
+  private ChapterDTO setFirstAndLastChapters(ChapterDTO chapterInfo, Document docAnimeLife, Integer chapter) {
     try {
       Element itemFirstChapter = docAnimeLife.body().select(".episodelist ul li").last();
       Element itemLastChapter = docAnimeLife.body().select(".episodelist ul li").first();
@@ -157,7 +154,7 @@ public class ChapterAnimeLifeService {
         lastChapterDate = chapterDateArray[chapterDateArray.length - 1];
   
         chapterInfo.setChapterImg(chapterImg);
-        chapterInfo.setActualChapter(Integer.parseInt(chapter));
+        chapterInfo.setActualChapter(chapter);
         chapterInfo.setFirstChapter(Integer.parseInt(firstChapter));
         chapterInfo.setLastChapter(Integer.parseInt(lastChapter));
         chapterInfo.setLastChapterDate(lastChapterDate);
@@ -173,8 +170,6 @@ public class ChapterAnimeLifeService {
     String regex = "https://(?:www\\.)?([^\\.]+)";
     Pattern pattern = java.util.regex.Pattern.compile(regex);
     Matcher matcher = pattern.matcher(url);
-    // https://www.animeflv.net
-    // Animeflv
     
     if (matcher.find()) {
         String provider = matcher.group(1);
@@ -186,61 +181,12 @@ public class ChapterAnimeLifeService {
 
   private boolean havePreviousChapter(Elements nearChapters) {
     Element previousChapter = nearChapters.first().select("a").first();
-
-    if (previousChapter != null) {
-      return true;
-    } else {
-      return false;
-    }
+    return previousChapter != null ? true : false;
   }
 
   private boolean haveNextChapter(Elements nearChapters) {
     Element nextChapter = nearChapters.last().select("a").first();
-
-    if (nextChapter != null) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-  
-  private String specialChapterCases(String urlRequest, String inputName, String chapter) {
-    if (inputName == null || inputName.isEmpty() || chapter == null) {
-      throw new ChapterNotFound("El nombre del anime y el capítulo son obligatorios.");
-    }
-
-    Map<String, String> specialCases = new HashMap<>();
-    String[] animes = {
-      "one-piece",
-      "one-punch-man",
-      "horimiya",
-      "chuunibyou-demo-koi-ga-shitai",
-      "chuunibyou-demo-koi-ga-shitai-ren",
-      "",
-      "",
-      "",
-      ""
-    };
-
-    for (String anime : animes) {
-      if (!anime.isEmpty() && anime != null) {
-        specialCases.put(anime, "-");
-      }
-    }
-
-    if (chapter.matches("\\d+")) {
-      int chapterNumber = Integer.parseInt(chapter);
-      if (chapterNumber < 10) {
-        if (specialCases.containsKey(inputName)) {
-          // Remplaza la parte final de la URL con la regla especial
-          urlRequest = urlRequest.replaceAll("-\\d+$", specialCases.get(inputName) + chapterNumber);
-        } else {
-          urlRequest = urlRequest.replaceAll("-\\d+$", "-0" + chapterNumber);
-        }
-      }
-    }
-
-    return urlRequest;
+    return nextChapter != null ? true : false;
   }
   
 }
