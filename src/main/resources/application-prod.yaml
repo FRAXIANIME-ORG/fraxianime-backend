@@ -1,8 +1,8 @@
 APP_PRODUCTION: true
 
-REDIS_HOST: ${REDIS_HOST}
-REDIS_PASSWORD: ${REDIS_PASSWORD}
-REDIS_PORT: ${REDIS_PORT}
+REDIS_HOST: localhost
+REDIS_PORT: 6379
+REDIS_PASSWORD: 40se02j7
 
 # Colocar 30 segundos más en CacheScheduler.java (línea 24)
 DEFAULT_CACHE_TIME: 30 # Minutos que durará en caché cualquier @Cacheable por defecto:
