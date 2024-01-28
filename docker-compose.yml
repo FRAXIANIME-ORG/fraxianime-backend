@@ -3,7 +3,7 @@ version: "3.1"
 services:
   redis:
     image: redis:latest
-    command: redis-server --loglevel warning --requirepass 40se02j7
+    command: redis-server --loglevel warning --requirepass ${REDIS_PASSWORD}
     ports:
       - "6379:6379"
   
@@ -13,9 +13,9 @@ services:
       dockerfile: Dockerfile
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: 40se02j7
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "8080:8080"
     depends_on:
