@@ -15,7 +15,7 @@ FROM openjdk:17-jdk-slim
 COPY --from=build target/fraxianime-backend-0.0.1-SNAPSHOT.jar /app/fraxianime-backend-0.0.1-SNAPSHOT.jar
 
 # Exponer el puerto
-# EXPOSE 8080
+EXPOSE 8080
 
 # Comando para ejecutar la aplicación
 ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "/app/fraxianime-backend-0.0.1-SNAPSHOT.jar"]
