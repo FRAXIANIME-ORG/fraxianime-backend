@@ -18,4 +18,4 @@ COPY --from=build target/fraxianime-backend-0.0.1-SNAPSHOT.jar /app/fraxianime-b
 EXPOSE 8080
 
 # Comando para ejecutar la aplicación
-ENTRYPOINT ["java", "-jar", "/app/fraxianime-backend-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "/app/fraxianime-backend-0.0.1-SNAPSHOT.jar"]
