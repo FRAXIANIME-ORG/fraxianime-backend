@@ -9,7 +9,10 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.java.Log;
+
 @Service
+@Log
 @SuppressWarnings("null")
 public class AnimeUtils {
   @Value("${PROVIDER_ANIMELIFE_URL}")
@@ -23,7 +26,9 @@ public class AnimeUtils {
     "horimiya",
     "chuunibyou-demo-koi-ga-shitai",
     "chuunibyou-demo-koi-ga-shitai-ren",
-    "bakemonogatari"
+    "bakemonogatari",
+    "maou-gakuin-no-futekigousha",
+    "maou-gakuin-no-futekigousha-2nd-season"
   );
   private List<String> chapterScriptCases = List.of(
     // Chapter url: one-piece-04 -> one-piece-03-2
@@ -43,28 +48,50 @@ public class AnimeUtils {
     //   Map.entry("Solo Leveling", map2)
     // );
 
-    if (type == 'h') { // Home: Proveedor página de inicio -> Mi página de inicio
+    // ? Home AnimeLife -> Home MIO
+    if (type == 'h') {
       specialCases.put("Solo Leveling", "Ore dake Level Up na Ken"); // 1
       specialCases.put("solo-leveling", "ore-dake-level-up-na-ken"); // 1
       specialCases.put("Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin", "Chiyu Mahou no Machigatta Tsukaikata"); // 2
       specialCases.put("chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin", "chiyu-mahou-no-machigatta-tsukaikata"); // 2
+      specialCases.put("maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e", "maou-gakuin-no-futekigousha"); // 4
+      specialCases.put("maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e-kayou-ii", "maou-gakuin-no-futekigousha-2nd-season"); // 5
     }
-    if (type == 'n') { // Name: Proveedor anime, capítulo -> Mi anime, capítulo
+    // ? (Anime, Chapter): MIO -> AnimeLife (name)
+    if (type == 'n') {
       specialCases.put("Solo Leveling", "Ore dake Level Up na Ken"); // 1
       specialCases.put("Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin", "Chiyu Mahou no Machigatta Tsukaikata"); // 2
     }
-    if (type == 's') { // Search: Usuario busca -> Proveedor busca
-      specialCases.put("ore-dake-level-up-na-ken", "solo-leveling"); // 1
-      specialCases.put("chiyu-mahou-no-machigatta-tsukaikata", "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin"); // 2
+    // ? Anime: MIO -> AnimeLife (url)
+    if (type == 'a') {
+      specialCases.put("ao-no-exorcist-shimane-illuminati-hen", "ao-no-exorcist-shin-series"); // 3
+      specialCases.put("captain-tsubasa-season-2-junior-youth-hen", "captain-tsubasa-junior-youth-hen"); // 4
     }
-    // Casos especiales
-    if (type == 'e') { // Episode: Mi capítulo -> Proveedor capítulo (Lista de capítulos en el proveedor tienen su nombre original)
+    // ? Anime: MIO -> Jkanime (url)
+    if (type == 'j') {
+      specialCases.put("maou-gakuin-no-futekigousha", "maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e"); // 4
+      specialCases.put("maou-gakuin-no-futekigousha-2nd-season", "maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e-kayou-ii"); // 5
+    }
+    // ? Chapter: MIO -> AnimeLife (lista de animes)
+    if (type == 'e') {
       specialCases.put("Ore dake Level Up na Ken", "Solo Leveling"); // 1
       specialCases.put("Chiyu Mahou no Machigatta Tsukaikata", "Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin"); // 2
     }
+    // ? Chapter: MIO -> AnimeLife (url)
+    if (type == 's') {
+      specialCases.put("ore-dake-level-up-na-ken", "solo-leveling"); // 1
+      specialCases.put("chiyu-mahou-no-machigatta-tsukaikata", "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin"); // 2
+    }
 
     for (Map.Entry<String, String> entry : specialCases.entrySet()) {
-      if (name.contains(entry.getKey())) {
+      if (
+        name.equals(entry.getKey()) || // Names
+        name.contains("/") && name.split("/")[0].trim().equals(entry.getKey()) // Urls
+      ) {
+        log.info("--------------------");
+        log.info("- Reemplazado: " + entry.getKey());
+        log.info("- Por: " + entry.getValue());
+        log.info("--------------------");
         return name.replace(entry.getKey(), entry.getValue());
       }
     }
@@ -106,10 +133,12 @@ public class AnimeUtils {
   // Recorre un mapa y cambia las claves por las que se le indiquen
   public static Map<String, Object> specialDataKeys(Map<String, Object> originalMap, Map<String, String> specialKeys) {
     Map<String, Object> newMap = new HashMap<>();
+    
     for (Map.Entry<String, Object> entry : originalMap.entrySet()) {
       String newKey = specialKeys.getOrDefault(entry.getKey(), entry.getKey());
       newMap.put(newKey, entry.getValue());
     }
+
     return newMap;
   }
   

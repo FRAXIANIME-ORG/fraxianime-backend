@@ -36,7 +36,6 @@ public class AnimeAnimeLifeService {
 
   private Map<String, String> specialKeys = Map.ofEntries(
     Map.entry("Publicado el", "emited"),
-    Map.entry("Publicado", "emited"),
     Map.entry("Duracion", "duration"),
     Map.entry("Tipo", "type"),
     Map.entry("Director", "director"),
@@ -52,8 +51,8 @@ public class AnimeAnimeLifeService {
   @Cacheable("anime")
   public AnimeInfoDTO animeInfo(String search) {
     try {
-      Document docJkanime = DataUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + search), 1);
-      Document docAnimeLife = DataUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + search), 2);
+      Document docAnimeLife = DataUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + this.animeUtils.specialNameOrUrlCases(search, 'a')), 2);
+      Document docJkanime = DataUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + this.animeUtils.specialNameOrUrlCases(search, 'j')), 1);
 
       Element mainAnimeLife = docAnimeLife.body().select(".wrapper").first();
 
@@ -101,19 +100,19 @@ public class AnimeAnimeLifeService {
       for (Element item : docAnimeLife.select(".info-content .spe span")) {
         Elements links = item.select("a");
         String key = item.text().split(":")[0].trim().replace(" en", " el");
+        
+        if (key.equals("Publicado")) continue;
 
         if (links.size() == 0 || links == null || links.isEmpty()) {
           if (item.select("time").size() > 0) {
             // Si hay un time, usar el text() como value
             String value = item.select("time").text();
-
             data.put(key, value);
           } else {
             // Si no hay un time, usar el texto luego de los ":" como value
             String[] values = item.text().split(":");
             if (values.length > 1) {
               String value = values[1].replace(" pero ep.", "").trim();
-
               // Valores modificables de los values
               if (value.equals("TV")) {
                 value = "Anime";
@@ -121,7 +120,6 @@ public class AnimeAnimeLifeService {
               if (value.equals("Completada")) {
                 value = "Finalizado";
               }
-
               data.put(key, value);
             }
           }
@@ -133,18 +131,15 @@ public class AnimeAnimeLifeService {
               .url(link.attr("href").replace(this.providerAnimeLifeUrl, ""))
               .build());
           }
-
           data.put(key, subData);
         }
       }
 
-      // ? Modificar los valores de los keys
-      // Borra el año
+      // ? Modificar las keys y las values
       if (data.containsKey("Año")) {
         data.remove("Año");
       }
-      // Si el estado es Proximamente, eliminar la última actualización
-      if (data.containsKey("Estado") && data.get("Estado").equals("Proximamente")) {
+      if (data.containsKey("Estado") && (data.get("Estado").equals("Proximamente") || data.get("Estado").equals("Finalizado"))) {
         data.remove("Actualizado el");
       }
       

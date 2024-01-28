@@ -13,10 +13,12 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 
 @Service
+@Log
 public class AnimeJkAnimeService {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
@@ -53,6 +55,7 @@ public class AnimeJkAnimeService {
     String jkanimeImgUrl = mainJkanime.select(".anime__details__pic").first().attr("data-setbg").trim();
     String synopsis = mainJkanime.select(".sinopsis").text().trim();
     Integer likes = Integer.parseInt(mainJkanime.select(".anime__details__content .vot").first().text().trim());
+    String emited = this.getSpecificKey(keys, "Emitido");
     String duration = this.getSpecificKey(keys, "Duracion").replace("por episodio", "").trim();
     String quality = this.getSpecificKey(keys, "Calidad");
     Map<String, Object> alternativeTitles = this.getAlternativeTitles(docJkanime);
@@ -71,6 +74,9 @@ public class AnimeJkAnimeService {
     }
     if (this.isValidData(likes)) {
       animeInfo.setLikes(likes);
+    }
+    if (this.isValidData(emited)) {
+      animeInfo.getData().put("Publicado el", emited);
     }
     if (this.isValidData(duration) && !duration.equals("Desconocido")) {
       animeInfo.getData().put("Duracion", duration);

@@ -123,7 +123,11 @@ public class HomePageService {
         .state(true)
         .build();
 
+
       String animeName = this.animeUtils.specialNameOrUrlCases(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')), 'h');
+      
+      // log.info("anime: " + anime.getName() + " - " + anime.getUrl() + " > " + this.animeUtils.specialNameOrUrlCases(animeName, 'h') + " - " + this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
+      
       anime.setName(this.animeUtils.specialNameOrUrlCases(animeName, 'h'));
       anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
 

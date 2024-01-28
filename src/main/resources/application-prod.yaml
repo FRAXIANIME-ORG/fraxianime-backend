@@ -6,7 +6,7 @@ REDIS_PORT: ${REDIS_PORT}
 
 # Colocar 30 segundos más en CacheScheduler.java (línea 24)
 DEFAULT_CACHE_TIME: 30 # Minutos que durará en caché cualquier @Cacheable por defecto:
-LAST_CHAPTERS_CACHE_TIME: 96 # Horas que durará en caché los últimos capítulos emitidos
+LAST_CHAPTERS_CACHE_TIME: 48 # Horas que durará en caché los últimos capítulos emitidos
 
 # PROVIDER 1
 PROVIDER_JKANIME_URL: https://jkanime.org/

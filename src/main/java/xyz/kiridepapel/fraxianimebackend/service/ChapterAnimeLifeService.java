@@ -70,7 +70,8 @@ public class ChapterAnimeLifeService {
       
       // Si no tiene siguiente capítulo, se obtiene la fecha de emisión del último capítulo y se le suma 7 días
       if (!chapterInfo.getHaveNextChapter()) {
-        chapterInfo.setNextChapterDate(DataUtils.parseDate(docAnimeLife.body().select(".year .updated").text().trim(), 7));
+        String date = DataUtils.parseDate(docAnimeLife.body().select(".year .updated").text().trim(), 7);
+        chapterInfo.setNextChapterDate(date);
       }
 
       // Establece el estado del ánime (en emisión o completado)
