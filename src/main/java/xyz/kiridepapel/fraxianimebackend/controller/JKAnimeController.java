@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
+import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.service.AnimeAnimeLifeService;
 import xyz.kiridepapel.fraxianimebackend.service.HomePageService;
@@ -63,9 +64,13 @@ public class JKAnimeController {
     }
   }
 
-  @GetMapping("/{search}")
-  public ResponseEntity<?> animeInfo(@PathVariable("search") String search) {
-    AnimeInfoDTO animeInfo = this.animeService.animeInfo(search);
+  @GetMapping("/{anime}")
+  public ResponseEntity<?> animeInfo(@PathVariable("anime") String anime) {
+    if (DataUtils.isSQLInjection(anime)) {
+      throw new SQLInjectionException("Esas cosas son del diablo.");
+    }
+
+    AnimeInfoDTO animeInfo = this.animeService.animeInfo(anime);
 
     if (DataUtils.isNotNullOrEmpty(animeInfo)) {
       return new ResponseEntity<>(animeInfo, HttpStatus.OK);
@@ -74,16 +79,17 @@ public class JKAnimeController {
     }
   }
 
-  @GetMapping("/{chapterUrl}/{chapter}")
-  public ResponseEntity<?> chapter(
-    @PathVariable("chapterUrl") String chapterUrl,
-    @PathVariable("chapter") Integer chapter) {
+  @GetMapping("/{anime}/{chapter}")
+  public ResponseEntity<?> chapter(@PathVariable("anime") String anime, @PathVariable("chapter") Integer chapter) {
+    if (DataUtils.isSQLInjection(anime)) {
+      throw new SQLInjectionException("Esas cosas son del diablo.");
+    }
 
     if (chapter < 0) {
       return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.OK);
     }
     
-    ChapterDTO chapterInfo = this.chapterService.constructChapter(chapterUrl, chapter);
+    ChapterDTO chapterInfo = this.chapterService.constructChapter(anime, chapter);
 
     if (DataUtils.isNotNullOrEmpty(chapterInfo)) {
       return new ResponseEntity<>(chapterInfo, HttpStatus.OK);

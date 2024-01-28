@@ -43,7 +43,8 @@ public class AnimeJkAnimeService {
     Map.entry("Version completa", "completeVersion"),
     Map.entry("Adicional", "additional"),
     Map.entry("Resumen", "summary"),
-    Map.entry("Personaje incluido", "includedCharacters")
+    Map.entry("Personaje incluido", "includedCharacters"),
+    Map.entry("Otro", "other")
   );
 
   public AnimeInfoDTO getAnimeInfo(AnimeInfoDTO animeInfo, Document docJkanime, String search) {

@@ -17,6 +17,8 @@ import lombok.extern.java.Log;
 public class AnimeUtils {
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
+
+  // Como se ve en MI Página
   private List<String> animesWithoutZeroCases = List.of(
     // Anime url: one-piece-0X -> one-piece-X
     "shigatsu-wa-kimi-no-uso",
@@ -28,8 +30,10 @@ public class AnimeUtils {
     "chuunibyou-demo-koi-ga-shitai-ren",
     "bakemonogatari",
     "maou-gakuin-no-futekigousha",
-    "maou-gakuin-no-futekigousha-2nd-season"
+    "maou-gakuin-no-futekigousha-2nd-season",
+    "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita"
   );
+
   private List<String> chapterScriptCases = List.of(
     // Chapter url: one-piece-04 -> one-piece-03-2
     "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin-04"
@@ -37,50 +41,62 @@ public class AnimeUtils {
 
   public String specialNameOrUrlCases(String name, char type) {
     Map<String, String> specialCases = new HashMap<>();
+    String from = String.valueOf(type);
 
-    // Map<String, String> map2 = Map.ofEntries(
-    //   Map.entry("providerUrl", "solo-leveling"),
-    //   Map.entry("myName", "Ore dake Level Up na Ken"),
-    //   Map.entry("myUrl", "ore-dake-level-up-na-ken")
-    // );
+    // 1. No se encontró en JKAnime
+    // 1. Sí se encontró en AnimeLife (anime y capítulos)
 
-    // Map<String, Map<String, String>> map1 = Map.ofEntries(
-    //   Map.entry("Solo Leveling", map2)
-    // );
+    // 2. Se quiere cambiar todo sobre un ánime en AnimeLife para que se alinie con el de JKAnime
 
     // ? Home AnimeLife -> Home MIO
     if (type == 'h') {
+      from = "Home";
       specialCases.put("Solo Leveling", "Ore dake Level Up na Ken"); // 1
       specialCases.put("solo-leveling", "ore-dake-level-up-na-ken"); // 1
       specialCases.put("Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin", "Chiyu Mahou no Machigatta Tsukaikata"); // 2
       specialCases.put("chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin", "chiyu-mahou-no-machigatta-tsukaikata"); // 2
+      // Ya no se van a mostrar
       specialCases.put("maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e", "maou-gakuin-no-futekigousha"); // 4
       specialCases.put("maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e-kayou-ii", "maou-gakuin-no-futekigousha-2nd-season"); // 5
     }
-    // ? (Anime, Chapter): MIO -> AnimeLife (name)
-    if (type == 'n') {
-      specialCases.put("Solo Leveling", "Ore dake Level Up na Ken"); // 1
-      specialCases.put("Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin", "Chiyu Mahou no Machigatta Tsukaikata"); // 2
-    }
-    // ? Anime: MIO -> AnimeLife (url)
-    if (type == 'a') {
-      specialCases.put("ao-no-exorcist-shimane-illuminati-hen", "ao-no-exorcist-shin-series"); // 3
-      specialCases.put("captain-tsubasa-season-2-junior-youth-hen", "captain-tsubasa-junior-youth-hen"); // 4
-    }
     // ? Anime: MIO -> Jkanime (url)
+    // 1
     if (type == 'j') {
+      from = "Jkanime";
       specialCases.put("maou-gakuin-no-futekigousha", "maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e"); // 4
       specialCases.put("maou-gakuin-no-futekigousha-2nd-season", "maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e-kayou-ii"); // 5
     }
-    // ? Chapter: MIO -> AnimeLife (lista de animes)
+    // ? (Anime, Chapter): AnimeLife -> MIO (name)
+    // 2
+    if (type == 'n') {
+      from = "Name";
+      specialCases.put("Solo Leveling", "Ore dake Level Up na Ken"); // 1
+      specialCases.put("Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin", "Chiyu Mahou no Machigatta Tsukaikata"); // 2
+      specialCases.put("Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node", "Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node, Henkyou de Slow Life suru Koto ni Shimashita"); // 3
+    }
+    // ? Anime: MIO -> AnimeLife (url)
+    // 2
+    if (type == 'a') {
+      from = "Anime";
+      specialCases.put("ao-no-exorcist-shimane-illuminati-hen", "ao-no-exorcist-shin-series"); // 3
+      specialCases.put("captain-tsubasa-season-2-junior-youth-hen", "captain-tsubasa-junior-youth-hen"); // 4
+      specialCases.put("shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita", "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node");
+    }
+    // ? Chapter: MIO -> AnimeLife (buscar en lista de animes)
+    // 2
     if (type == 'e') {
+      from = "List";
       specialCases.put("Ore dake Level Up na Ken", "Solo Leveling"); // 1
       specialCases.put("Chiyu Mahou no Machigatta Tsukaikata", "Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin"); // 2
+      specialCases.put("Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node, Henkyou de Slow Life suru Koto ni Shimashita", "Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node"); // 3
     }
     // ? Chapter: MIO -> AnimeLife (url)
+    // 2
     if (type == 's') {
+      from = "Search";
       specialCases.put("ore-dake-level-up-na-ken", "solo-leveling"); // 1
       specialCases.put("chiyu-mahou-no-machigatta-tsukaikata", "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin"); // 2
+      specialCases.put("shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita", "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node");
     }
 
     for (Map.Entry<String, String> entry : specialCases.entrySet()) {
@@ -89,8 +105,8 @@ public class AnimeUtils {
         name.contains("/") && name.split("/")[0].trim().equals(entry.getKey()) // Urls
       ) {
         log.info("--------------------");
-        log.info("- Reemplazado: " + entry.getKey());
-        log.info("- Por: " + entry.getValue());
+        log.info("| " + from + " | Reemplazado: " + entry.getKey());
+        log.info("| " + from + " | Por: " + entry.getValue());
         log.info("--------------------");
         return name.replace(entry.getKey(), entry.getValue());
       }

@@ -9,12 +9,19 @@ import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
+import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
     // Security Exceptions
     @ExceptionHandler(ProtectedResource.class)
     public ResponseEntity<?> handleProtectedResource(ProtectedResource ex) {
+        ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    }
+
+    @ExceptionHandler(SQLInjectionException.class)
+    public ResponseEntity<?> handleSQLInjectionException(SQLInjectionException ex) {
         ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
         return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
     }

@@ -99,6 +99,11 @@ public class DataUtils {
     }
   }
 
+  // ? Security
+  public static boolean isSQLInjection(String str) {
+    return str.matches(".*(--|[;+*^$|?{}\\[\\]()'\"\\']).*");
+  }
+
   // ? Generic
   public static boolean isNotNullOrEmpty(List<?> list) {
     return list != null && !list.isEmpty();
@@ -112,6 +117,7 @@ public class DataUtils {
     return obj != null;
   }
 
+  // ? Utils
   // La primera letra del formato de la fecha debe ser una letra, no un número.
   public static String parseDate(String date, int daysToModify) {
     if (date == null || date.isEmpty()) {

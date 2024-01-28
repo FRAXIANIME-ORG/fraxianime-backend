@@ -6,5 +6,12 @@ public class SecurityExceptions {
             super(message);
         }
     }
+
+    public static class SQLInjectionException extends RuntimeException {
+        public SQLInjectionException(String message) {
+            super(message);
+        }
+    }
     
+
 }
