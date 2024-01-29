@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
@@ -21,6 +22,7 @@ import xyz.kiridepapel.fraxianimebackend.service.ChapterAnimeLifeService;
 @RestController
 @RequestMapping("/api/v1")
 @CrossOrigin(origins = { "https://fraxianime.vercel.app", "http://localhost:4200" }, allowedHeaders = "**")
+@Log
 public class JKAnimeController {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
@@ -38,8 +40,13 @@ public class JKAnimeController {
   @GetMapping("/test")
   public ResponseEntity<?> test() {
     try {
-      Document document = Jsoup.connect("https://fraxianime.vercel.app").get();
-      return new ResponseEntity<>(document, HttpStatus.OK);
+      try {
+        Document document = Jsoup.connect("https://embedv.net/e/KrdZ5kYBBMEmX47").get();
+        log.info("document: " + document);
+      } catch (Exception e) {
+        log.info("error: " + e.getMessage());
+      }
+      return new ResponseEntity<>("ok", HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>("Ocurrió un error: " + e.getMessage(), HttpStatus.valueOf(500));
     }

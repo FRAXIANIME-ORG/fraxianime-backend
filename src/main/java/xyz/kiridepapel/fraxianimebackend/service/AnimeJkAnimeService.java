@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeHistoryDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 
 @Service
@@ -56,9 +58,10 @@ public class AnimeJkAnimeService {
     String jkanimeImgUrl = mainJkanime.select(".anime__details__pic").first().attr("data-setbg").trim();
     String synopsis = mainJkanime.select(".sinopsis").text().trim();
     Integer likes = Integer.parseInt(mainJkanime.select(".anime__details__content .vot").first().text().trim());
-    String emited = this.getSpecificKey(keys, "Emitido");
-    String duration = this.getSpecificKey(keys, "Duracion").replace("por episodio", "").trim();
-    String quality = this.getSpecificKey(keys, "Calidad");
+    Elements studios = (Elements) this.getSpecificKey(keys, "Studios", true);
+    String emited = String.valueOf(this.getSpecificKey(keys, "Emitido", false));
+    String duration = String.valueOf(this.getSpecificKey(keys, "Duracion", false)).replace("por episodio", "").trim();
+    String quality = String.valueOf(this.getSpecificKey(keys, "Calidad", false));
     Map<String, Object> alternativeTitles = this.getAlternativeTitles(docJkanime);
     Map<String, Object> history = this.getHistory(docJkanime);
     String trailer = mainJkanime.select(".animeTrailer").attr("data-yt");
@@ -75,6 +78,16 @@ public class AnimeJkAnimeService {
     }
     if (this.isValidData(likes)) {
       animeInfo.setLikes(likes);
+    }
+    if (animeInfo.getData().get("Estudio") == null && this.isValidData(studios)) {
+      List<LinkDTO> finalStudios = new ArrayList<>();
+      for (Element studio : studios) {
+        finalStudios.add(LinkDTO.builder()
+          .name(studio.text().trim())
+          .url("studio/" + studio.text().trim().toLowerCase().replaceAll(" ", "-"))
+          .build());
+      }
+      animeInfo.getData().put("Estudio", finalStudios);
     }
     if (this.isValidData(emited)) {
       animeInfo.getData().put("Publicado el", emited);
@@ -134,7 +147,7 @@ public class AnimeJkAnimeService {
     Elements allChilds = docJkanime.body().select(".aninfo").last().children();
     Map<String, Object> history = new LinkedHashMap<>();
     String currentKey = null;
-    List<String> currentLinks = null;
+    List<AnimeHistoryDTO> currentLinks = null;
 
     // Si hay elementos en el contenedor
     if (allChilds != null && !allChilds.isEmpty()) {
@@ -148,10 +161,15 @@ public class AnimeJkAnimeService {
           // Inicializar una nueva lista para el nuevo <h5>
           currentKey = item.text();
           currentLinks = new ArrayList<>();
-        // Verificar si el elemento es un <a>
+        // Verificar si es un link <a>
         } else if (item.tagName().equals("a") && currentLinks != null) {
-          // Añadir el texto del enlace a la lista actual
-          currentLinks.add(item.text());
+          String[] parts = item.text().split("\\(");
+          AnimeHistoryDTO link = AnimeHistoryDTO.builder()
+            .name(parts[0].trim())
+            .type(parts[parts.length - 1].replace(")", ""))
+            .url(item.attr("href").replace(this.providerJkanimeUrl, "").replace("/", ""))
+            .build();
+          currentLinks.add(link);
         }
       }
 
@@ -166,7 +184,7 @@ public class AnimeJkAnimeService {
     return history;
   }
 
-  private String getSpecificKey(Elements keys, String key) {
+  private Object getSpecificKey(Elements keys, String key, boolean returnList) {
     String realValue = "";
 
     for (Element li : keys) {
@@ -174,8 +192,12 @@ public class AnimeJkAnimeService {
       Elements links = li.select("a");
       
       if (realKey.contains(key)) {
-        if (links.isEmpty()) {
-          return li.text().substring(li.text().indexOf(":") + 1).trim();
+        if (!returnList) {
+          if (links.isEmpty()) {
+            return li.text().substring(li.text().indexOf(":") + 1).trim(); // "Emitido: 2019" -> "2019"
+          }
+        } else {
+          return li.select("a");
         }
       }
     }
@@ -192,6 +214,9 @@ public class AnimeJkAnimeService {
   }
   private boolean isValidData(Integer data) {
     return data != null && data >= 0;
+  }
+  private boolean isValidData(Object data) {
+    return data != null;
   }
     
 }

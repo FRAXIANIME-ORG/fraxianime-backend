@@ -61,4 +61,15 @@ public class IndividualDTO {
         private String url;
     }
 
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class AnimeHistoryDTO implements Serializable {
+        private String name;
+        private String type;
+        private String url;
+    }
+
 }

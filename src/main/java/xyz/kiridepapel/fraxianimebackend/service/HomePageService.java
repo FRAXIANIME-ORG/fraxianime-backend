@@ -122,12 +122,9 @@ public class HomePageService {
         .url(this.changeFormatUrl(eAnimeLife.select(".bsx a").attr("href"), providerAnimeLifeUrl))
         .state(true)
         .build();
-
-
-      String animeName = this.animeUtils.specialNameOrUrlCases(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')), 'h');
       
-      // log.info("anime: " + anime.getName() + " - " + anime.getUrl() + " > " + this.animeUtils.specialNameOrUrlCases(animeName, 'h') + " - " + this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
-      
+      String animeName = anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"'));
+            
       anime.setName(this.animeUtils.specialNameOrUrlCases(animeName, 'h'));
       anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
 
