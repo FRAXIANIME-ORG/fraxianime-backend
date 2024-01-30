@@ -28,9 +28,11 @@ public class AnimeInfoDTO implements Serializable {
     private Map<String, Object> alternativeTitles;
     private Map<String, Object> history;
 
-    private String nextChapterDate;
     private Integer firstChapter;
     private Integer lastChapter;
+    private String lastChapterDate;
+
+    private String nextChapterDate;
 
     // private List<LastAnimeDataDTO> recomendations;
 

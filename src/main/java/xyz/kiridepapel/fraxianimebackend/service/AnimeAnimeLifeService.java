@@ -162,7 +162,7 @@ public class AnimeAnimeLifeService {
 
   private AnimeInfoDTO setFirstAndLastChapters(AnimeInfoDTO animeInfo, Document docAnimeLife) {
     try {
-      // Establecer la fecha del próximo capítulo
+      // Fecha del próximo capítulo
       if (animeInfo.getData().get("Estado").equals("En emisión")) {
         animeInfo.setNextChapterDate(DataUtils.parseDate(animeInfo.getData().get("Actualizado el").toString(), 7));
       }
@@ -172,12 +172,12 @@ public class AnimeAnimeLifeService {
 
       if (chapters != null && !chapters.isEmpty()) {
         String lastChapter = chapters.first().select(".epl-num").text().trim();
-        String firstChapter = chapters.last().select(".epl-num").text().trim();
         
-        animeInfo.setFirstChapter(Integer.parseInt(firstChapter));
+        animeInfo.setFirstChapter(Integer.parseInt(chapters.last().select(".epl-num").text().trim()));
         animeInfo.setLastChapter(Integer.parseInt(lastChapter));
+        animeInfo.setLastChapterDate(chapters.first().select(".epl-date").text().trim());
 
-        // Asigna la cantidad de capítulos como el último capítulo
+        // Asigna el útlimo capítulo como la cantidad de capítulos
         animeInfo.getData().put("Episodios", lastChapter);
       }
 

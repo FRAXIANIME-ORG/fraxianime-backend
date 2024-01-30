@@ -91,6 +91,11 @@ public class AnimeJkAnimeService {
     }
     if (this.isValidData(emited)) {
       animeInfo.getData().put("Publicado el", emited);
+
+      // Asignar lastChapterDate
+      if (emited.contains(" a ")) {
+        animeInfo.setLastChapterDate(emited.split(" a ")[1].trim().replace(" de ", ", ").toLowerCase());
+      }
     }
     if (this.isValidData(duration) && !duration.equals("Desconocido")) {
       animeInfo.getData().put("Duracion", duration);
