@@ -45,31 +45,36 @@ public class CacheScheduler {
     int counter = 1;
     
     for (ChapterDataDTO chapterInfo : animesProgramming) {
-      boolean isCached = false;
-      String url = chapterInfo.getUrl().split("/")[0];
-      int chapter = Integer.parseInt(chapterInfo.getUrl().split("/")[1]);
-      
-      // Comprueba si el capítulo ya está en caché
-      ChapterDTO chapterCache = this.animeUtils.searchFromCache(cacheManager, "chapter", (url + "/" + chapter), ChapterDTO.class);
-      if (chapterCache != null) {
-        isCached = true;
-      }
-
-      // Si está en caché, pasa al siguiente capítulo
-      if (isCached) {
-        log.info(String.format("%02d", counter++) + ". Ya esta en cache: " + url + " (" + String.format("%02d", chapter) + ")");
-        continue;
-      } else {
-        // Si no está en caché, busca el capítulo en la web y lo guarda en caché
-        try {
-          // Espera de 3 a 5 segundos antes de buscar el capítulo en la web
-          int randomTime = 3000 + (random.nextInt(2001));
-          Thread.sleep(randomTime);
-          log.info(String.format("%02d", counter++) + ". Guardando en cache: " + url + " (" + String.format("%02d", chapter) + ")");
-          this.chapterService.cacheChapter(url, chapter);
-        } catch (InterruptedException e) {
-          log.severe("Error: " + e.getMessage());
+      try {
+        boolean isCached = false;
+        String url = chapterInfo.getUrl().split("/")[0];
+        int chapter = Integer.parseInt(chapterInfo.getUrl().split("/")[1]);
+        
+        // Comprueba si el capítulo ya está en caché
+        ChapterDTO chapterCache = this.animeUtils.searchFromCache(cacheManager, "chapter", (url + "/" + chapter), ChapterDTO.class);
+        if (chapterCache != null) {
+          isCached = true;
         }
+
+        // Si está en caché, pasa al siguiente capítulo
+        if (isCached) {
+          log.info(String.format("%02d", counter++) + ". Ya esta en cache: " + url + " (" + String.format("%02d", chapter) + ")");
+          continue;
+        } else {
+          // Si no está en caché, busca el capítulo en la web y lo guarda en caché
+          try {
+            // Espera de 3 a 5 segundos antes de buscar el capítulo en la web
+            int randomTime = 3000 + (random.nextInt(2001));
+            Thread.sleep(randomTime);
+            log.info(String.format("%02d", counter++) + ". Guardando en cache: " + url + " (" + String.format("%02d", chapter) + ")");
+            this.chapterService.cacheChapter(url, chapter);
+          } catch (InterruptedException e) {
+            log.severe("Error: " + e.getMessage());
+          }
+        }
+      } catch (Exception e) {
+        log.severe(String.format("%02d", counter++) + ". Error: El capitulo del anime " + chapterInfo.getName() + " no se pudo guardar en cache.");
+        log.severe(String.format("%02d", counter) + ". Error exacto: " + e.getMessage());
       }
     }
   }

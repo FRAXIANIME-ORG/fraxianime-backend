@@ -41,7 +41,7 @@ public class JKAnimeController {
   public ResponseEntity<?> test() {
     try {
       try {
-        Document document = Jsoup.connect("https://jkanime.org/ijiranaide-nagatoro-san-2nd-attack/").get();
+        Document document = Jsoup.connect("https://jkanime.org").get();
         log.info("document: " + document);
       } catch (Exception e) {
         log.info("error: " + e.getMessage());

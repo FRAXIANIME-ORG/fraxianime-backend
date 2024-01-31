@@ -66,38 +66,43 @@ public class AnimeUtils {
       specialCases.put("maou-gakuin-no-futekigousha", "maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e"); // 4
       specialCases.put("maou-gakuin-no-futekigousha-2nd-season", "maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e-kayou-ii"); // 5
     }
-    // ? (Anime, Chapter): AnimeLife -> MIO (name)
-    // 2
+    // ? Anime, Chapter: AnimeLife -> MIO (name)
+    // 2: ("AnimeLife", "JKanime")
     if (type == 'n') {
       from = "Name";
       specialCases.put("Solo Leveling", "Ore dake Level Up na Ken"); // 1
       specialCases.put("Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin", "Chiyu Mahou no Machigatta Tsukaikata"); // 2
       specialCases.put("Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node", "Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node, Henkyou de Slow Life suru Koto ni Shimashita"); // 3
+      specialCases.put("Mushoku Tensei: Isekai Ittara Honki Dasu Part 2", "Mushoku Tensei: Isekai Ittara Honki Dasu 2nd Season");
     }
     // ? Anime: MIO -> AnimeLife (url)
-    // 2
+    // 2: ("JKanime", "AnimeLife")
     if (type == 'a') {
       from = "Anime";
       specialCases.put("ao-no-exorcist-shimane-illuminati-hen", "ao-no-exorcist-shin-series"); // 3
       specialCases.put("captain-tsubasa-season-2-junior-youth-hen", "captain-tsubasa-junior-youth-hen"); // 4
       specialCases.put("shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita", "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node");
-    }
-    // ? Chapter: MIO -> AnimeLife (buscar en lista de animes)
-    // 2
-    if (type == 'e') {
-      from = "List";
-      specialCases.put("Ore dake Level Up na Ken", "Solo Leveling"); // 1
-      specialCases.put("Chiyu Mahou no Machigatta Tsukaikata", "Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin"); // 2
-      specialCases.put("Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node, Henkyou de Slow Life suru Koto ni Shimashita", "Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node"); // 3
+      specialCases.put("mushoku-tensei-isekai-ittara-honki-dasu-2nd-season", "mushoku-tensei-isekai-ittara-honki-dasu-part-2");
     }
     // ? Chapter: MIO -> AnimeLife (url)
-    // 2
+    // 2: ("JKanime", "AnimeLife")
     if (type == 's') {
       from = "Search";
       specialCases.put("ore-dake-level-up-na-ken", "solo-leveling"); // 1
       specialCases.put("chiyu-mahou-no-machigatta-tsukaikata", "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin"); // 2
       specialCases.put("shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita", "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node");
+      specialCases.put("mushoku-tensei-isekai-ittara-honki-dasu-2nd-season", "mushoku-tensei-isekai-ittara-honki-dasu-part-2");
     }
+    // ? Chapter: MIO -> AnimeLife (name: buscar en lista de animes)
+    // 2: ("JKanime", "AnimeLife")
+    if (type == 'e') {
+      from = "List";
+      specialCases.put("Ore dake Level Up na Ken", "Solo Leveling"); // 1
+      specialCases.put("Chiyu Mahou no Machigatta Tsukaikata", "Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin"); // 2
+      specialCases.put("Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node, Henkyou de Slow Life suru Koto ni Shimashita", "Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node"); // 3
+      specialCases.put("Mushoku Tensei: Isekai Ittara Honki Dasu 2nd Season", "Mushoku Tensei: Isekai Ittara Honki Dasu Part 2");
+    }
+    // specialCases.put("", "");
 
     for (Map.Entry<String, String> entry : specialCases.entrySet()) {
       if (

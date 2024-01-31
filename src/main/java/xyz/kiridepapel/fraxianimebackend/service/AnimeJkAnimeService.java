@@ -46,7 +46,8 @@ public class AnimeJkAnimeService {
     Map.entry("Adicional", "additional"),
     Map.entry("Resumen", "summary"),
     Map.entry("Personaje incluido", "includedCharacters"),
-    Map.entry("Otro", "other")
+    Map.entry("Otro", "other"),
+    Map.entry("Derivado", "derived")
   );
 
   public AnimeInfoDTO getAnimeInfo(AnimeInfoDTO animeInfo, Document docJkanime, String search) {

@@ -114,7 +114,7 @@ public class ChapterAnimeLifeService {
   
       // Ordena los servidores de reproducción
       Comparator<LinkDTO> comparator = (src1, src2) -> {
-        List<String> order = Arrays.asList("YourUpload", "VidGuard");
+        List<String> order = Arrays.asList("Voe", "YourUpload", "VidGuard");
         int index1 = order.indexOf(src1.getName());
         int index2 = order.indexOf(src2.getName());
 
