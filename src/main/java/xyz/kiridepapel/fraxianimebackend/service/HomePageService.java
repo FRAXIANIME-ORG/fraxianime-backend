@@ -97,7 +97,6 @@ public class HomePageService {
     Elements elementsJkAnime = docJkanime.body().select(".listadoanime-home .anime_programing a");
 
     List<ChapterDataDTO> lastChapters = new ArrayList<>();
-
     Map<String, LinkDTO> animesJkanimes = new HashMap<>();
 
     for (Element eJkanime : elementsJkAnime) {
@@ -110,30 +109,34 @@ public class HomePageService {
     }
 
     for (Element eAnimeLife : elementsAnimeLife) {
-      ChapterDataDTO anime = ChapterDataDTO.builder()
-        .name(eAnimeLife.select(".tt").first().childNodes().stream()
-          .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
-          .map(Node::toString)
-          .collect(Collectors.joining()).trim())
-        .imgUrl(eAnimeLife.select("img").attr("src").trim())
-        .chapter(eAnimeLife.select(".epx").text().replace("Ep 0", "Capitulo ").replace("Ep ", "Capitulo ").trim())
-        .type(eAnimeLife.select(".typez").text().trim())
-        .date(null)
-        .url(this.changeFormatUrl(eAnimeLife.select(".bsx a").attr("href"), providerAnimeLifeUrl))
-        .state(true)
-        .build();
-      
-      String animeName = anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"'));
-            
-      anime.setName(this.animeUtils.specialNameOrUrlCases(animeName, 'h'));
-      anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
+      String url = this.changeFormatUrl(eAnimeLife.select(".bsx a").attr("href"), providerAnimeLifeUrl);
 
-      if (animesJkanimes.containsKey(animeName)) {
-        anime.setDate(this.getFormattedDate(animesJkanimes.get(animeName).getName()));
-        anime.setImgUrl(animesJkanimes.get(animeName).getUrl());
+      if (url.contains("/")) {
+        ChapterDataDTO anime = ChapterDataDTO.builder()
+          .name(eAnimeLife.select(".tt").first().childNodes().stream()
+            .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
+            .map(Node::toString)
+            .collect(Collectors.joining()).trim())
+          .imgUrl(eAnimeLife.select("img").attr("src").trim())
+          .chapter(eAnimeLife.select(".epx").text().replace("Ep 0", "Capitulo ").replace("Ep ", "Capitulo ").trim())
+          .type(eAnimeLife.select(".typez").text().trim())
+          .date(null)
+          .url(this.changeFormatUrl(eAnimeLife.select(".bsx a").attr("href"), providerAnimeLifeUrl))
+          .state(true)
+          .build();
+        
+        String animeName = anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"'));
+              
+        anime.setName(this.animeUtils.specialNameOrUrlCases(animeName, 'h'));
+        anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
+
+        if (animesJkanimes.containsKey(animeName)) {
+          anime.setDate(this.getFormattedDate(animesJkanimes.get(animeName).getName()));
+          anime.setImgUrl(animesJkanimes.get(animeName).getUrl());
+        }
+      
+        lastChapters.add(anime);
       }
-    
-      lastChapters.add(anime);
     }
 
     return lastChapters;
