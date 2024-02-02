@@ -46,19 +46,20 @@ public class AnimeUtils {
 
   public String specialNameOrUrlCases(String original, Character type) {
     try {
-      // Si es una url
+      String mapped = "";
+
       if (original.contains("/")) {
-        original = original.split("/")[0].trim();
+        mapped = this.specialCaseRepository.getMappedByOriginalAndType(original.split("/")[0].trim(), type); // Si es una url
+      } else {
+        mapped = this.specialCaseRepository.getMappedByOriginalAndType(original, type); // Si es un nombre
       }
 
-      String mapped = this.specialCaseRepository.getMappedByOriginalAndType(original, type);
-      
       if (mapped != null){
         log.info("--------------------");
         log.info("| " + type + " | Original: " + original);
         log.info("| " + type + " | Reemplazado por: " + mapped);
         log.info("--------------------");
-        return mapped;
+        return original.replace(original, mapped);
       } else {
         return original;
       }
