@@ -9,6 +9,7 @@ target/
 src/main/resources/application.yaml
 src/main/resources/logback.xml
 /logs/
+.env
 
 ### STS ###
 .apt_generated

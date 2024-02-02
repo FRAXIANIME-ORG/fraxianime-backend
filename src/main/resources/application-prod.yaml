@@ -1,8 +1,28 @@
-APP_PRODUCTION: true
+spring:
+  datasource:
+    url: jdbc:postgresql://postgresdb:5432/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maxLifetime: 150000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    properties:
+      hibernate:
+        format-sql: true
+
+JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
 
 REDIS_HOST: ${REDIS_HOST}
-REDIS_PASSWORD: ${REDIS_PASSWORD}
 REDIS_PORT: ${REDIS_PORT}
+REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+APP_PRODUCTION: true
 
 # Colocar 30 segundos más en CacheScheduler.java (línea 24)
 DEFAULT_CACHE_TIME: 30 # Minutos que durará en caché cualquier @Cacheable por defecto:

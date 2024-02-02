@@ -59,7 +59,7 @@ public class AnimeJkAnimeService {
     String jkanimeImgUrl = mainJkanime.select(".anime__details__pic").first().attr("data-setbg").trim();
     String synopsis = mainJkanime.select(".sinopsis").text().trim();
     Integer likes = Integer.parseInt(mainJkanime.select(".anime__details__content .vot").first().text().trim());
-    Elements studios = (Elements) this.getSpecificKey(keys, "Studios", true);
+    Object studios = this.getSpecificKey(keys, "Studios", true);
     String emited = String.valueOf(this.getSpecificKey(keys, "Emitido", false));
     String duration = String.valueOf(this.getSpecificKey(keys, "Duracion", false)).replace("por episodio", "").trim();
     String quality = String.valueOf(this.getSpecificKey(keys, "Calidad", false));
@@ -80,15 +80,18 @@ public class AnimeJkAnimeService {
     if (this.isValidData(likes)) {
       animeInfo.setLikes(likes);
     }
-    if (animeInfo.getData().get("Estudio") == null && this.isValidData(studios)) {
-      List<LinkDTO> finalStudios = new ArrayList<>();
-      for (Element studio : studios) {
-        finalStudios.add(LinkDTO.builder()
-          .name(studio.text().trim())
-          .url("studio/" + studio.text().trim().toLowerCase().replaceAll(" ", "-"))
-          .build());
+    if (studios != null && !studios.toString().trim().isEmpty()) {
+      Elements stds = (Elements) studios;
+      if (animeInfo.getData().get("Estudio") == null && this.isValidData(studios)) {
+        List<LinkDTO> finalStudios = new ArrayList<>();
+        for (Element studio : stds) {
+          finalStudios.add(LinkDTO.builder()
+            .name(studio.text().trim())
+            .url("studio/" + studio.text().trim().toLowerCase().replaceAll(" ", "-"))
+            .build());
+        }
+        animeInfo.getData().put("Estudio", finalStudios);
       }
-      animeInfo.getData().put("Estudio", finalStudios);
     }
     if (this.isValidData(emited)) {
       animeInfo.getData().put("Publicado el", emited);

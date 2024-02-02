@@ -74,6 +74,7 @@ public class AnimeUtils {
       specialCases.put("Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin", "Chiyu Mahou no Machigatta Tsukaikata"); // 2
       specialCases.put("Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node", "Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node, Henkyou de Slow Life suru Koto ni Shimashita"); // 3
       specialCases.put("Mushoku Tensei: Isekai Ittara Honki Dasu Part 2", "Mushoku Tensei: Isekai Ittara Honki Dasu 2nd Season");
+      specialCases.put("Boku no Kokoro no Yabai Yatsu: Twi-Yaba", "Twi-Yaba");
     }
     // ? Anime: MIO -> AnimeLife (url)
     // 2: ("JKanime", "AnimeLife")
@@ -83,6 +84,7 @@ public class AnimeUtils {
       specialCases.put("captain-tsubasa-season-2-junior-youth-hen", "captain-tsubasa-junior-youth-hen"); // 4
       specialCases.put("shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita", "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node");
       specialCases.put("mushoku-tensei-isekai-ittara-honki-dasu-2nd-season", "mushoku-tensei-isekai-ittara-honki-dasu-part-2");
+      specialCases.put("twi-yaba", "boku-no-kokoro-no-yabai-yatsu-twi-yaba");
     }
     // ? Chapter: MIO -> AnimeLife (url)
     // 2: ("JKanime", "AnimeLife")
@@ -92,6 +94,7 @@ public class AnimeUtils {
       specialCases.put("chiyu-mahou-no-machigatta-tsukaikata", "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin"); // 2
       specialCases.put("shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita", "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node");
       specialCases.put("mushoku-tensei-isekai-ittara-honki-dasu-2nd-season", "mushoku-tensei-isekai-ittara-honki-dasu-part-2");
+      specialCases.put("twi-yaba", "boku-no-kokoro-no-yabai-yatsu-twi-yaba");
     }
     // ? Chapter: MIO -> AnimeLife (name: buscar en lista de animes)
     // 2: ("JKanime", "AnimeLife")
@@ -101,6 +104,7 @@ public class AnimeUtils {
       specialCases.put("Chiyu Mahou no Machigatta Tsukaikata", "Chiyu Mahou no Machigatta Tsukaikata: Senjou wo Kakeru Kaifuku Youin"); // 2
       specialCases.put("Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node, Henkyou de Slow Life suru Koto ni Shimashita", "Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node"); // 3
       specialCases.put("Mushoku Tensei: Isekai Ittara Honki Dasu 2nd Season", "Mushoku Tensei: Isekai Ittara Honki Dasu Part 2");
+      specialCases.put("Twi-Yaba", "Boku no Kokoro no Yabai Yatsu: Twi-Yaba");
     }
     // specialCases.put("", "");
 

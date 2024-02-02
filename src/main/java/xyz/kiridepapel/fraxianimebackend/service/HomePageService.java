@@ -82,7 +82,7 @@ public class HomePageService {
       LastAnimeDataDTO anime = LastAnimeDataDTO.builder()
         .name(element.select(".anime__item__text a").text())
         .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
-        .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
+        .url(element.select("a").attr("href").replace(providerJkanimeUrl, "").split("/")[0].trim())
         .type(element.select(".anime__item__text ul li").text())
         .build();
 

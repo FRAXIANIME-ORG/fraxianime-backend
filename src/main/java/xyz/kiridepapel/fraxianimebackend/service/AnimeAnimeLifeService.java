@@ -171,9 +171,12 @@ public class AnimeAnimeLifeService {
       Elements chapters = docAnimeLife.body().select(".eplister ul li");
 
       if (chapters != null && !chapters.isEmpty()) {
-        String lastChapter = chapters.first().select(".epl-num").text().trim();
+        String[] firstSplit = chapters.last().select(".epl-title").text().trim().split(" ");
+        String[] lastSplit = chapters.first().select(".epl-title").text().trim().split(" ");
+        String firstChapter = firstSplit[firstSplit.length - 1];
+        String lastChapter = lastSplit[lastSplit.length - 1];
         
-        animeInfo.setFirstChapter(Integer.parseInt(chapters.last().select(".epl-num").text().trim()));
+        animeInfo.setFirstChapter(Integer.parseInt(firstChapter));
         animeInfo.setLastChapter(Integer.parseInt(lastChapter));
         animeInfo.setLastChapterDate(chapters.first().select(".epl-date").text().trim());
 
