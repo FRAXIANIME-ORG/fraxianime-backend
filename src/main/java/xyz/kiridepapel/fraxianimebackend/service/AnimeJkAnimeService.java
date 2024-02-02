@@ -13,14 +13,12 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeHistoryDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 
 @Service
-@Log
 public class AnimeJkAnimeService {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;

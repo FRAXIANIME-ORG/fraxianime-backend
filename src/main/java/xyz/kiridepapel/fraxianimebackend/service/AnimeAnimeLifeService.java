@@ -52,7 +52,7 @@ public class AnimeAnimeLifeService {
   public AnimeInfoDTO animeInfo(String search) {
     try {
       Document docAnimeLife = DataUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + this.animeUtils.specialNameOrUrlCases(search, 'a')), 2);
-      Document docJkanime = DataUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + this.animeUtils.specialNameOrUrlCases(search, 'j')), 1);
+      Document docJkanime = DataUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + this.animeUtils.specialNameOrUrlCases(search, 's')), 1);
 
       Element mainAnimeLife = docAnimeLife.body().select(".wrapper").first();
 

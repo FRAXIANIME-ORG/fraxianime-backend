@@ -49,7 +49,7 @@ public class ChapterAnimeLifeService {
     }
 
     // Lógica para obtener el ChapterDTO si no está en caché (no se almacena en caché)
-    String modifiedUrlChapter = this.providerAnimeLifeUrl + this.animeUtils.specialNameOrUrlCases(url, 's');
+    String modifiedUrlChapter = this.providerAnimeLifeUrl + this.animeUtils.specialNameOrUrlCases(url, 'c');
     modifiedUrlChapter = this.animeUtils.specialChapterCases(modifiedUrlChapter, url, chapter);
     return this.findChapter(modifiedUrlChapter, chapter);
   }
@@ -177,7 +177,7 @@ public class ChapterAnimeLifeService {
       Element itemFirstChapter = docAnimeLife.body().select(".episodelist ul li").last();
       Element itemLastChapter = docAnimeLife.body().select(".episodelist ul li").first();
       // El nombre del ánime puede estar modificado en casos especiales
-      String chapterNameModified = this.animeUtils.specialNameOrUrlCases(chapterInfo.getName(), 'e');
+      String chapterNameModified = this.animeUtils.specialNameOrUrlCases(chapterInfo.getName(), 'l');
 
       if (itemFirstChapter != null && itemLastChapter != null) {
         // Ambos (img)

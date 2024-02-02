@@ -12,10 +12,10 @@ import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
+import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.service.AnimeAnimeLifeService;
 import xyz.kiridepapel.fraxianimebackend.service.HomePageService;
-import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 import xyz.kiridepapel.fraxianimebackend.service.ChapterAnimeLifeService;
 
@@ -34,19 +34,29 @@ public class JKAnimeController {
   private AnimeAnimeLifeService animeService;
   @Autowired
   private ChapterAnimeLifeService chapterService;
+
   @Autowired
-  AnimeUtils animeUtils;
+  private SpecialCaseRepository specialCaseRepository;
   
   @GetMapping("/test")
   public ResponseEntity<?> test() {
     try {
-      try {
-        Document document = Jsoup.connect("https://jkanime.org").get();
-        log.info("document: " + document);
-      } catch (Exception e) {
-        log.info("error: " + e.getMessage());
+      // try {
+      //   Document document = Jsoup.connect("https://jkanime.org").get();
+      //   log.info("document: " + document);
+      // } catch (Exception e) {
+      //   log.info("error: " + e.getMessage());
+      // }
+      
+      String mapped = this.specialCaseRepository.getMappedByOriginalAndType("ao-no-exorcists-shimane-illuminati-hen", 'a');
+      
+      log.info("mapped: " + mapped);
+
+      if (mapped == null) {
+        mapped = "No se encontró un mapeo";
       }
-      return new ResponseEntity<>("ok", HttpStatus.OK);
+
+      return new ResponseEntity<>("mapped: " + mapped, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>("Ocurrió un error: " + e.getMessage(), HttpStatus.valueOf(500));
     }
