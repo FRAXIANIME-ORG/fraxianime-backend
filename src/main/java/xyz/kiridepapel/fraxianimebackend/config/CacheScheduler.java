@@ -47,9 +47,13 @@ public class CacheScheduler {
     for (ChapterDataDTO chapterInfo : animesProgramming) {
       try {
         boolean isCached = false;
+        int chapter = Integer.parseInt(chapterInfo.getChapter().replace("Capitulo ", "").trim());
         String url = chapterInfo.getUrl().split("/")[0];
-        int chapter = Integer.parseInt(chapterInfo.getUrl().split("/")[1]);
         
+        if (url.contains("/")) {
+          url = url.split("/")[0];
+        }
+
         // Comprueba si el capítulo ya está en caché
         ChapterDTO chapterCache = this.animeUtils.searchFromCache(cacheManager, "chapter", (url + "/" + chapter), ChapterDTO.class);
         if (chapterCache != null) {
@@ -73,8 +77,12 @@ public class CacheScheduler {
           }
         }
       } catch (Exception e) {
-        log.severe(String.format("%02d", counter++) + ". Error: El capitulo del anime " + chapterInfo.getName() + " no se pudo guardar en cache.");
-        log.severe(String.format("%02d", counter) + ". Error exacto: " + e.getMessage());
+        log.severe("-----------------------------");
+        log.severe(String.format("%02d", counter) + ". Name: El capitulo (" + chapterInfo.getChapter() + ") del anime " + chapterInfo.getName() + " no se pudo guardar en cache.");
+        log.severe(String.format("%02d", counter) + ". Url: " + chapterInfo.getUrl());
+        log.severe(String.format("%02d", counter) + ". Error: " + e.getMessage());
+        log.severe("-----------------------------");
+        counter++;
       }
     }
   }
