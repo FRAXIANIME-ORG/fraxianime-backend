@@ -17,7 +17,10 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDataDTO;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SearchDTO extends ResponseDTO {
+public class SearchDTO {
   Integer lastPage;
   List<AnimeDataDTO> searchList;
+
+  // Cuando no se encuentra nada
+  String message;
 }

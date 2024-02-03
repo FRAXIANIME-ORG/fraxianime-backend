@@ -1,6 +1,7 @@
 package xyz.kiridepapel.fraxianimebackend.controller;
 
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,12 +9,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import lombok.extern.java.Log;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.SearchDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.InvalidSearch;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
-import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.service.AnimeAnimeLifeService;
 import xyz.kiridepapel.fraxianimebackend.service.HomePageService;
@@ -24,12 +27,13 @@ import xyz.kiridepapel.fraxianimebackend.service.ChapterAnimeLifeService;
 @RestController
 @RequestMapping("/api/v1")
 @CrossOrigin(origins = { "https://fraxianime.vercel.app", "http://localhost:4200" }, allowedHeaders = "**")
-@Log
 public class JKAnimeController {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
+  @Value("${FRONTEND_URL}")
+  private String frontendUrl;
   @Autowired
   private HomePageService homePageService;
   @Autowired
@@ -39,8 +43,12 @@ public class JKAnimeController {
   @Autowired
   private SearchService searchService;
 
-  @Autowired
-  private SpecialCaseRepository specialCaseRepository;
+  private List<String> allowedOrigins;
+
+  @PostConstruct
+  public void init() {
+    this.allowedOrigins = Arrays.asList(frontendUrl);
+  }
 
   @GetMapping("/test")
   public ResponseEntity<?> test() {
@@ -51,24 +59,20 @@ public class JKAnimeController {
       // } catch (Exception e) {
       // log.info("error: " + e.getMessage());
       // }
-
-      String mapped = this.specialCaseRepository.getMappedByOriginalAndType("ao-no-exorcists-shimane-illuminati-hen",
-          'a');
-
-      log.info("mapped: " + mapped);
-
-      if (mapped == null) {
-        mapped = "No se encontró un mapeo";
-      }
-
-      return new ResponseEntity<>("mapped: " + mapped, HttpStatus.OK);
+      return new ResponseEntity<>("Ok", HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>("Ocurrió un error: " + e.getMessage(), HttpStatus.valueOf(500));
     }
   }
 
   @GetMapping("/animes")
-  public ResponseEntity<?> homePage() {
+  public ResponseEntity<?> homePage(HttpServletRequest request) {
+    String originHeader = request.getHeader("Origin");
+
+    if (!isOriginAllowed(originHeader)) {
+      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+    }
+
     HomePageDTO animes = this.homePageService.homePage();
 
     if (DataUtils.isNotNullOrEmpty(animes.getSliderAnimes()) &&
@@ -80,12 +84,18 @@ public class JKAnimeController {
         DataUtils.isNotNullOrEmpty(animes.getLatestAddedList())) {
       return new ResponseEntity<>(animes, HttpStatus.OK);
     } else {
-      return new ResponseEntity<>("Ocurrió un error al recuperar los datos principales", HttpStatus.OK);
+      return new ResponseEntity<>(new ResponseDTO("Error al recuperar los datos", 404), HttpStatus.NOT_FOUND);
     }
   }
 
   @GetMapping("/{anime}")
-  public ResponseEntity<?> animeInfo(@PathVariable("anime") String anime) {
+  public ResponseEntity<?> animeInfo(HttpServletRequest request, @PathVariable("anime") String anime) {
+    String originHeader = request.getHeader("Origin");
+
+    if (!isOriginAllowed(originHeader)) {
+      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+    }
+
     this.isSQLInjection(anime);
 
     AnimeInfoDTO animeInfo = this.animeService.animeInfo(anime);
@@ -98,7 +108,14 @@ public class JKAnimeController {
   }
 
   @GetMapping("/{anime}/{chapter}")
-  public ResponseEntity<?> chapter(@PathVariable("anime") String anime, @PathVariable("chapter") Integer chapter) {
+  public ResponseEntity<?> chapter(HttpServletRequest request, @PathVariable("anime") String anime,
+      @PathVariable("chapter") Integer chapter) {
+    String originHeader = request.getHeader("Origin");
+
+    if (!isOriginAllowed(originHeader)) {
+      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+    }
+
     this.isSQLInjection(anime);
 
     if (chapter < 0) {
@@ -114,31 +131,63 @@ public class JKAnimeController {
     }
   }
 
-  @GetMapping("/search/{anime}/{page}")
-  public ResponseEntity<?> searchAnimesWithoutMax(@PathVariable("anime") String anime,
-      @PathVariable("page") Integer page) {
+  @GetMapping("/search/{anime}")
+  public ResponseEntity<?> searchAnimes(HttpServletRequest request, @PathVariable("anime") String anime) {
+    String originHeader = request.getHeader("Origin");
+
+    if (!isOriginAllowed(originHeader)) {
+      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+    }
+
     this.isSQLInjection(anime);
+
+    return new ResponseEntity<>(this.searchAnimes(anime, 1, null), HttpStatus.OK);
+  }
+
+  @GetMapping("/search/{anime}/{page}")
+  public ResponseEntity<?> searchAnimesWithoutMax(HttpServletRequest request, @PathVariable("anime") String anime,
+      @PathVariable("page") Integer page) {
+    String originHeader = request.getHeader("Origin");
+
+    if (!isOriginAllowed(originHeader)) {
+      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+    }
+
+    this.isSQLInjection(anime);
+
     return new ResponseEntity<>(this.searchAnimes(anime, page, null), HttpStatus.OK);
   }
 
   @GetMapping("/search/{anime}/{page}/{maxItems}")
-  public ResponseEntity<?> searchAnimesWithMax(@PathVariable("anime") String anime, @PathVariable("page") Integer page,
+  public ResponseEntity<?> searchAnimesWithMax(HttpServletRequest request, @PathVariable("anime") String anime,
+      @PathVariable("page") Integer page,
       @PathVariable("maxItems") Integer maxItems) {
+    String originHeader = request.getHeader("Origin");
+
+    if (!isOriginAllowed(originHeader)) {
+      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+    }
+
     this.isSQLInjection(anime);
+
     return new ResponseEntity<>(this.searchAnimes(anime, page, maxItems), HttpStatus.OK);
   }
 
-  private Map<String, Object> searchAnimes(String anime, Integer page, Integer maxItems) {
-    if (page < 1 || page > 100 || page == null) {
-      throw new InvalidSearch("La página solicitada no es válida.");
-    }
-    return this.searchService.searchAnimes(anime, page, maxItems);
+  private boolean isOriginAllowed(String origin) {
+    return origin != null && allowedOrigins.contains(origin);
   }
 
   private void isSQLInjection(String anime) {
     if (DataUtils.isSQLInjection(anime) || anime.contains("SELECT")) {
       throw new SQLInjectionException("Esas cosas son del diablo.");
     }
+  }
+
+  private SearchDTO searchAnimes(String anime, Integer page, Integer maxItems) {
+    if (page < 1 || page > 100 || page == null) {
+      throw new InvalidSearch("La página solicitada no es válida.");
+    }
+    return this.searchService.searchAnimes(anime, page, maxItems);
   }
 
 }

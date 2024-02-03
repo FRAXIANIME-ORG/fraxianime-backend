@@ -1,7 +1,6 @@
 package xyz.kiridepapel.fraxianimebackend.service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,8 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDataDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.SearchDTO;
 import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
-import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.InvalidSearch;
 import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
@@ -26,13 +25,13 @@ public class SearchService {
   @Autowired
   private SpecialCaseRepository specialCaseRepository;
 
-  public Map<String, Object> searchAnimes(String anime, Integer page, Integer maxItems) {
+  public SearchDTO searchAnimes(String anime, Integer page, Integer maxItems) {
     anime = this.verySpecialAndManuallyCases(anime);
     String searchUrl = this.providerAnimeLifeUrl + "page/" + page + "/?s=" + anime.replace(":", "%3A").replace("_", "+");
 
-    Map<String, Object> searchMap = new HashMap<>();
+    SearchDTO searchDTO = new SearchDTO();
     Document docAnimeLife = DataUtils.tryConnectOrReturnNull(searchUrl, 2);
-
+ 
     if (docAnimeLife != null && docAnimeLife.body().select(".listupd center h3").first() == null) {
       Elements animes = docAnimeLife.body().select(".listupd article");
 
@@ -62,7 +61,7 @@ public class SearchService {
         }
 
         AnimeDataDTO data = AnimeDataDTO.builder()
-            .name(name)
+            .name(name.replace("&radic;", "√").replace("&quot;", "\""))
             .imgUrl(animes.get(i).select("img").attr("src").replace("?resize=247,350", ""))
             .url(url)
             .state(animes.get(i).select(".epx").text().replace("Completada", "Finalizado"))
@@ -77,15 +76,15 @@ public class SearchService {
 
       if (pages != null && pages.size() > 0) {
         pages.remove(pages.size() - 1);
-        searchMap.put("lastPage", Integer.parseInt(pages.last().text()));
+        searchDTO.setLastPage(Integer.parseInt(pages.last().text()));
       }
 
-      searchMap.put("searchList", searchList);
+      searchDTO.setSearchList(searchList);
 
-      return searchMap;
+      return searchDTO;
     } else {
-      searchMap.put("message", "No se encontraron resultados.");
-      return searchMap;
+      searchDTO.setMessage("No se encontraron resultados.");
+      return searchDTO;
     }
   }
 
