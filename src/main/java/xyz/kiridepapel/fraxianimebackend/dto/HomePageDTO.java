@@ -10,7 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LastAnimeDataDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDataDTO;
 
@@ -21,10 +21,10 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDataDTO;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class HomePageDTO implements Serializable {
     List<ChapterDataDTO> sliderAnimes;
-    List<LastAnimeDataDTO> ovasOnasSpecials;
+    List<AnimeDataDTO> ovasOnasSpecials;
     List<ChapterDataDTO> animesProgramming;
     List<ChapterDataDTO> donghuasProgramming;
     List<TopDataDTO> topAnimes;
-    List<LastAnimeDataDTO> latestAddedAnimes;
+    List<AnimeDataDTO> latestAddedAnimes;
     List<LinkDTO> latestAddedList;
 }

@@ -20,8 +20,8 @@ import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LastAnimeDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDataDTO;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
@@ -74,12 +74,12 @@ public class HomePageService {
     return sliderAnimes;
   }
 
-  public List<LastAnimeDataDTO> ovasOnasSpecials(Document document) {
+  public List<AnimeDataDTO> ovasOnasSpecials(Document document) {
     Elements elements = document.select(".solopc").last().select(".anime__item");
-    List<LastAnimeDataDTO> ovasOnasSpecials = new ArrayList<>();
+    List<AnimeDataDTO> ovasOnasSpecials = new ArrayList<>();
 
     for (Element element : elements) {
-      LastAnimeDataDTO anime = LastAnimeDataDTO.builder()
+      AnimeDataDTO anime = AnimeDataDTO.builder()
         .name(element.select(".anime__item__text a").text())
         .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
         .url(element.select("a").attr("href").replace(providerJkanimeUrl, "").split("/")[0].trim())
@@ -201,12 +201,12 @@ public class HomePageService {
     return topAnimes;
   }
 
-  public List<LastAnimeDataDTO> latestAddedAnimes(Document document) {
+  public List<AnimeDataDTO> latestAddedAnimes(Document document) {
     Elements elements = document.select(".trending__anime .anime__item");
-    List<LastAnimeDataDTO> latestAddedAnimes = new ArrayList<>();
+    List<AnimeDataDTO> latestAddedAnimes = new ArrayList<>();
 
     for (Element element : elements) {
-      LastAnimeDataDTO anime = LastAnimeDataDTO.builder()
+      AnimeDataDTO anime = AnimeDataDTO.builder()
         .name(element.select(".anime__item__text h5 a").text())
         .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
         .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))

@@ -43,7 +43,7 @@ public class IndividualDTO {
     @AllArgsConstructor
     @Builder
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class LastAnimeDataDTO implements Serializable {
+    public static class AnimeDataDTO implements Serializable {
         private String name;
         private String imgUrl;
         private String url;

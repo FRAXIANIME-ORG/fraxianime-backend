@@ -24,7 +24,7 @@ public class DataUtils {
   private String providerAnimeLifeUrl;
 
   // ? Connection
-  public Document simpleConnect(String urlHome, String errorMessage) {
+  public static Document simpleConnect(String urlHome, String errorMessage) {
     try {
       return Jsoup.connect(urlHome).get();
     } catch (Exception x) {

@@ -12,5 +12,11 @@ public class AnimeExceptions {
             super(message);
         }
     }
+    
+    public static class InvalidSearch extends RuntimeException {
+        public InvalidSearch(String message) {
+            super(message);
+        }
+    }
 
 }
