@@ -23,7 +23,6 @@ public class AnimeUtils {
   @Autowired
   private SpecialCaseRepository specialCaseRepository;
 
-  // Como se ve en MI Página
   private List<String> animesWithoutZeroCases = List.of(
     // Anime url: one-piece-0X -> one-piece-X
     "shigatsu-wa-kimi-no-uso",

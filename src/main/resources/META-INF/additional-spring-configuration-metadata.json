@@ -1,74 +1,77 @@
-{
-  "properties": [
-    {
-      "name": "JWT_SECRET_KEY",
-      "type": "java.lang.String",
-      "description": "A description for 'JWT_SECRET_KEY'"
-    },
-    {
-      "name": "JWT_EXPIRATION_TIME",
-      "type": "java.lang.String",
-      "description": "A description for 'JWT_EXPIRATION_TIME'"
-    },
-    {
-      "name": "REDIS_HOST",
-      "type": "java.lang.String",
-      "description": "A description for 'REDIS_HOST'"
-    },
-    {
-      "name": "REDIS_PORT",
-      "type": "java.lang.String",
-      "description": "A description for 'REDIS_PORT'"
-    },
-    {
-      "name": "REDIS_USERNAME",
-      "type": "java.lang.String",
-      "description": "A description for 'REDIS_USERNAME'"
-    },
-    {
-      "name": "REDIS_PASSWORD",
-      "type": "java.lang.String",
-      "description": "A description for 'REDIS_PASSWORD'"
-    },
-    {
-      "name": "APP_PRODUCTION",
-      "type": "java.lang.String",
-      "description": "A description for 'APP_PRODUCTION'"
-    },
-    {
-      "name": "DEFAULT_CACHE_TIME",
-      "type": "java.lang.String",
-      "description": "A description for 'DEFAULT_CACHE_TIME'"
-    },
-    {
-      "name": "LAST_CHAPTERS_CACHE_TIME",
-      "type": "java.lang.String",
-      "description": "A description for 'LAST_CHAPTERS_CACHE_TIME'"
-    },
-    {
-      "name": "APP_CANT_LAST_CHAPTERS",
-      "type": "java.lang.String",
-      "description": "A description for 'APP_CANT_LAST_CHAPTERS'"
-    },
-    {
-      "name": "PROVIDER_JKANIME_URL",
-      "type": "java.lang.String",
-      "description": "A description for 'PROVIDER_JKANIME_URL'"
-    },
-    {
-      "name": "PROVIDER_ANIMELIFE_URL",
-      "type": "java.lang.String",
-      "description": "A description for 'PROVIDER_ANIMELIFE_URL'"
-    },
-    {
-      "name": "PROVIDER_ANIMEYT_URL",
-      "type": "java.lang.String",
-      "description": "A description for 'PROVIDER_ANIMEYT_URL'"
-    },
-    {
-      "name": "PROVIDER_ANIMEFLV_URL",
-      "type": "java.lang.String",
-      "description": "A description for 'PROVIDER_ANIMEFLV_URL'"
-    }
-  ]
-}
+{"properties": [
+  {
+    "name": "JWT_SECRET_KEY",
+    "type": "java.lang.String",
+    "description": "A description for 'JWT_SECRET_KEY'"
+  },
+  {
+    "name": "JWT_EXPIRATION_TIME",
+    "type": "java.lang.String",
+    "description": "A description for 'JWT_EXPIRATION_TIME'"
+  },
+  {
+    "name": "REDIS_HOST",
+    "type": "java.lang.String",
+    "description": "A description for 'REDIS_HOST'"
+  },
+  {
+    "name": "REDIS_PORT",
+    "type": "java.lang.String",
+    "description": "A description for 'REDIS_PORT'"
+  },
+  {
+    "name": "REDIS_USERNAME",
+    "type": "java.lang.String",
+    "description": "A description for 'REDIS_USERNAME'"
+  },
+  {
+    "name": "REDIS_PASSWORD",
+    "type": "java.lang.String",
+    "description": "A description for 'REDIS_PASSWORD'"
+  },
+  {
+    "name": "APP_PRODUCTION",
+    "type": "java.lang.String",
+    "description": "A description for 'APP_PRODUCTION'"
+  },
+  {
+    "name": "DEFAULT_CACHE_TIME",
+    "type": "java.lang.String",
+    "description": "A description for 'DEFAULT_CACHE_TIME'"
+  },
+  {
+    "name": "LAST_CHAPTERS_CACHE_TIME",
+    "type": "java.lang.String",
+    "description": "A description for 'LAST_CHAPTERS_CACHE_TIME'"
+  },
+  {
+    "name": "APP_CANT_LAST_CHAPTERS",
+    "type": "java.lang.String",
+    "description": "A description for 'APP_CANT_LAST_CHAPTERS'"
+  },
+  {
+    "name": "PROVIDER_JKANIME_URL",
+    "type": "java.lang.String",
+    "description": "A description for 'PROVIDER_JKANIME_URL'"
+  },
+  {
+    "name": "PROVIDER_ANIMELIFE_URL",
+    "type": "java.lang.String",
+    "description": "A description for 'PROVIDER_ANIMELIFE_URL'"
+  },
+  {
+    "name": "PROVIDER_ANIMEYT_URL",
+    "type": "java.lang.String",
+    "description": "A description for 'PROVIDER_ANIMEYT_URL'"
+  },
+  {
+    "name": "PROVIDER_ANIMEFLV_URL",
+    "type": "java.lang.String",
+    "description": "A description for 'PROVIDER_ANIMEFLV_URL'"
+  },
+  {
+    "name": "FRONTEND_URL",
+    "type": "java.lang.String",
+    "description": "A description for 'FRONTEND_URL'"
+  }
+]}
