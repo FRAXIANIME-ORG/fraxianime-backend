@@ -70,7 +70,7 @@ public class JKAnimeController {
     String originHeader = request.getHeader("Origin");
 
     if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
     }
 
     HomePageDTO animes = this.homePageService.homePage();
@@ -93,7 +93,7 @@ public class JKAnimeController {
     String originHeader = request.getHeader("Origin");
 
     if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
     }
 
     this.isSQLInjection(anime);
@@ -113,7 +113,7 @@ public class JKAnimeController {
     String originHeader = request.getHeader("Origin");
 
     if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
     }
 
     this.isSQLInjection(anime);
@@ -136,7 +136,7 @@ public class JKAnimeController {
     String originHeader = request.getHeader("Origin");
 
     if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
     }
 
     this.isSQLInjection(anime);
@@ -150,7 +150,7 @@ public class JKAnimeController {
     String originHeader = request.getHeader("Origin");
 
     if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
     }
 
     this.isSQLInjection(anime);
@@ -165,7 +165,7 @@ public class JKAnimeController {
     String originHeader = request.getHeader("Origin");
 
     if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Origen no permitido", 403), HttpStatus.FORBIDDEN);
+      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
     }
 
     this.isSQLInjection(anime);
