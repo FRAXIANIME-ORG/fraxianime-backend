@@ -176,9 +176,17 @@ public class AnimeAnimeLifeService {
         String firstChapter = firstSplit[firstSplit.length - 1];
         String lastChapter = lastSplit[lastSplit.length - 1];
         
-        animeInfo.setFirstChapter(Integer.parseInt(firstChapter));
-        animeInfo.setLastChapter(Integer.parseInt(lastChapter));
         animeInfo.setLastChapterDate(chapters.first().select(".epl-date").text().trim());
+
+        // Si los capítulos tienen números, asignarlos
+        if (firstChapter.matches("[0-9]+") && lastChapter.matches("[0-9]+")) {
+          animeInfo.setFirstChapter(Integer.parseInt(firstChapter));
+          animeInfo.setLastChapter(Integer.parseInt(lastChapter));
+        } else {
+          // Si no tiene numeros en los capítulos, asignar 1 como primer y último capítulo
+          animeInfo.setFirstChapter(1);
+          animeInfo.setLastChapter(1);
+        }
 
         // Asigna el útlimo capítulo como la cantidad de capítulos
         animeInfo.getData().put("Episodios", lastChapter);

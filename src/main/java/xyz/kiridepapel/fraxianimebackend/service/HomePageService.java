@@ -95,51 +95,81 @@ public class HomePageService {
   public List<ChapterDataDTO> animesProgramming(Document docAnimeLife, Document docJkanime) {
     Elements elementsAnimeLife = docAnimeLife.body().select(".excstf").first().select(".bs");
     Elements elementsJkAnime = docJkanime.body().select(".listadoanime-home .anime_programing a");
+    
+    List<ChapterDataDTO> animesProgramming = new ArrayList<>();
+    Map<String, ChapterDataDTO> animesJkanimes = new HashMap<>();
 
-    List<ChapterDataDTO> lastChapters = new ArrayList<>();
-    Map<String, LinkDTO> animesJkanimes = new HashMap<>();
-
-    for (Element eJkanime : elementsJkAnime) {
-      String name = eJkanime.select("h5").first().text().trim();
-      LinkDTO data = LinkDTO.builder()
-        .name(eJkanime.select(".anime__sidebar__comment__item__text span").first().text().trim())
-        .url(eJkanime.select(".anime__sidebar__comment__item__pic img").attr("src").trim())
+    // Obtener los animes de Jkanime
+    for (Element item : elementsJkAnime) {
+      ChapterDataDTO data = ChapterDataDTO.builder()
+        .name(item.select("h5").first().text().trim())
+        .date(item.select(".anime__sidebar__comment__item__text span").first().text().trim())
+        .url(item.select(".anime__sidebar__comment__item__pic img").attr("src").trim())
         .build();
-      animesJkanimes.put(name, data);
+      animesJkanimes.put(data.getName(), data);
     }
 
-    for (Element eAnimeLife : elementsAnimeLife) {
-      String url = this.changeFormatUrl(eAnimeLife.select(".bsx a").attr("href"), providerAnimeLifeUrl);
+    int index = 0;
+    for (Element item : elementsAnimeLife) {
+      String url = this.changeFormatUrl(item.select(".bsx a").attr("href"), providerAnimeLifeUrl);
 
+      // Si es un capítulo (one-piece/5)
       if (url.contains("/")) {
         ChapterDataDTO anime = ChapterDataDTO.builder()
-          .name(eAnimeLife.select(".tt").first().childNodes().stream()
+          .name(item.select(".tt").first().childNodes().stream()
             .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
             .map(Node::toString)
             .collect(Collectors.joining()).trim())
-          .imgUrl(eAnimeLife.select("img").attr("src").trim())
-          .chapter(eAnimeLife.select(".epx").text().replace("Ep 0", "Capitulo ").replace("Ep ", "Capitulo ").trim())
-          .type(eAnimeLife.select(".typez").text().trim())
-          .date(null)
-          .url(this.changeFormatUrl(eAnimeLife.select(".bsx a").attr("href"), providerAnimeLifeUrl))
-          .state(true)
+          .imgUrl(item.select("img").attr("src").trim())
+          .chapter(item.select(".epx").text().replace("Ep 0", "Capitulo ").replace("Ep ", "Capitulo ").trim())
+          .type(item.select(".typez").text().trim())
+          .url(this.changeFormatUrl(item.select(".bsx a").attr("href"), providerAnimeLifeUrl))
           .build();
         
-        String animeName = anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"'));
+        String nameAnimeLife = anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"'));
               
-        anime.setName(this.animeUtils.specialNameOrUrlCases(animeName, 'h'));
+        anime.setName(this.animeUtils.specialNameOrUrlCases(nameAnimeLife, 'h').replace("Movie", "").trim());
         anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
 
-        if (animesJkanimes.containsKey(animeName)) {
-          anime.setDate(this.getFormattedDate(animesJkanimes.get(animeName).getName()));
-          anime.setImgUrl(animesJkanimes.get(animeName).getUrl());
+        // Si el anime existe en Jkanime
+        if (animesJkanimes.containsKey(nameAnimeLife)) {
+          anime.setDate(this.getFormattedDate(animesJkanimes.get(nameAnimeLife).getDate()));
+          anime.setImgUrl(animesJkanimes.get(nameAnimeLife).getUrl());
+          anime.setState(true);
+        } else {
+          // Establece fecha basada en el índice
+          if (index <= 10) anime.setDate("Hoy");
+          else if (index <= 15) anime.setDate("Ayer");
+          else if (index <= 20) anime.setDate("Hace 2 días");
+          else if (index <= 25) anime.setDate("Hace 3 días");
+          anime.setState(false);
         }
       
-        lastChapters.add(anime);
+        animesProgramming.add(anime);
+        index++;
       }
     }
 
-    return lastChapters;
+    // Ordenar por fecha y estado
+    animesProgramming.sort((a, b) -> {
+      if (a.getDate().equals("Hoy") && b.getDate().equals("Hoy")) {
+        if (a.getState() && !b.getState()) {
+          return -1;
+        } else if (!a.getState() && b.getState()) {
+          return 1;
+        } else {
+          return 0;
+        }
+      } else if (a.getDate().equals("Hoy") && !b.getDate().equals("Hoy")) {
+        return -1;
+      } else if (!a.getDate().equals("Hoy") && b.getDate().equals("Hoy")) {
+        return 1;
+      } else {
+        return a.getDate().compareTo(b.getDate());
+      }
+    });
+
+    return animesProgramming;
   }
 
   public List<ChapterDataDTO> donghuasProgramming(Document document) {

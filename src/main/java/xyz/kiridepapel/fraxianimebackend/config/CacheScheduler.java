@@ -47,7 +47,7 @@ public class CacheScheduler {
     for (ChapterDataDTO chapterInfo : animesProgramming) {
       try {
         boolean isCached = false;
-        int chapter = Integer.parseInt(chapterInfo.getChapter().replace("Capitulo ", "").trim());
+        int chapter = Integer.parseInt(chapterInfo.getUrl().split("/")[1]);
         String url = chapterInfo.getUrl().split("/")[0];
         
         if (url.contains("/")) {
