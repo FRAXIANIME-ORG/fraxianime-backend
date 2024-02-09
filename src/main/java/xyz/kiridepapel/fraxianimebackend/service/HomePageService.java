@@ -100,10 +100,19 @@ public class HomePageService {
     Map<String, ChapterDataDTO> animesJkanimes = new HashMap<>();
 
     // Obtener los animes de Jkanime
+    String year = String.valueOf(LocalDate.now().getYear());
     for (Element item : elementsJkAnime) {
+      String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
+
+      if (date.equals("Hoy") || date.equals("Ayer")) {
+        date = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+      } else {
+        date = DataUtils.parseDate(date + "/" + year, "dd/MM/yyyy", 0);
+      }
+
       ChapterDataDTO data = ChapterDataDTO.builder()
         .name(item.select("h5").first().text().trim())
-        .date(item.select(".anime__sidebar__comment__item__text span").first().text().trim())
+        .date(date)
         .url(item.select(".anime__sidebar__comment__item__pic img").attr("src").trim())
         .build();
       animesJkanimes.put(data.getName(), data);
@@ -137,7 +146,7 @@ public class HomePageService {
           anime.setImgUrl(animesJkanimes.get(nameAnimeLife).getUrl());
           anime.setState(true);
         } else {
-          // Establece fecha basada en el índice
+          // Establece fecha basada en el índice para los animes de AnimeLife
           if (index <= 10) anime.setDate("Hoy");
           else if (index <= 15) anime.setDate("Ayer");
           else if (index <= 20) anime.setDate("Hace 2 días");
@@ -173,17 +182,27 @@ public class HomePageService {
   }
 
   public List<ChapterDataDTO> donghuasProgramming(Document document) {
-    Elements elements = document.select(".donghuas_programing a.bloqq");
+    Elements elementsJkAnime = document.select(".donghuas_programing a.bloqq");
     List<ChapterDataDTO> lastChapters = new ArrayList<>();
 
-    for (Element element : elements) {
+    
+    String year = String.valueOf(LocalDate.now().getYear());
+    for (Element item : elementsJkAnime) {
+      String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
+
+      if (date.equals("Hoy") || date.equals("Ayer")) {
+        date = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+      } else {
+        date = DataUtils.parseDate(date + "/" + year, "dd/MM/yyyy", 0);
+      }
+
       ChapterDataDTO anime = ChapterDataDTO.builder()
-        .name(element.select(".anime__sidebar__comment__item__text h5").text())
-        .imgUrl(element.select(".anime__sidebar__comment__item__pic img").attr("src"))
-        .chapter(element.select(".anime__sidebar__comment__item__text h6").text().replace("Episodio", "Capitulo"))
+        .name(item.select(".anime__sidebar__comment__item__text h5").text())
+        .imgUrl(item.select(".anime__sidebar__comment__item__pic img").attr("src"))
+        .chapter(item.select(".anime__sidebar__comment__item__text h6").text().replace("Episodio", "Capitulo"))
         .type("Donghua")
-        .date(this.getFormattedDate(element.select(".anime__sidebar__comment__item__text span").text()))
-        .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
+        .date(this.getFormattedDate(date))
+        .url(item.select("a").attr("href").replace(providerJkanimeUrl, ""))
         .state(true)
         .build();
       
@@ -267,26 +286,24 @@ public class HomePageService {
   }
 
   private String getFormattedDate(String dateText) {
-    if (dateText.equals("Hoy") || dateText.equals("Ayer")) {
-      // Manejar el caso de que la fecha sea Hoy o Ayer
-      return dateText;
-    } else if (dateText.matches("\\d{2}/\\d{2}")) {
-      // Manejar el caso de que la fecha sea DIA/MES
-      String currentYear = String.valueOf(LocalDate.now().getYear());
-      LocalDate date = LocalDate.parse((dateText + "/" + currentYear), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+    if (dateText.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$")) {
+      // Manejar el caso de que la fecha sea DIA/MES/AÑO
+      LocalDate date = LocalDate.parse((dateText), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
       long daysBetween = ChronoUnit.DAYS.between(date, LocalDate.now());
 
       if (daysBetween <= 7) {
-        if (daysBetween == 1) {
+        if (daysBetween == 0) {
+          return "Hoy";
+        } else if (daysBetween == 1) {
           return "Ayer";
         } else {
           return "Hace " + daysBetween + " días";
         }
       } else {
-        return dateText;
+        String[] dateArray = dateText.split("/");
+        return dateArray[0] + "/" + dateArray[1];
       }
-    } else { 
-      // Manejar otros casos si los hay
+    } else {
       return dateText;
     }
   }

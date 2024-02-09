@@ -78,7 +78,7 @@ public class CacheScheduler {
         }
       } catch (Exception e) {
         log.severe("-----------------------------");
-        log.severe(String.format("%02d", counter) + ". Name: El capitulo (" + chapterInfo.getChapter() + ") del anime " + chapterInfo.getName() + " no se pudo guardar en cache.");
+        log.severe(String.format("%02d", counter) + ". Name: " + chapterInfo.getName() + "(" + chapterInfo.getChapter() + ") no se pudo guardar en cache.");
         log.severe(String.format("%02d", counter) + ". Url: " + chapterInfo.getUrl());
         log.severe(String.format("%02d", counter) + ". Error: " + e.getMessage());
         log.severe("-----------------------------");

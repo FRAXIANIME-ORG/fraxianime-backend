@@ -164,7 +164,7 @@ public class AnimeAnimeLifeService {
     try {
       // Fecha del próximo capítulo
       if (animeInfo.getData().get("Estado").equals("En emisión")) {
-        animeInfo.setNextChapterDate(DataUtils.parseDate(animeInfo.getData().get("Actualizado el").toString(), 7));
+        animeInfo.setNextChapterDate(DataUtils.parseDate(animeInfo.getData().get("Actualizado el").toString(), "dd/MM/yyyy", 7));
       }
       
       // Establecer la información del primer y último capítulo

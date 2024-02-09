@@ -118,14 +118,13 @@ public class DataUtils {
   }
 
   // ? Utils
-  // La primera letra del formato de la fecha debe ser una letra, no un número.
-  public static String parseDate(String date, int daysToModify) {
+  public static String parseDate(String date, String pattern, int daysToModify) {
     if (date == null || date.isEmpty()) {
-        return null;
+      return null;
     }
 
-    DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
-    DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
+    DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern(pattern, new Locale("es", "ES"));
+    DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern(pattern, new Locale("es", "ES"));
 
     LocalDate currentDate = LocalDate.parse(date, inputFormatter);
     LocalDate nextChapterDate = currentDate.plusDays(daysToModify);
