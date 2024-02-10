@@ -20,7 +20,8 @@ public class AnimeInfoDTO implements Serializable {
     private String name;
     private String alternativeName;
     private String imgUrl;
-    private String sinopsis;
+    private String synopsis;
+    private String synopsisTranslated;
 	private String trailer;
     private Integer likes;
 

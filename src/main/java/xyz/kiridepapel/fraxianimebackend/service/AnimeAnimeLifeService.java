@@ -30,7 +30,8 @@ public class AnimeAnimeLifeService {
 
   @Autowired
   private AnimeJkAnimeService jkAnimeService;
-
+  @Autowired
+  private TranslateService translateService;
   @Autowired
   private AnimeUtils animeUtils;
 
@@ -69,7 +70,7 @@ public class AnimeAnimeLifeService {
         .name(this.animeUtils.specialNameOrUrlCases(mainAnimeLife.select(".entry-title").text().trim(), 'n'))
         .alternativeName(mainAnimeLife.select(".entry-title").text().trim())
         .imgUrl(mainAnimeLife.select(".thumbook img").attr("src").trim())
-        .sinopsis(mainAnimeLife.select(".synp p").text().trim())
+        .synopsis(mainAnimeLife.select(".synp p").text().trim())
         .trailer(trailer)
         .data(this.getAnimeData(docAnimeLife))
         // .recomendations(this.getRecomendations(docAnimeLife));
@@ -78,10 +79,13 @@ public class AnimeAnimeLifeService {
       // Traer la información de los capítulos
       animeInfo = this.setFirstAndLastChapters(animeInfo, docAnimeLife);
 
-      // Si el capitulo existe en el proveedor 1, modificar la infomación con la de este
+      // Si el capitulo existe en JkAnime, modificar la infomación con la de este
       if (docJkanime != null) {
         animeInfo = this.jkAnimeService.getAnimeInfo(animeInfo, docJkanime, search);
       }
+
+      // Busca y establece la sinopsis traducida
+      animeInfo.setSynopsisTranslated(this.translateService.translate(animeInfo.getName(), animeInfo.getSynopsis()));
 
       // Modificar las keys obtenidas en data (español) -> (inglés)
       animeInfo.setData(AnimeUtils.specialDataKeys(animeInfo.getData(), this.specialKeys));
@@ -164,7 +168,7 @@ public class AnimeAnimeLifeService {
     try {
       // Fecha del próximo capítulo
       if (animeInfo.getData().get("Estado").equals("En emisión")) {
-        animeInfo.setNextChapterDate(DataUtils.parseDate(animeInfo.getData().get("Actualizado el").toString(), "dd/MM/yyyy", 7));
+        animeInfo.setNextChapterDate(DataUtils.parseDate(animeInfo.getData().get("Actualizado el").toString(), "MMMM d, yyyy", 7));
       }
       
       // Establecer la información del primer y último capítulo
@@ -187,7 +191,7 @@ public class AnimeAnimeLifeService {
           animeInfo.setFirstChapter(1);
           animeInfo.setLastChapter(1);
         }
-
+        
         // Asigna el útlimo capítulo como la cantidad de capítulos
         animeInfo.getData().put("Episodios", lastChapter);
       }

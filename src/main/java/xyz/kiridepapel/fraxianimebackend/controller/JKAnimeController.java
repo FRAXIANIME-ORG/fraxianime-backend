@@ -21,6 +21,7 @@ import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.service.AnimeAnimeLifeService;
 import xyz.kiridepapel.fraxianimebackend.service.HomePageService;
 import xyz.kiridepapel.fraxianimebackend.service.SearchService;
+import xyz.kiridepapel.fraxianimebackend.service.TranslateService;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 import xyz.kiridepapel.fraxianimebackend.service.ChapterAnimeLifeService;
 
@@ -42,6 +43,8 @@ public class JKAnimeController {
   private ChapterAnimeLifeService chapterService;
   @Autowired
   private SearchService searchService;
+  @Autowired
+  private TranslateService translateService;
 
   private List<String> allowedOrigins;
 
@@ -51,15 +54,13 @@ public class JKAnimeController {
   }
 
   @GetMapping("/test")
-  public ResponseEntity<?> test() {
+  public ResponseEntity<?> test(
+      @RequestParam("name") String name,
+      @RequestParam("synopsis") String synopsis) {
     try {
-      // try {
-      // Document document = Jsoup.connect("https://jkanime.org").get();
-      // log.info("document: " + document);
-      // } catch (Exception e) {
-      // log.info("error: " + e.getMessage());
-      // }
-      return new ResponseEntity<>("Ok", HttpStatus.OK);
+      String translation = this.translateService.translate(name, synopsis);
+
+      return new ResponseEntity<>(translation, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>("Ocurrió un error: " + e.getMessage(), HttpStatus.valueOf(500));
     }

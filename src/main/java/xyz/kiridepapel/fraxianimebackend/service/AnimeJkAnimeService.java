@@ -73,7 +73,7 @@ public class AnimeJkAnimeService {
       animeInfo.setImgUrl(jkanimeImgUrl);
     }
     if (this.isValidData(synopsis)) {
-      animeInfo.setSinopsis(synopsis);
+      animeInfo.setSynopsis(synopsis);
     }
     if (this.isValidData(likes)) {
       animeInfo.setLikes(likes);

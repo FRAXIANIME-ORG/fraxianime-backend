@@ -62,11 +62,15 @@ public class HomePageService {
     List<ChapterDataDTO> sliderAnimes = new ArrayList<>();
     
     for (Element element : elements) {
+
       ChapterDataDTO anime = ChapterDataDTO.builder()
         .name(element.select(".hero__text h2").text())
         .imgUrl(element.attr("data-setbg"))
         .url(element.select(".hero__text a").attr("href").replace(providerJkanimeUrl, ""))
         .build();
+      
+      String[] urlSplit = anime.getUrl().split("/");
+      anime.setChapter(urlSplit[urlSplit.length - 1]);
 
       sliderAnimes.add(anime);
     }
@@ -130,7 +134,7 @@ public class HomePageService {
             .map(Node::toString)
             .collect(Collectors.joining()).trim())
           .imgUrl(item.select("img").attr("src").trim())
-          .chapter(item.select(".epx").text().replace("Ep 0", "Capitulo ").replace("Ep ", "Capitulo ").trim())
+          .chapter(item.select(".epx").text().replace("Ep 0", "").replace("Ep ", "").trim())
           .type(item.select(".typez").text().trim())
           .url(this.changeFormatUrl(item.select(".bsx a").attr("href"), providerAnimeLifeUrl))
           .build();
