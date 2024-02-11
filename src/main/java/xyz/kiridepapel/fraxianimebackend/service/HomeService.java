@@ -39,36 +39,36 @@ public class HomeService {
   @Autowired
   AnimeUtils animeUtils;
 
-  @Cacheable(value = "home", key="'animes'")
+  @Cacheable(value = "home", key = "'animes'")
   public HomePageDTO homePage() {
     Document docJkanime = this.dataUtils.simpleConnect(this.providerJkanimeUrl, "Proveedor 1 inactivo");
     Document docAnimelife = this.dataUtils.simpleConnect(this.providerAnimeLifeUrl, "Proveedor 2 inactivo");
 
     HomePageDTO animes = HomePageDTO.builder()
-      .sliderAnimes(this.sliderAnimes(docJkanime))
-      .ovasOnasSpecials(this.ovasOnasSpecials(docJkanime))
-      .animesProgramming(this.animesProgramming(docAnimelife, docJkanime))
-      .donghuasProgramming(this.donghuasProgramming(docJkanime))
-      .topAnimes(this.topAnimes(docJkanime))
-      .latestAddedAnimes(this.latestAddedAnimes(docJkanime))
-      .latestAddedList(this.latestAddedList(docJkanime))
-      .build();
-    
+        .sliderAnimes(this.sliderAnimes(docJkanime))
+        .ovasOnasSpecials(this.ovasOnasSpecials(docJkanime))
+        .animesProgramming(this.animesProgramming(docAnimelife, docJkanime))
+        .donghuasProgramming(this.donghuasProgramming(docJkanime))
+        .topAnimes(this.topAnimes(docJkanime))
+        .latestAddedAnimes(this.latestAddedAnimes(docJkanime))
+        .latestAddedList(this.latestAddedList(docJkanime))
+        .build();
+
     return animes;
   }
 
   public List<ChapterDataDTO> sliderAnimes(Document document) {
     Elements elements = document.select(".hero__items");
     List<ChapterDataDTO> sliderAnimes = new ArrayList<>();
-    
+
     for (Element element : elements) {
 
       ChapterDataDTO anime = ChapterDataDTO.builder()
-        .name(element.select(".hero__text h2").text())
-        .imgUrl(element.attr("data-setbg"))
-        .url(element.select(".hero__text a").attr("href").replace(providerJkanimeUrl, ""))
-        .build();
-      
+          .name(element.select(".hero__text h2").text())
+          .imgUrl(element.attr("data-setbg"))
+          .url(element.select(".hero__text a").attr("href").replace(providerJkanimeUrl, ""))
+          .build();
+
       String[] urlSplit = anime.getUrl().split("/");
       anime.setChapter(urlSplit[urlSplit.length - 1]);
 
@@ -84,22 +84,22 @@ public class HomeService {
 
     for (Element element : elements) {
       AnimeDataDTO anime = AnimeDataDTO.builder()
-        .name(element.select(".anime__item__text a").text())
-        .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
-        .url(element.select("a").attr("href").replace(providerJkanimeUrl, "").split("/")[0].trim())
-        .type(element.select(".anime__item__text ul li").text())
-        .build();
+          .name(element.select(".anime__item__text a").text())
+          .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
+          .url(element.select("a").attr("href").replace(providerJkanimeUrl, "").split("/")[0].trim())
+          .type(element.select(".anime__item__text ul li").text())
+          .build();
 
       ovasOnasSpecials.add(anime);
     }
 
     return ovasOnasSpecials;
   }
-  
+
   public List<ChapterDataDTO> animesProgramming(Document docAnimeLife, Document docJkanime) {
     Elements elementsAnimeLife = docAnimeLife.body().select(".excstf").first().select(".bs");
     Elements elementsJkAnime = docJkanime.body().select(".listadoanime-home .anime_programing a");
-    
+
     List<ChapterDataDTO> animesProgramming = new ArrayList<>();
     Map<String, ChapterDataDTO> animesJkanimes = new HashMap<>();
 
@@ -115,10 +115,10 @@ public class HomeService {
       }
 
       ChapterDataDTO data = ChapterDataDTO.builder()
-        .name(item.select("h5").first().text().trim())
-        .date(date)
-        .url(item.select(".anime__sidebar__comment__item__pic img").attr("src").trim())
-        .build();
+          .name(item.select("h5").first().text().trim())
+          .date(date)
+          .url(item.select(".anime__sidebar__comment__item__pic img").attr("src").trim())
+          .build();
       animesJkanimes.put(data.getName(), data);
     }
 
@@ -129,24 +129,17 @@ public class HomeService {
 
       if (url.contains("/")) {
         ChapterDataDTO anime = ChapterDataDTO.builder()
-          .name(item.select(".tt").first().childNodes().stream()
-            .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
-            .map(Node::toString)
-            .collect(Collectors.joining()).trim())
-          .imgUrl(item.select("img").attr("src").trim())
-          .chapter(item.select(".epx").text().replace("Ep 0", "").replace("Ep ", "").trim())
-          .type(item.select(".typez").text().trim())
-          .url(this.changeFormatUrl(item.select(".bsx a").attr("href"), providerAnimeLifeUrl))
-          .build();
-        
-        // Elimina caracteres raros del nombre
-        anime.setName(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')));
-        // Cambia los nombres especiales
-        anime.setName(this.animeUtils.specialNameOrUrlCases(anime.getName(), 'h'));
-        // Elimina "Movie" del nombre
-        anime.setName(anime.getName().replace("Movie", "").trim());
-        //Cambia las urls especiales
-        anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
+            .name(item.select(".tt").first().childNodes().stream()
+                .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
+                .map(Node::toString)
+                .collect(Collectors.joining()).trim())
+            .imgUrl(item.select("img").attr("src").trim())
+            .chapter(item.select(".epx").text().replace("Ep 0", "").replace("Ep ", "").trim())
+            .type(item.select(".typez").text().trim())
+            .url(this.changeFormatUrl(item.select(".bsx a").attr("href"), providerAnimeLifeUrl))
+            .build();
+
+        anime = this.defineSpecialCases(anime);
 
         if (animesJkanimes.containsKey(anime.getName())) {
           // Si el anime está en Jkanime, usa la fecha y la imagen de Jkanime
@@ -156,22 +149,24 @@ public class HomeService {
         } else {
           // Si el anime no está en Jkanime, asigna una fecha a partir de la posición
           // en del anime en la lista de animes de AnimeLife
-          if (index <= 10) anime.setDate("Hoy");
-          else if (index <= 15) anime.setDate("Ayer");
-          else if (index <= 20) anime.setDate("Hace 2 días");
-          else if (index <= 25) anime.setDate("Hace 3 días");
+          if (index <= 10)
+            anime.setDate("Hoy");
+          else if (index <= 15)
+            anime.setDate("Ayer");
+          else if (index <= 20)
+            anime.setDate("Hace 2 días");
+          else if (index <= 25)
+            anime.setDate("Hace 3 días");
           anime.setState(false);
         }
-      
+
         animesProgramming.add(anime);
         index++;
       }
     }
 
-    // Ordenar por fecha y estado
-    // -1: a primero que b
-    // 1: b primero que a
-    // 0: no ocurre nada
+    // Ordenar por fecha y estado: [-1: a primero que b] - [1: b primero que a] -
+    // [0: nada]
     animesProgramming.sort((a, b) -> {
       if (a.getDate().equals("Hoy") && b.getDate().equals("Hoy")) {
         if (!a.getState() && b.getState()) {
@@ -193,11 +188,41 @@ public class HomeService {
     return animesProgramming;
   }
 
+  private ChapterDataDTO defineSpecialCases(ChapterDataDTO anime) {
+    // Elimina caracteres raros del nombre
+    anime.setName(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')));
+    anime.setName(this.animeUtils.specialNameOrUrlCases(anime.getName(), 'h')); // Nombres especiales
+    anime.setName(anime.getName().replace("Movie", "").trim()); // "Movie" en el nombre
+    anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h')); // Urls especiales
+
+    // Si el número de capítulo tiene un "."
+    if (anime.getChapter().contains(".")) {
+      int chapter = Integer.parseInt(anime.getChapter().split("\\.")[0]) + 1;
+
+      // Reconstruye la url sin el capítulo
+      String[] urlSplit = anime.getUrl().split("-");
+      String url = "";
+      for (int i = 0; i < urlSplit.length - 1; i++) {
+        url += (i != 0) ? "-" + urlSplit[i] : urlSplit[i];
+      }
+
+      // Asigna el nuevo capítulo y la nueva url
+      anime.setChapter(String.valueOf(chapter));
+      anime.setUrl(url + "/" + chapter);
+
+      log.info("---------");
+      log.info("chapter: " + anime.getChapter());
+      log.info("url: " + anime.getUrl());
+      log.info("---------");
+    }
+
+    return anime;
+  }
+
   public List<ChapterDataDTO> donghuasProgramming(Document document) {
     Elements elementsJkAnime = document.select(".donghuas_programing a.bloqq");
     List<ChapterDataDTO> lastChapters = new ArrayList<>();
 
-    
     String year = String.valueOf(LocalDate.now().getYear());
     for (Element item : elementsJkAnime) {
       String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
@@ -209,20 +234,20 @@ public class HomeService {
       }
 
       ChapterDataDTO anime = ChapterDataDTO.builder()
-        .name(item.select(".anime__sidebar__comment__item__text h5").text())
-        .imgUrl(item.select(".anime__sidebar__comment__item__pic img").attr("src"))
-        .chapter(item.select(".anime__sidebar__comment__item__text h6").text().replace("Episodio", "Capitulo"))
-        .type("Donghua")
-        .date(this.getFormattedDate(date))
-        .url(item.select("a").attr("href").replace(providerJkanimeUrl, ""))
-        .state(true)
-        .build();
-      
+          .name(item.select(".anime__sidebar__comment__item__text h5").text())
+          .imgUrl(item.select(".anime__sidebar__comment__item__pic img").attr("src"))
+          .chapter(item.select(".anime__sidebar__comment__item__text h6").text().replace("Episodio", "Capitulo"))
+          .type("Donghua")
+          .date(this.getFormattedDate(date))
+          .url(item.select("a").attr("href").replace(providerJkanimeUrl, ""))
+          .state(true)
+          .build();
+
       // Quitar el "/" final de la url
       if (anime.getUrl().endsWith("/")) {
         anime.setUrl(anime.getUrl().substring(0, anime.getUrl().length() - 1));
       }
-      
+
       anime.setName(this.animeUtils.specialNameOrUrlCases(anime.getName(), 'h'));
       anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
 
@@ -238,23 +263,23 @@ public class HomeService {
 
     Element firstTop = data.child(2);
     TopDataDTO firstAnime = TopDataDTO.builder()
-      .name(firstTop.select(".comment h5").text())
-      .imgUrl(firstTop.select(".anime__item__pic").attr("data-setbg"))
-      .likes(Integer.parseInt(firstTop.select(".vc").text().trim()))
-      .position(Integer.parseInt(firstTop.select(".ep").text().trim()))
-      .url(firstTop.select("a").attr("href").replace(providerJkanimeUrl, ""))
-      .build();
+        .name(firstTop.select(".comment h5").text())
+        .imgUrl(firstTop.select(".anime__item__pic").attr("data-setbg"))
+        .likes(Integer.parseInt(firstTop.select(".vc").text().trim()))
+        .position(Integer.parseInt(firstTop.select(".ep").text().trim()))
+        .url(firstTop.select("a").attr("href").replace(providerJkanimeUrl, ""))
+        .build();
     topAnimes.add(firstAnime);
 
     Elements restTop = data.child(3).select("a");
     for (Element element : restTop) {
       TopDataDTO anime = TopDataDTO.builder()
-        .name(element.select(".comment h5").text())
-        .imgUrl(element.select(".anime__item__pic__fila4").attr("data-setbg"))
-        .likes(Integer.parseInt(element.select(".vc").text()))
-        .position(Integer.parseInt(element.select(".anime__item__pic__fila4 div").first().text().trim()))
-        .url(element.attr("href").replace(providerJkanimeUrl, ""))
-        .build();
+          .name(element.select(".comment h5").text())
+          .imgUrl(element.select(".anime__item__pic__fila4").attr("data-setbg"))
+          .likes(Integer.parseInt(element.select(".vc").text()))
+          .position(Integer.parseInt(element.select(".anime__item__pic__fila4 div").first().text().trim()))
+          .url(element.attr("href").replace(providerJkanimeUrl, ""))
+          .build();
 
       topAnimes.add(anime);
     }
@@ -268,13 +293,13 @@ public class HomeService {
 
     for (Element element : elements) {
       AnimeDataDTO anime = AnimeDataDTO.builder()
-        .name(element.select(".anime__item__text h5 a").text())
-        .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
-        .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
-        .state(element.select(".anime__item__text ul li").first().text())
-        .type(element.select(".anime__item__text ul li").last().text())
-        .build();
-      
+          .name(element.select(".anime__item__text h5 a").text())
+          .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
+          .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
+          .state(element.select(".anime__item__text ul li").first().text())
+          .type(element.select(".anime__item__text ul li").last().text())
+          .build();
+
       if (!anime.getType().equals("ONA")) {
         latestAddedAnimes.add(anime);
       }
@@ -289,9 +314,9 @@ public class HomeService {
 
     for (Element element : elements) {
       LinkDTO anime = LinkDTO.builder()
-        .name(element.select("a").text())
-        .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
-        .build();
+          .name(element.select("a").text())
+          .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
+          .build();
 
       latestAddedList.add(anime);
     }
@@ -329,11 +354,11 @@ public class HomeService {
       // Extrae el número y lo incrementa
       String numberPart = url.replaceAll("^.*-(\\d{2})-2/?$", "$1");
       try {
-          int number = Integer.parseInt(numberPart) + 1;
-          newUrl = url.replaceFirst("-\\d{2}-2/?$", "/" + number);
-          return newUrl.replace(providerUrl, "");
+        int number = Integer.parseInt(numberPart) + 1;
+        newUrl = url.replaceFirst("-\\d{2}-2/?$", "/" + number);
+        return newUrl.replace(providerUrl, "");
       } catch (NumberFormatException e) {
-          log.warning("Error parsing number from URL: " + url);
+        log.warning("Error parsing number from URL: " + url);
       }
     } else {
       // Si no termina con -xx-2, solo elimina los ceros a la izquierda

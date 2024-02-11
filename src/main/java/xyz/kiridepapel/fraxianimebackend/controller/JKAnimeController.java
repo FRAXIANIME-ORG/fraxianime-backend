@@ -117,7 +117,7 @@ public class JKAnimeController {
     if (chapter < 0) {
       return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.OK);
     }
-
+    
     ChapterDTO chapterInfo = this.chapterService.constructChapter(anime, chapter);
 
     if (isNotNullOrEmpty(chapterInfo)) {

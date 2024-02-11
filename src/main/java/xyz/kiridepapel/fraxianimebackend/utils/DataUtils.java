@@ -58,23 +58,42 @@ public class DataUtils {
       log.info("[] Last request url: " + urlChapter);
       return Jsoup.connect(urlChapter).get();
     } catch (Exception x) {
+      // Si ya busca 0 y no encuentra, el capitulo no existe
       if (chapter == 0) {
-        // Si no se encontró 00, retornar error (no existe)
         throw new AnimeNotFound(errorMessage);
       } else {
-        // Si no se encontró, se intenta sin el 0: one-piece-04 -> one-piece-4
-        try { 
-          String newUrl = AnimeUtils.urlChapterWithoutZero(urlChapter);
-          log.info("[] Trying without zero: " + newUrl);
-          return Jsoup.connect(newUrl).get();
+        try {
+          // No lo intenta si el capitulo es mayor a 9
+          if (chapter >= 0 && chapter <= 9) {
+            // Intenta: one-piece-04 -> one-piece-4
+            String url1 = AnimeUtils.urlChapterWithoutZero(urlChapter);
+            log.info("[] Trying without zero (-0X): " + url1);
+            try {
+              log.info("[] Founded!");
+              return Jsoup.connect(url1).get();
+            } catch (Exception e) {
+              throw new AnimeNotFound(errorMessage);
+            }
+          } else {
+            throw new Exception();
+          }
         } catch (Exception xx) {
-          // Si no se encontró, se intenta con guion y restando uno al capitulo: one-piece-04 -> one-piece-03-3
+          // Intenta: one-piece-15 -> one-piece-14-2
+          String url2 = AnimeUtils.urlChapterWithScript(urlChapter);
+          log.info("[] Trying with script (-2): " + url2);
           try {
-            String newUrl = AnimeUtils.urlChapterWithScript(urlChapter);
-            log.info("[] Trying (<chapter> - 1)-2: " + newUrl);
-            return Jsoup.connect(newUrl).get();
+            log.info("[] Founded!");
+            return Jsoup.connect(url2).get();
           } catch (Exception xxx) {
-            throw new AnimeNotFound(errorMessage);
+            // Intenta: one-piece-15 -> one-piece-14-5
+            String url3 = AnimeUtils.urlChapterWithPoint(urlChapter);
+            log.info("[] Trying with point (-5): " + url3);
+            try {
+              log.info("[] Founded!");
+              return Jsoup.connect(url3).get();
+            } catch (Exception e) {
+              throw new AnimeNotFound(errorMessage);
+            }
           }
         }
       }

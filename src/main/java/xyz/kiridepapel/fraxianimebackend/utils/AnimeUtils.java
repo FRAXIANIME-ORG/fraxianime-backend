@@ -100,6 +100,13 @@ public class AnimeUtils {
     String urlWithScript = urlChapter.replaceAll("-(\\d+)$", "-" + String.format("%02d", number) + "-2");
     return urlWithScript;
   }
+
+  // Convierte: chapter-55 -> chapter-54-5
+  public static String urlChapterWithPoint(String urlChapter) {
+    int number = Integer.parseInt(urlChapter.replaceAll("^.*-(\\d+)$", "$1")) - 1;
+    String urlWithPoint = urlChapter.replaceAll("-(\\d+)$", "-" + String.format("%02d", number) + "-5");
+    return urlWithPoint;
+  }
   
   // Busca en caché
   public <T> T searchFromCache(CacheManager cacheManager, String cacheName, String cacheKey, Class<T> type) {

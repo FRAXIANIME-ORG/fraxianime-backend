@@ -73,14 +73,14 @@ public class CacheScheduler {
             log.info(String.format("%02d", counter++) + ". Guardando en cache: " + url + " (" + String.format("%02d", chapter) + ")");
             this.chapterService.cacheChapter(url, chapter);
           } catch (InterruptedException e) {
-            log.severe("Error: " + e.getMessage());
+            log.severe("Error Schedule: " + e.getMessage());
           }
         }
       } catch (Exception e) {
         log.severe("-----------------------------");
+        log.severe(String.format("%02d", counter) + ". " + e.getMessage());
         log.severe(String.format("%02d", counter) + ". Name: " + chapterInfo.getName() + " (" + chapterInfo.getChapter() + ") no se pudo guardar en cache.");
         log.severe(String.format("%02d", counter) + ". Url: " + chapterInfo.getUrl());
-        log.severe(String.format("%02d", counter) + ". Error: " + e.getMessage());
         log.severe("-----------------------------");
         counter++;
       }

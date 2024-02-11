@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
-import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
@@ -87,7 +86,7 @@ public class LfChapterService {
 
       return chapterInfo;
     } catch (Exception e) {
-      throw new ChapterNotFound("2 No se encontró el capitulo solicitado.");
+      throw new ChapterNotFound("Error Chapter 1: " + e.getMessage());
     }
   }
 
@@ -130,7 +129,7 @@ public class LfChapterService {
   
       return list;
     } catch (Exception e) {
-      throw new ChapterNotFound("Ocurrió un error al obtener los servidores de reproducción.");
+      throw new ChapterNotFound("2: " + e.getMessage());
     }
   }
 
@@ -168,7 +167,7 @@ public class LfChapterService {
         }
       }
     } catch (Exception e) {
-      throw new ChapterNotFound("Ocurrió un error al obtener los servidores de descarga.");
+      throw new ChapterNotFound("3: " + e.getMessage());
     }
   }
 
@@ -176,22 +175,32 @@ public class LfChapterService {
     try {
       Element itemFirstChapter = docAnimeLife.body().select(".episodelist ul li").last();
       Element itemLastChapter = docAnimeLife.body().select(".episodelist ul li").first();
+
       // El nombre del ánime puede estar modificado en casos especiales
       String chapterNameModified = this.animeUtils.specialNameOrUrlCases(chapterInfo.getName(), 'l');
 
       if (itemFirstChapter != null && itemLastChapter != null) {
-        // Ambos (img)
+        // Imagen del capítulo
         String chapterImg = itemFirstChapter.select(".thumbnel img").attr("src").replace("?resize=130,130", "");
         
-        // Ambos (número)
+        // Primer y último capítulo
         String firstChapter = itemFirstChapter.select(".playinfo h4").text().replace(chapterNameModified, "").trim();
         String lastChapter = itemLastChapter.select(".playinfo h4").text().replace(chapterNameModified, "").trim();
+        
+        // Redondear el primer o el último capítulo
+        if (firstChapter.contains(".")) {
+          firstChapter = firstChapter.substring(0, firstChapter.indexOf("."));
+        }
+        if (lastChapter.contains(".")) {
+          lastChapter = lastChapter.substring(0, lastChapter.indexOf("."));
+        }
 
-        // Último capítulo (fecha)
+        // Fecha del último capítulo
         String lastChapterDate = itemLastChapter.select(".playinfo span").text();
         String[] chapterDateArray = lastChapterDate.split(" - ");
         lastChapterDate = chapterDateArray[chapterDateArray.length - 1];
-        
+
+        // Asigna la información
         chapterInfo.setChapterImg(chapterImg);
         chapterInfo.setActualChapter(chapter);
         chapterInfo.setFirstChapter(Integer.parseInt(firstChapter));
@@ -201,7 +210,7 @@ public class LfChapterService {
 
       return chapterInfo;
     } catch (Exception e) {
-      throw new AnimeNotFound("Error obteniendo la información de los capítulos del anime.");
+      throw new ChapterNotFound("4: " + e.getMessage());
     }
   }
 
@@ -211,21 +220,19 @@ public class LfChapterService {
     Matcher matcher = pattern.matcher(url);
     
     if (matcher.find()) {
-        String provider = matcher.group(1);
-        return provider.substring(0, 1).toUpperCase() + provider.substring(1);
+      String provider = matcher.group(1);
+      return provider.substring(0, 1).toUpperCase() + provider.substring(1);
     } else {
-        return "Privado";
+      return "Privado";
     }
   }
 
   private boolean havePreviousChapter(Elements nearChapters) {
-    
     Element previousChapter = nearChapters.first().select("a").first();
     return previousChapter != null ? true : false;
   }
 
   private boolean haveNextChapter(Elements nearChapters) {
-
     Element nextChapter = nearChapters.last().select("a").first();
     return nextChapter != null ? true : false;
   }

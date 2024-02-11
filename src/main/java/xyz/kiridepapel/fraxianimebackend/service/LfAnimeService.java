@@ -184,10 +184,19 @@ public class LfAnimeService {
 
         // Si los capítulos tienen números, asignarlos
         if (firstChapter.matches("[0-9]+") && lastChapter.matches("[0-9]+")) {
-          animeInfo.setFirstChapter(Integer.parseInt(firstChapter));
-          animeInfo.setLastChapter(Integer.parseInt(lastChapter));
+          // Primer capítulo
+          if (firstChapter.contains(".")) {
+            firstChapter = String.valueOf(Integer.parseInt(firstChapter.split("\\.")[0]) + 1);
+          } else {
+            animeInfo.setFirstChapter(Integer.parseInt(firstChapter));
+          }
+          // Último capítulo
+          if (lastChapter.contains(".")) {
+            lastChapter = String.valueOf(Integer.parseInt(lastChapter.split("\\.")[0]) + 1);
+          } else {
+            animeInfo.setLastChapter(Integer.parseInt(lastChapter));
+          }
         } else {
-          // Si no tiene numeros en los capítulos, asignar 1 como primer y último capítulo
           animeInfo.setFirstChapter(1);
           animeInfo.setLastChapter(1);
         }
