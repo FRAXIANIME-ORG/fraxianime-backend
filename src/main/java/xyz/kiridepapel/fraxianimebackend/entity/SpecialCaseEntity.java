@@ -16,16 +16,16 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "special_case")
 public class SpecialCaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false, length = 1)
-    private Character type;
+  @Column(nullable = false, length = 1)
+  private Character type;
 
-    @Column(nullable = false, length = 200)
-    private String original;
+  @Column(nullable = false, length = 200)
+  private String original;
 
-    @Column(nullable = false, length = 200)
-    private String mapped;
+  @Column(nullable = false, length = 200)
+  private String mapped;
 }

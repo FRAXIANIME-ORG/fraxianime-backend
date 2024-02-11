@@ -20,11 +20,11 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDataDTO;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class HomePageDTO implements Serializable {
-    List<ChapterDataDTO> sliderAnimes;
-    List<AnimeDataDTO> ovasOnasSpecials;
-    List<ChapterDataDTO> animesProgramming;
-    List<ChapterDataDTO> donghuasProgramming;
-    List<TopDataDTO> topAnimes;
-    List<AnimeDataDTO> latestAddedAnimes;
-    List<LinkDTO> latestAddedList;
+  List<ChapterDataDTO> sliderAnimes;
+  List<AnimeDataDTO> ovasOnasSpecials;
+  List<ChapterDataDTO> animesProgramming;
+  List<ChapterDataDTO> donghuasProgramming;
+  List<TopDataDTO> topAnimes;
+  List<AnimeDataDTO> latestAddedAnimes;
+  List<LinkDTO> latestAddedList;
 }

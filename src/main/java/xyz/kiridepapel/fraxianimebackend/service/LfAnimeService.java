@@ -22,14 +22,14 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 
 @Service
 @Log
-public class AnimeAnimeLifeService {
+public class LfAnimeService {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
 
   @Autowired
-  private AnimeJkAnimeService jkAnimeService;
+  private JkAnimeService jkAnimeService;
   @Autowired
   private TranslateService translateService;
   @Autowired

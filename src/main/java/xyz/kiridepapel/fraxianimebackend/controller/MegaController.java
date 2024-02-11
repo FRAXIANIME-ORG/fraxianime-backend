@@ -14,14 +14,17 @@ import xyz.kiridepapel.fraxianimebackend.service.MegaService;
 
 @RestController
 @RequestMapping("/api/v1/mega")
-@CrossOrigin(origins = { "https://fraxianime.vercel.app", "http://localhost:4200" }, allowedHeaders = "**")
+@CrossOrigin(
+  origins = { "https://fraxianime.vercel.app", "http://localhost:4200" },
+  allowedHeaders = "**"
+)
 public class MegaController {
-    @Autowired
-    private MegaService megaService;
-    
-    @GetMapping("/")
-    public ResponseEntity<?> isValidMegaLink(@RequestBody LinkDTO data) {
-        Boolean response = this.megaService.isValidMegaLink(data.getUrl());
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
+  @Autowired
+  private MegaService megaService;
+
+  @GetMapping("/")
+  public ResponseEntity<?> isValidMegaLink(@RequestBody LinkDTO data) {
+    Boolean response = this.megaService.isValidMegaLink(data.getUrl());
+    return new ResponseEntity<>(response, HttpStatus.OK);
+  }
 }

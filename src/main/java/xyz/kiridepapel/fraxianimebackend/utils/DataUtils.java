@@ -3,7 +3,6 @@ package xyz.kiridepapel.fraxianimebackend.utils;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
-import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -97,24 +96,6 @@ public class DataUtils {
         return decodedString;
       }
     }
-  }
-
-  // ? Security
-  public static boolean isSQLInjection(String str) {
-    return str.matches(".*(--|[;+*^$|?{}\\[\\]()'\"\\']).*");
-  }
-
-  // ? Generic
-  public static boolean isNotNullOrEmpty(List<?> list) {
-    return list != null && !list.isEmpty();
-  }
-
-  public static boolean isNotNullOrEmpty(String str) {
-    return str != null && !str.isEmpty();
-  }
-
-  public static boolean isNotNullOrEmpty(Object obj) {
-    return obj != null;
   }
 
   // ? Utils

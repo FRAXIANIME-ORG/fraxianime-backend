@@ -14,42 +14,41 @@ import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjecti
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-    // Security Exceptions
-    @ExceptionHandler(ProtectedResource.class)
-    public ResponseEntity<?> handleProtectedResource(ProtectedResource ex) {
-        ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
-    }
+  // Security Exceptions
+  @ExceptionHandler(ProtectedResource.class)
+  public ResponseEntity<?> handleProtectedResource(ProtectedResource ex) {
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
 
-    @ExceptionHandler(SQLInjectionException.class)
-    public ResponseEntity<?> handleSQLInjectionException(SQLInjectionException ex) {
-        ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
-    }
-    
-    @ExceptionHandler(NumberFormatException.class)
-    public ResponseEntity<?> handleNumberFormatException(NumberFormatException ex) {
-        ResponseDTO response = new ResponseDTO("El capitulo solicitado no existe", 404);
-        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
-    }
+  @ExceptionHandler(SQLInjectionException.class)
+  public ResponseEntity<?> handleSQLInjectionException(SQLInjectionException ex) {
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
 
-    // Anime Exceptions
-    @ExceptionHandler(ChapterNotFound.class)
-    public ResponseEntity<?> handleChapterNotFound(ChapterNotFound ex) {
-        ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
-    }
-    
-    @ExceptionHandler(AnimeNotFound.class)
-    public ResponseEntity<?> handleAnimeNotFound(AnimeNotFound ex) {
-        ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
-    }
-    
-    @ExceptionHandler(InvalidSearch.class)
-    public ResponseEntity<?> handleInvalidSearch(InvalidSearch ex) {
-        ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
-    }
+  @ExceptionHandler(NumberFormatException.class)
+  public ResponseEntity<?> handleNumberFormatException(NumberFormatException ex) {
+    ResponseDTO response = new ResponseDTO("El capitulo solicitado no existe", 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
 
+  // Anime Exceptions
+  @ExceptionHandler(ChapterNotFound.class)
+  public ResponseEntity<?> handleChapterNotFound(ChapterNotFound ex) {
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
+
+  @ExceptionHandler(AnimeNotFound.class)
+  public ResponseEntity<?> handleAnimeNotFound(AnimeNotFound ex) {
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
+
+  @ExceptionHandler(InvalidSearch.class)
+  public ResponseEntity<?> handleInvalidSearch(InvalidSearch ex) {
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
 }

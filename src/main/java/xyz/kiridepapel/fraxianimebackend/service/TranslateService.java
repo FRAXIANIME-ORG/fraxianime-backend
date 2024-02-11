@@ -12,10 +12,12 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.entity.AnimeEntity;
 import xyz.kiridepapel.fraxianimebackend.repository.AnimeRepository;
 
 @Service
+@Log
 public class TranslateService {
   @Value("${RAPIDAPI_KEY}")
   private String rapidApiKey;
@@ -26,15 +28,18 @@ public class TranslateService {
 
   public String translate(String name, String synopsis) {
     AnimeEntity anime = animeRepository.findByName(name);
-
+    
     if (anime != null) {
+      log.info("Se encontró el anime en la base de datos");
       return anime.getSynopsisTranslated();
     } else {
       try {
         String synopsisTranslated = this.translateWithMicrosoft(synopsis);
+        log.info("Se tradujo 'correctamente': " + synopsisTranslated);
         animeRepository.save(new AnimeEntity(null, name, synopsisTranslated));
         return synopsisTranslated;
       } catch (Exception e) {
+        log.info("Error al traducir: " + e.getMessage());
         return synopsis;
       }
     }

@@ -29,7 +29,7 @@ import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
 @Log
-public class HomePageService {
+public class HomeService {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
@@ -122,11 +122,11 @@ public class HomePageService {
       animesJkanimes.put(data.getName(), data);
     }
 
+    // Obtener los animes de AnimeLife
     int index = 0;
     for (Element item : elementsAnimeLife) {
       String url = this.changeFormatUrl(item.select(".bsx a").attr("href"), providerAnimeLifeUrl);
 
-      // Si es un capítulo (one-piece/5)
       if (url.contains("/")) {
         ChapterDataDTO anime = ChapterDataDTO.builder()
           .name(item.select(".tt").first().childNodes().stream()
@@ -139,18 +139,23 @@ public class HomePageService {
           .url(this.changeFormatUrl(item.select(".bsx a").attr("href"), providerAnimeLifeUrl))
           .build();
         
-        String nameAnimeLife = anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"'));
-              
-        anime.setName(this.animeUtils.specialNameOrUrlCases(nameAnimeLife, 'h').replace("Movie", "").trim());
+        // Elimina caracteres raros del nombre
+        anime.setName(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')));
+        // Cambia los nombres especiales
+        anime.setName(this.animeUtils.specialNameOrUrlCases(anime.getName(), 'h'));
+        // Elimina "Movie" del nombre
+        anime.setName(anime.getName().replace("Movie", "").trim());
+        //Cambia las urls especiales
         anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
 
-        // Si el anime existe en Jkanime
-        if (animesJkanimes.containsKey(nameAnimeLife)) {
-          anime.setDate(this.getFormattedDate(animesJkanimes.get(nameAnimeLife).getDate()));
-          anime.setImgUrl(animesJkanimes.get(nameAnimeLife).getUrl());
+        if (animesJkanimes.containsKey(anime.getName())) {
+          // Si el anime está en Jkanime, usa la fecha y la imagen de Jkanime
+          anime.setDate(this.getFormattedDate(animesJkanimes.get(anime.getName()).getDate()));
+          anime.setImgUrl(animesJkanimes.get(anime.getName()).getUrl());
           anime.setState(true);
         } else {
-          // Establece fecha basada en el índice para los animes de AnimeLife
+          // Si el anime no está en Jkanime, asigna una fecha a partir de la posición
+          // en del anime en la lista de animes de AnimeLife
           if (index <= 10) anime.setDate("Hoy");
           else if (index <= 15) anime.setDate("Ayer");
           else if (index <= 20) anime.setDate("Hace 2 días");
@@ -164,11 +169,14 @@ public class HomePageService {
     }
 
     // Ordenar por fecha y estado
+    // -1: a primero que b
+    // 1: b primero que a
+    // 0: no ocurre nada
     animesProgramming.sort((a, b) -> {
       if (a.getDate().equals("Hoy") && b.getDate().equals("Hoy")) {
-        if (a.getState() && !b.getState()) {
+        if (!a.getState() && b.getState()) {
           return -1;
-        } else if (!a.getState() && b.getState()) {
+        } else if (a.getState() && !b.getState()) {
           return 1;
         } else {
           return 0;
@@ -266,8 +274,10 @@ public class HomePageService {
         .state(element.select(".anime__item__text ul li").first().text())
         .type(element.select(".anime__item__text ul li").last().text())
         .build();
-
-      latestAddedAnimes.add(anime);
+      
+      if (!anime.getType().equals("ONA")) {
+        latestAddedAnimes.add(anime);
+      }
     }
 
     return latestAddedAnimes;

@@ -18,7 +18,7 @@ import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
-public class SearchService {
+public class LfSearchService {
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
 

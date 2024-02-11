@@ -17,24 +17,22 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AnimeInfoDTO implements Serializable {
-    private String name;
-    private String alternativeName;
-    private String imgUrl;
-    private String synopsis;
-    private String synopsisTranslated;
-	private String trailer;
-    private Integer likes;
+  private String name;
+  private String alternativeName;
+  private String imgUrl;
+  private String synopsis;
+  private String synopsisTranslated;
+  private String trailer;
+  private Integer likes;
 
-    private Map<String, Object> data;
-    private Map<String, Object> alternativeTitles;
-    private Map<String, Object> history;
+  private Map<String, Object> data;
+  private Map<String, Object> alternativeTitles;
+  private Map<String, Object> history;
 
-    private Integer firstChapter;
-    private Integer lastChapter;
-    private String lastChapterDate;
+  private Integer firstChapter;
+  private Integer lastChapter;
+  private String lastChapterDate;
+  private String nextChapterDate;
 
-    private String nextChapterDate;
-
-    // private List<LastAnimeDataDTO> recomendations;
-
+  // private List<LastAnimeDataDTO> recomendations;
 }

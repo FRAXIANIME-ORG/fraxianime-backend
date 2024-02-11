@@ -25,7 +25,7 @@ import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
-public class ChapterAnimeLifeService {
+public class LfChapterService {
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
   @Autowired

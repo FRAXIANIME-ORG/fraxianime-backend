@@ -14,17 +14,19 @@ import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 
 @Component
 public class ProtectedEntryPoint implements AuthenticationEntryPoint {
-    @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response,
-        AuthenticationException authException) throws IOException {
-        if (!request.getRequestURI().startsWith("/api/v1/")) {
-            ResponseDTO responseDTO = new ResponseDTO("Acceso denegado", 401);
-            response.setStatus(401);
-            response.setContentType("application/json");
-            response.getWriter().write(
-                "{\"message\":\"" + responseDTO.getMessage() +
-                "\",\"status\":" + responseDTO.getStatus() +"}");
-            response.getWriter().flush();
-        }
+  @Override
+  public void commence(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      AuthenticationException authException) throws IOException {
+    if (!request.getRequestURI().startsWith("/api/v1/")) {
+      ResponseDTO responseDTO = new ResponseDTO("Acceso denegado", 401);
+      response.setStatus(401);
+      response.setContentType("application/json");
+      response.getWriter().write(
+        "{\"message\":\"" + responseDTO.getMessage() +
+        "\",\"status\":" + responseDTO.getStatus() + "}");
+      response.getWriter().flush();
     }
+  }
 }

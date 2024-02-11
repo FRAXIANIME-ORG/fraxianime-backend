@@ -18,12 +18,12 @@ import lombok.Setter;
 @AllArgsConstructor
 @Table(name = "anime")
 public class AnimeEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    private String name;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(columnDefinition = "TEXT")
-    private String synopsisTranslated;
+  private String name;
+
+  @Column(columnDefinition = "TEXT")
+  private String synopsisTranslated;
 }

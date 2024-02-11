@@ -19,7 +19,7 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 
 @Service
-public class AnimeJkAnimeService {
+public class JkAnimeService {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
   private Map<String, String> specialKeys = Map.ofEntries(

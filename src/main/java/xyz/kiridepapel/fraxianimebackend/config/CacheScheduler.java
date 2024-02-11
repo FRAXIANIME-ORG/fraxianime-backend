@@ -12,17 +12,17 @@ import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
-import xyz.kiridepapel.fraxianimebackend.service.ChapterAnimeLifeService;
-import xyz.kiridepapel.fraxianimebackend.service.HomePageService;
+import xyz.kiridepapel.fraxianimebackend.service.LfChapterService;
+import xyz.kiridepapel.fraxianimebackend.service.HomeService;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 
 @Component
 @Log
 public class CacheScheduler {
   @Autowired
-  private HomePageService homePageService;
+  private HomeService homePageService;
   @Autowired
-  private ChapterAnimeLifeService chapterService;
+  private LfChapterService chapterService;
 
   @Autowired
   private CacheManager cacheManager;
@@ -78,7 +78,7 @@ public class CacheScheduler {
         }
       } catch (Exception e) {
         log.severe("-----------------------------");
-        log.severe(String.format("%02d", counter) + ". Name: " + chapterInfo.getName() + "(" + chapterInfo.getChapter() + ") no se pudo guardar en cache.");
+        log.severe(String.format("%02d", counter) + ". Name: " + chapterInfo.getName() + " (" + chapterInfo.getChapter() + ") no se pudo guardar en cache.");
         log.severe(String.format("%02d", counter) + ". Url: " + chapterInfo.getUrl());
         log.severe(String.format("%02d", counter) + ". Error: " + e.getMessage());
         log.severe("-----------------------------");

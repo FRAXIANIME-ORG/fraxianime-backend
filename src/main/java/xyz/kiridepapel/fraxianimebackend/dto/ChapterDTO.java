@@ -17,18 +17,18 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ChapterDTO implements Serializable {
-    private String name;
-    private List<LinkDTO> srcOptions;
-    private List<LinkDTO> downloadOptions;
-    private Boolean havePreviousChapter;
-    private Boolean haveNextChapter;
-    private String nextChapterDate;
-    private Boolean inEmision;
+  private String name;
+  private List<LinkDTO> srcOptions;
+  private List<LinkDTO> downloadOptions;
+  private Boolean havePreviousChapter;
+  private Boolean haveNextChapter;
+  private String nextChapterDate;
+  private Boolean inEmision;
 
-    // External
-    private String chapterImg;
-    private Integer actualChapter;
-    private Integer firstChapter;
-    private Integer lastChapter;
-    private String lastChapterDate;
+  // External
+  private String chapterImg;
+  private Integer actualChapter;
+  private Integer firstChapter;
+  private Integer lastChapter;
+  private String lastChapterDate;
 }

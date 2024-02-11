@@ -16,37 +16,42 @@ import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.SearchDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.InvalidSearch;
+import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
-import xyz.kiridepapel.fraxianimebackend.service.AnimeAnimeLifeService;
-import xyz.kiridepapel.fraxianimebackend.service.HomePageService;
-import xyz.kiridepapel.fraxianimebackend.service.SearchService;
+import xyz.kiridepapel.fraxianimebackend.service.LfAnimeService;
+import xyz.kiridepapel.fraxianimebackend.service.HomeService;
+import xyz.kiridepapel.fraxianimebackend.service.LfSearchService;
 import xyz.kiridepapel.fraxianimebackend.service.TranslateService;
-import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
-import xyz.kiridepapel.fraxianimebackend.service.ChapterAnimeLifeService;
+import xyz.kiridepapel.fraxianimebackend.service.LfChapterService;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = { "https://fraxianime.vercel.app", "http://localhost:4200" }, allowedHeaders = "**")
+@CrossOrigin(
+  origins = { "https://fraxianime.vercel.app", "http://localhost:4200" },
+  allowedHeaders = "**"
+)
 public class JKAnimeController {
+  // Variables estaticas
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
   @Value("${FRONTEND_URL}")
   private String frontendUrl;
+  // Variables
+  private List<String> allowedOrigins;
+  // Inyección de dependencias
   @Autowired
-  private HomePageService homePageService;
+  private HomeService homePageService;
   @Autowired
-  private AnimeAnimeLifeService animeService;
+  private LfAnimeService animeService;
   @Autowired
-  private ChapterAnimeLifeService chapterService;
+  private LfChapterService chapterService;
   @Autowired
-  private SearchService searchService;
+  private LfSearchService searchService;
   @Autowired
   private TranslateService translateService;
-
-  private List<String> allowedOrigins;
 
   @PostConstruct
   public void init() {
@@ -68,21 +73,17 @@ public class JKAnimeController {
 
   @GetMapping("/animes")
   public ResponseEntity<?> homePage(HttpServletRequest request) {
-    String originHeader = request.getHeader("Origin");
-
-    if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
-    }
+    this.verifyAllowedOrigin(request.getHeader("Origin"));
 
     HomePageDTO animes = this.homePageService.homePage();
 
-    if (DataUtils.isNotNullOrEmpty(animes.getSliderAnimes()) &&
-        DataUtils.isNotNullOrEmpty(animes.getOvasOnasSpecials()) &&
-        DataUtils.isNotNullOrEmpty(animes.getAnimesProgramming()) &&
-        DataUtils.isNotNullOrEmpty(animes.getDonghuasProgramming()) &&
-        DataUtils.isNotNullOrEmpty(animes.getTopAnimes()) &&
-        DataUtils.isNotNullOrEmpty(animes.getLatestAddedAnimes()) &&
-        DataUtils.isNotNullOrEmpty(animes.getLatestAddedList())) {
+    if (isNotNullOrEmpty(animes.getSliderAnimes()) &&
+        isNotNullOrEmpty(animes.getOvasOnasSpecials()) &&
+        isNotNullOrEmpty(animes.getAnimesProgramming()) &&
+        isNotNullOrEmpty(animes.getDonghuasProgramming()) &&
+        isNotNullOrEmpty(animes.getTopAnimes()) &&
+        isNotNullOrEmpty(animes.getLatestAddedAnimes()) &&
+        isNotNullOrEmpty(animes.getLatestAddedList())) {
       return new ResponseEntity<>(animes, HttpStatus.OK);
     } else {
       return new ResponseEntity<>(new ResponseDTO("Error al recuperar los datos", 404), HttpStatus.NOT_FOUND);
@@ -90,18 +91,15 @@ public class JKAnimeController {
   }
 
   @GetMapping("/{anime}")
-  public ResponseEntity<?> animeInfo(HttpServletRequest request, @PathVariable("anime") String anime) {
-    String originHeader = request.getHeader("Origin");
+  public ResponseEntity<?> animeInfo(HttpServletRequest request,
+      @PathVariable("anime") String anime) {
 
-    if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
-    }
-
-    this.isSQLInjection(anime);
+    this.verifyAllowedOrigin(request.getHeader("Origin"));
+    this.verifySQLInjection(anime);
 
     AnimeInfoDTO animeInfo = this.animeService.animeInfo(anime);
 
-    if (DataUtils.isNotNullOrEmpty(animeInfo)) {
+    if (isNotNullOrEmpty(animeInfo)) {
       return new ResponseEntity<>(animeInfo, HttpStatus.OK);
     } else {
       return new ResponseEntity<>("Ocurrió un error al recuperar los datos del ánime solicitado.", HttpStatus.OK);
@@ -109,15 +107,12 @@ public class JKAnimeController {
   }
 
   @GetMapping("/{anime}/{chapter}")
-  public ResponseEntity<?> chapter(HttpServletRequest request, @PathVariable("anime") String anime,
+  public ResponseEntity<?> chapter(HttpServletRequest request,
+      @PathVariable("anime") String anime,
       @PathVariable("chapter") Integer chapter) {
-    String originHeader = request.getHeader("Origin");
 
-    if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
-    }
-
-    this.isSQLInjection(anime);
+    this.verifyAllowedOrigin(request.getHeader("Origin"));
+    this.verifySQLInjection(anime);
 
     if (chapter < 0) {
       return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.OK);
@@ -125,70 +120,67 @@ public class JKAnimeController {
 
     ChapterDTO chapterInfo = this.chapterService.constructChapter(anime, chapter);
 
-    if (DataUtils.isNotNullOrEmpty(chapterInfo)) {
+    if (isNotNullOrEmpty(chapterInfo)) {
       return new ResponseEntity<>(chapterInfo, HttpStatus.OK);
     } else {
       return new ResponseEntity<>("Ocurrió un error al recuperar los datos del capítulo solicitado.", HttpStatus.OK);
     }
   }
 
-  @GetMapping("/search/{anime}")
-  public ResponseEntity<?> searchAnimes(HttpServletRequest request, @PathVariable("anime") String anime) {
-    String originHeader = request.getHeader("Origin");
-
-    if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
-    }
-
-    this.isSQLInjection(anime);
-
-    return new ResponseEntity<>(this.searchAnimes(anime, 1, null), HttpStatus.OK);
-  }
-
   @GetMapping("/search/{anime}/{page}")
-  public ResponseEntity<?> searchAnimesWithoutMax(HttpServletRequest request, @PathVariable("anime") String anime,
+  public ResponseEntity<?> searchAnimesWithoutMax(HttpServletRequest request,
+      @PathVariable("anime") String anime,
       @PathVariable("page") Integer page) {
-    String originHeader = request.getHeader("Origin");
 
-    if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
-    }
-
-    this.isSQLInjection(anime);
-
-    return new ResponseEntity<>(this.searchAnimes(anime, page, null), HttpStatus.OK);
+    return new ResponseEntity<>(this.searchAnimes(request, anime, page, null), HttpStatus.OK);
   }
 
   @GetMapping("/search/{anime}/{page}/{maxItems}")
-  public ResponseEntity<?> searchAnimesWithMax(HttpServletRequest request, @PathVariable("anime") String anime,
+  public ResponseEntity<?> searchAnimesWithMax(HttpServletRequest request,
+      @PathVariable("anime") String anime,
       @PathVariable("page") Integer page,
       @PathVariable("maxItems") Integer maxItems) {
-    String originHeader = request.getHeader("Origin");
 
-    if (!isOriginAllowed(originHeader)) {
-      return new ResponseEntity<>(new ResponseDTO("Acceso denegado", 401), HttpStatus.FORBIDDEN);
+    return new ResponseEntity<>(this.searchAnimes(request, anime, page, maxItems), HttpStatus.OK);
+  }
+
+  private SearchDTO searchAnimes(HttpServletRequest request, String anime, Integer page, Integer maxItems) {
+    if (page == null || page < 1 || page > 100) {
+      throw new InvalidSearch("La página solicitada no es válida.");
+    }
+    if (maxItems != null && (maxItems < 1 || maxItems > 100)) {
+      throw new InvalidSearch("El número de elementos solicitados no es válido.");
     }
 
-    this.isSQLInjection(anime);
+    this.verifyAllowedOrigin(request.getHeader("Origin"));
+    this.verifySQLInjection(anime);
 
-    return new ResponseEntity<>(this.searchAnimes(anime, page, maxItems), HttpStatus.OK);
+    return this.searchService.searchAnimes(anime, page, maxItems);
   }
 
-  private boolean isOriginAllowed(String origin) {
-    return origin != null && allowedOrigins.contains(origin);
+
+  private void verifyAllowedOrigin(String origin) {
+    if (origin == null || !allowedOrigins.contains(origin)) {
+      throw new ProtectedResource("Acceso denegado");
+    }
   }
 
-  private void isSQLInjection(String anime) {
-    if (DataUtils.isSQLInjection(anime) || anime.contains("SELECT")) {
+  private void verifySQLInjection(String str) {
+    if (str.matches(".*(--|[;+*^$|?{}\\[\\]()'\"\\']).*") || str.contains("SELECT")) {
       throw new SQLInjectionException("Esas cosas son del diablo.");
     }
   }
 
-  private SearchDTO searchAnimes(String anime, Integer page, Integer maxItems) {
-    if (page < 1 || page > 100 || page == null) {
-      throw new InvalidSearch("La página solicitada no es válida.");
-    }
-    return this.searchService.searchAnimes(anime, page, maxItems);
+  private boolean isNotNullOrEmpty(List<?> list) {
+    return list != null && !list.isEmpty();
+  }
+
+  public boolean isNotNullOrEmpty(String str) {
+    return str != null && !str.isEmpty();
+  }
+
+  public boolean isNotNullOrEmpty(Object obj) {
+    return obj != null;
   }
 
 }
