@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
+import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
+import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.NextTrySearch;
 
 @Log
 @Component
@@ -35,11 +37,13 @@ public class DataUtils {
     try {
       Document document = Jsoup.connect(urlAnimeInfo).get();
 
+      // JkAnime
       if (provider == 1) {
         // Si existe .container, NO está en la página de error
         Element test = document.body().select(".container").first();
         return test != null ? document : null;
       }
+      // AnimeLife
       if (provider == 2) {
         // Si existe .postbody, NO está en la página de error
         Element test = document.body().select(".postbody").first();
@@ -56,11 +60,17 @@ public class DataUtils {
   public Document chapterSearchConnect(String urlChapter, Integer chapter, String errorMessage) {
     try {
       log.info("[] Last request url: " + urlChapter);
-      return Jsoup.connect(urlChapter).get();
-    } catch (Exception x) {
+      Document doc = tryConnectOrReturnNull(urlChapter, 2);
+      if (doc != null) {
+        log.info("[] Founded!");
+        return doc;
+      } else {
+        throw new NextTrySearch();
+      }
+    } catch (NextTrySearch x) {
       // Si ya busca 0 y no encuentra, el capitulo no existe
       if (chapter == 0) {
-        throw new AnimeNotFound(errorMessage);
+        throw new ChapterNotFound(errorMessage);
       } else {
         try {
           // No lo intenta si el capitulo es mayor a 9
@@ -68,31 +78,39 @@ public class DataUtils {
             // Intenta: one-piece-04 -> one-piece-4
             String url1 = AnimeUtils.urlChapterWithoutZero(urlChapter);
             log.info("[] Trying without zero (-0X): " + url1);
-            try {
+            Document doc = tryConnectOrReturnNull(url1, 2);
+            if (doc != null) {
               log.info("[] Founded!");
-              return Jsoup.connect(url1).get();
-            } catch (Exception e) {
-              throw new AnimeNotFound(errorMessage);
+              return doc;
             }
-          } else {
-            throw new Exception();
           }
-        } catch (Exception xx) {
-          // Intenta: one-piece-15 -> one-piece-14-2
-          String url2 = AnimeUtils.urlChapterWithScript(urlChapter);
-          log.info("[] Trying with script (-2): " + url2);
+          throw new NextTrySearch();
+        } catch (NextTrySearch xx) {
           try {
-            log.info("[] Founded!");
-            return Jsoup.connect(url2).get();
-          } catch (Exception xxx) {
-            // Intenta: one-piece-15 -> one-piece-14-5
-            String url3 = AnimeUtils.urlChapterWithPoint(urlChapter);
-            log.info("[] Trying with point (-5): " + url3);
-            try {
+            // Intenta: one-piece-15 -> one-piece-14-2
+            String url2 = AnimeUtils.urlChapterWithScript(urlChapter);
+            log.info("[] Trying with script (-2): " + url2);
+            Document doc = tryConnectOrReturnNull(url2, 2);
+            if (doc != null) {
               log.info("[] Founded!");
-              return Jsoup.connect(url3).get();
-            } catch (Exception e) {
-              throw new AnimeNotFound(errorMessage);
+              return doc;
+            } else {
+              throw new NextTrySearch();
+            }
+          } catch (NextTrySearch xxx) {
+            try {
+              // Intenta: one-piece-15 -> one-piece-14-5
+              String url3 = AnimeUtils.urlChapterWithPoint(urlChapter);
+              log.info("[] Trying with point (-5): " + url3);
+              Document doc = tryConnectOrReturnNull(url3, 2);
+              if (doc != null) {
+                log.info("[] Founded!");
+                return doc;
+              } else {
+                throw new NextTrySearch();
+              }
+            } catch (NextTrySearch xxxx) {
+              throw new ChapterNotFound(errorMessage);
             }
           }
         }

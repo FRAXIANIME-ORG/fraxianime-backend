@@ -209,11 +209,6 @@ public class HomeService {
       // Asigna el nuevo capítulo y la nueva url
       anime.setChapter(String.valueOf(chapter));
       anime.setUrl(url + "/" + chapter);
-
-      log.info("---------");
-      log.info("chapter: " + anime.getChapter());
-      log.info("url: " + anime.getUrl());
-      log.info("---------");
     }
 
     return anime;

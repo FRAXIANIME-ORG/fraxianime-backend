@@ -175,28 +175,29 @@ public class LfAnimeService {
       Elements chapters = docAnimeLife.body().select(".eplister ul li");
 
       if (chapters != null && !chapters.isEmpty()) {
+        // Establecer la fecha del último capítulo
+        animeInfo.setLastChapterDate(chapters.first().select(".epl-date").text().trim());
+
+        // Obtener el primer y último capítulo
         String[] firstSplit = chapters.last().select(".epl-title").text().trim().split(" ");
         String[] lastSplit = chapters.first().select(".epl-title").text().trim().split(" ");
         String firstChapter = firstSplit[firstSplit.length - 1];
         String lastChapter = lastSplit[lastSplit.length - 1];
-        
-        animeInfo.setLastChapterDate(chapters.first().select(".epl-date").text().trim());
 
-        // Si los capítulos tienen números, asignarlos
+        // Si son decimales, pasarlos a enteros y sumarles 1
+        if (firstChapter.contains(".")) {
+          firstChapter = String.valueOf(Integer.parseInt(firstChapter.split("\\.")[0]) + 1);
+        }
+        if (lastChapter.contains(".")) {
+          lastChapter = String.valueOf(Integer.parseInt(lastChapter.split("\\.")[0]) + 1);
+        }
+
+        // Si son números, asignarlos al anime
         if (firstChapter.matches("[0-9]+") && lastChapter.matches("[0-9]+")) {
-          // Primer capítulo
-          if (firstChapter.contains(".")) {
-            firstChapter = String.valueOf(Integer.parseInt(firstChapter.split("\\.")[0]) + 1);
-          } else {
-            animeInfo.setFirstChapter(Integer.parseInt(firstChapter));
-          }
-          // Último capítulo
-          if (lastChapter.contains(".")) {
-            lastChapter = String.valueOf(Integer.parseInt(lastChapter.split("\\.")[0]) + 1);
-          } else {
-            animeInfo.setLastChapter(Integer.parseInt(lastChapter));
-          }
+          animeInfo.setFirstChapter(Integer.parseInt(firstChapter));
+          animeInfo.setLastChapter(Integer.parseInt(lastChapter));
         } else {
+          // En caso de ovas, onas, películas, etc.
           animeInfo.setFirstChapter(1);
           animeInfo.setLastChapter(1);
         }

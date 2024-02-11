@@ -1,10 +1,14 @@
 package xyz.kiridepapel.fraxianimebackend.service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,6 +21,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
@@ -24,6 +29,7 @@ import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
+@Log
 public class LfChapterService {
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
@@ -55,7 +61,9 @@ public class LfChapterService {
 
   public ChapterDTO findChapter(String modifiedUrlChapter, Integer chapter) {
     try {
-      Document docAnimeLife = this.dataUtils.chapterSearchConnect(modifiedUrlChapter, chapter, "1 No se encontró el capitulo solicitado.");
+      Document docAnimeLife = this.dataUtils.chapterSearchConnect(
+          modifiedUrlChapter, chapter,
+          "No se encontró el capitulo solicitado.");
       // Obtiene los capítulos cercanos para determinar si hay capítulos anteriores o siguientes
       Elements nearChapters = docAnimeLife.body().select(".naveps .nvs");
 
@@ -70,7 +78,7 @@ public class LfChapterService {
       // Si no tiene siguiente capítulo, se obtiene la fecha de emisión del último capítulo y se le suma 7 días
       if (!chapterInfo.getHaveNextChapter()) {
         String date = DataUtils.parseDate(docAnimeLife.body().select(".year .updated").text().trim(), "MMMM d, yyyy", 7);
-        chapterInfo.setNextChapterDate(date);
+        chapterInfo.setNextChapterDate(this.calcNextChapterDate(date));
       }
 
       // Establece el estado del ánime (en emisión o completado)
@@ -86,7 +94,7 @@ public class LfChapterService {
 
       return chapterInfo;
     } catch (Exception e) {
-      throw new ChapterNotFound("Error Chapter 1: " + e.getMessage());
+      throw new ChapterNotFound(e.getMessage());
     }
   }
 
@@ -169,6 +177,21 @@ public class LfChapterService {
     } catch (Exception e) {
       throw new ChapterNotFound("3: " + e.getMessage());
     }
+  }
+
+  private String calcNextChapterDate(String lastChapterDate) {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
+    LocalDate today = LocalDate.now();
+
+    LocalDate date = LocalDate.parse(lastChapterDate, formatter);
+    DayOfWeek weekDay = date.getDayOfWeek();
+
+    int daysToAdd = weekDay.getValue() - today.getDayOfWeek().getValue();
+    if (daysToAdd != 0 || !date.isBefore(today)) {
+      daysToAdd += 7;
+    }
+
+    return today.plusDays(daysToAdd).format(formatter);
   }
 
   private ChapterDTO setFirstAndLastChapters(ChapterDTO chapterInfo, Document docAnimeLife, Integer chapter) {

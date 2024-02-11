@@ -9,6 +9,7 @@ import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.InvalidSearch;
+import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.NextTrySearch;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
 
@@ -30,6 +31,13 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(NumberFormatException.class)
   public ResponseEntity<?> handleNumberFormatException(NumberFormatException ex) {
     ResponseDTO response = new ResponseDTO("El capitulo solicitado no existe", 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
+
+  // Connection Exceptions
+  @ExceptionHandler(NextTrySearch.class)
+  public ResponseEntity<?> handleNextTrySearch(NextTrySearch ex) {
+    ResponseDTO response = new ResponseDTO("Trying next search...", 404);
     return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
   }
 

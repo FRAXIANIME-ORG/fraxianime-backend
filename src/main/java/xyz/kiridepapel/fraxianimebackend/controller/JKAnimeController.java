@@ -1,7 +1,11 @@
 package xyz.kiridepapel.fraxianimebackend.controller;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +26,6 @@ import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.service.LfAnimeService;
 import xyz.kiridepapel.fraxianimebackend.service.HomeService;
 import xyz.kiridepapel.fraxianimebackend.service.LfSearchService;
-import xyz.kiridepapel.fraxianimebackend.service.TranslateService;
 import xyz.kiridepapel.fraxianimebackend.service.LfChapterService;
 
 @RestController
@@ -50,8 +53,6 @@ public class JKAnimeController {
   private LfChapterService chapterService;
   @Autowired
   private LfSearchService searchService;
-  @Autowired
-  private TranslateService translateService;
 
   @PostConstruct
   public void init() {
@@ -60,12 +61,22 @@ public class JKAnimeController {
 
   @GetMapping("/test")
   public ResponseEntity<?> test(
-      @RequestParam("name") String name,
-      @RequestParam("synopsis") String synopsis) {
+      @RequestParam("date") String lastChapterDate) {
     try {
-      String translation = this.translateService.translate(name, synopsis);
+      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
+      LocalDate today = LocalDate.now();
 
-      return new ResponseEntity<>(translation, HttpStatus.OK);
+      LocalDate date = LocalDate.parse(lastChapterDate, formatter);
+      DayOfWeek weekDay = date.getDayOfWeek();
+
+      int daysToAdd = weekDay.getValue() - today.getDayOfWeek().getValue();
+      if (daysToAdd != 0 || !date.isBefore(today)) {
+        daysToAdd += 7;
+      }
+
+      String newDate = today.plusDays(daysToAdd).format(formatter);
+
+      return new ResponseEntity<>(newDate, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>("Ocurrió un error: " + e.getMessage(), HttpStatus.valueOf(500));
     }
