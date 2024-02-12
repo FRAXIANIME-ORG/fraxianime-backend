@@ -35,6 +35,7 @@ public class TranslateService {
       log.info("Se encontró el anime en la base de datos");
       return anime.getSynopsisTranslated();
     } else {
+      synopsis = synopsis.replaceAll("\"", "'");
       if (isProduction == true) {
         try {
           String synopsisTranslated = this.translateWithMicrosoft(synopsis);
