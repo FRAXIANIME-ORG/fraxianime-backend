@@ -120,7 +120,7 @@ public class HomeService {
     Calendar nowCal = Calendar.getInstance();
     nowCal.setTime(today);
     
-    int daysToRest = (nowCal.get(Calendar.HOUR_OF_DAY) >= 19 && nowCal.get(Calendar.HOUR_OF_DAY) <= 23) ? 0 : 1;
+    int daysToRest = (nowCal.get(Calendar.HOUR_OF_DAY) >= 19 && nowCal.get(Calendar.HOUR_OF_DAY) <= 23) ? 1 : 0;    
 
     for (Element item : elementsJkAnime) {
       String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
