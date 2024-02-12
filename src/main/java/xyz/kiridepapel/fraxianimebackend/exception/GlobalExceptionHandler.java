@@ -9,6 +9,7 @@ import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.InvalidSearch;
+import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.SearchException;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.NextTrySearch;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
@@ -50,6 +51,12 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(AnimeNotFound.class)
   public ResponseEntity<?> handleAnimeNotFound(AnimeNotFound ex) {
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
+
+  @ExceptionHandler(SearchException.class)
+  public ResponseEntity<?> handleSearchException(SearchException ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
     return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
   }

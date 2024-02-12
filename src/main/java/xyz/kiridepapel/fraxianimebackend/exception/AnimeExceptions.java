@@ -13,6 +13,12 @@ public class AnimeExceptions {
     }
   }
 
+  public static class SearchException extends RuntimeException {
+    public SearchException(String message) {
+      super(message);
+    }
+  } 
+
   public static class InvalidSearch extends RuntimeException {
     public InvalidSearch(String message) {
       super(message);

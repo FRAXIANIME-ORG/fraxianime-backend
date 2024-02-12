@@ -4,6 +4,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -27,6 +28,9 @@ import xyz.kiridepapel.fraxianimebackend.service.LfAnimeService;
 import xyz.kiridepapel.fraxianimebackend.service.HomeService;
 import xyz.kiridepapel.fraxianimebackend.service.LfSearchService;
 import xyz.kiridepapel.fraxianimebackend.service.LfChapterService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/v1")
@@ -81,6 +85,17 @@ public class JKAnimeController {
       return new ResponseEntity<>("Ocurrió un error: " + e.getMessage(), HttpStatus.valueOf(500));
     }
   }
+
+  @GetMapping("/test2")
+  public ResponseEntity<?> test2() {
+    // Fecha exacta con tiempo
+    Date today = new Date();
+    // restar 5 horas
+    today.setTime(today.getTime() - 18000000);
+
+    return new ResponseEntity<>(today, HttpStatus.OK);
+  }
+  
 
   @GetMapping("/animes")
   public ResponseEntity<?> homePage(HttpServletRequest request) {
@@ -156,10 +171,10 @@ public class JKAnimeController {
   }
 
   private SearchDTO searchAnimes(HttpServletRequest request, String anime, Integer page, Integer maxItems) {
-    if (page == null || page < 1 || page > 100) {
+    if (page == null || page < 1 || page > 300) {
       throw new InvalidSearch("La página solicitada no es válida.");
     }
-    if (maxItems != null && (maxItems < 1 || maxItems > 100)) {
+    if (maxItems != null && (maxItems < 1 || maxItems > 20)) {
       throw new InvalidSearch("El número de elementos solicitados no es válido.");
     }
 
