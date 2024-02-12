@@ -35,10 +35,10 @@ public class TranslateService {
       log.info("Se encontró el anime en la base de datos");
       return anime.getSynopsisTranslated();
     } else {
-      synopsis = synopsis.replaceAll("\"", "'");
       if (isProduction == true) {
         try {
-          String synopsisTranslated = this.translateWithMicrosoft(synopsis);
+          synopsis = synopsis.replaceAll("\"", "++");
+          String synopsisTranslated = this.translateWithMicrosoft(synopsis).replaceAll("++", "\"");
           log.info("Se tradujo 'correctamente': " + synopsisTranslated);
           animeRepository.save(new AnimeEntity(null, name, synopsisTranslated));
           return synopsisTranslated;
