@@ -67,13 +67,13 @@ public class JkAnimeService {
 
     // Asignar la nueva información si es válida
     if (this.isValidData(alternativeName)) {
-      animeInfo.setAlternativeName(alternativeName);
+      animeInfo.setAlternativeName(alternativeName.replace("&#039;", "'"));
     }
     if (this.isValidData(jkanimeImgUrl)) {
       animeInfo.setImgUrl(jkanimeImgUrl);
     }
     if (this.isValidData(synopsis)) {
-      animeInfo.setSynopsis(synopsis);
+      animeInfo.setSynopsis(synopsis.replace("&#039;", "'"));
     }
     if (this.isValidData(likes)) {
       animeInfo.setLikes(likes);

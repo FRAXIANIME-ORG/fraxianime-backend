@@ -4,6 +4,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -31,13 +32,9 @@ import xyz.kiridepapel.fraxianimebackend.service.LfChapterService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(
-  origins = { "https://fraxianime.vercel.app", "http://localhost:4200" },
-  allowedHeaders = "**"
-)
+@CrossOrigin(origins = { "https://fraxianime.vercel.app", "http://localhost:4200" }, allowedHeaders = "**")
 public class JKAnimeController {
   // Variables estaticas
   @Value("${PROVIDER_JKANIME_URL}")
@@ -88,14 +85,27 @@ public class JKAnimeController {
 
   @GetMapping("/test2")
   public ResponseEntity<?> test2() {
-    // Fecha exacta con tiempo
+    // Fecha exacta con tiempo UTC y 5 horas menos (Hora de Perú)
+    String date = "Ayer"; // Ayer, dd/MM
     Date today = new Date();
-    // restar 5 horas
-    today.setTime(today.getTime() - 18000000);
+    // today.setTime(today.getTime() - 18000000); // 5 horas
+    // today.setTime(today.getTime() - 14400000); // 4 horas
+    today.setTime(today.getTime() + 10800000); // 3 horas
+    // today.setTime(today.getTime() - 7200000); // 2 horas
+    // today.setTime(today.getTime() - 3600000); // 1 hora
+    Calendar nowCal = Calendar.getInstance();
+    // restarle 3 horas a nowCal
+    nowCal.setTime(today);
 
-    return new ResponseEntity<>(today, HttpStatus.OK);
+    // Si la hora es >= 19 < 0, entonces es "Hoy"
+    // Si es la 1 am, entonces es "Ayer"
+    if (date.equals("Hoy") || (date.equals("Ayer") &&
+      nowCal.get(Calendar.HOUR_OF_DAY) >= 19 || nowCal.get(Calendar.HOUR_OF_DAY) < 0)) {
+      date = "Hoy";
+    }
+
+    return new ResponseEntity<>("today: " + today + " - nowCal: " + nowCal.get(Calendar.HOUR_OF_DAY) + " - newDate: " + date, HttpStatus.OK);
   }
-  
 
   @GetMapping("/animes")
   public ResponseEntity<?> homePage(HttpServletRequest request) {
@@ -143,7 +153,7 @@ public class JKAnimeController {
     if (chapter < 0) {
       return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.OK);
     }
-    
+
     ChapterDTO chapterInfo = this.chapterService.constructChapter(anime, chapter);
 
     if (isNotNullOrEmpty(chapterInfo)) {
@@ -183,7 +193,6 @@ public class JKAnimeController {
 
     return this.searchService.searchAnimes(anime, page, maxItems);
   }
-
 
   private void verifyAllowedOrigin(String origin) {
     if (origin == null || !allowedOrigins.contains(origin)) {

@@ -35,8 +35,6 @@ public class LfSearchService {
       String searchUrl = this.providerAnimeLifeUrl + "page/" + page + "/?s="
           + anime.replace(":", "%3A").replace("_", "+");
 
-      log.info("searchUrl: " + searchUrl);
-
       SearchDTO searchDTO = new SearchDTO();
       Document docAnimeLife = DataUtils.tryConnectOrReturnNull(searchUrl, 2);
 

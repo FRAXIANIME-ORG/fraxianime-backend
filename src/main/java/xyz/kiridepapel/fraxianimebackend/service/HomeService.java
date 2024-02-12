@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,8 @@ import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 @Service
 @Log
 public class HomeService {
+  @Value("${APP_PRODUCTION}")
+  private Boolean isProduction;
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
@@ -105,13 +109,41 @@ public class HomeService {
 
     // Obtener los animes de Jkanime
     String year = String.valueOf(LocalDate.now().getYear());
+
+    // Fecha exacta con tiempo UTC y 5 horas menos si esta en produccion (Hora de Perú)
+    Date today = new Date();
+    if (isProduction) {
+      today.setTime(today.getTime() - 18000000);
+    }
+
+    // Fecha en instancia de calendario
+    Calendar nowCal = Calendar.getInstance();
+    nowCal.setTime(today);
+    
+    int daysToRest = (nowCal.get(Calendar.HOUR_OF_DAY) >= 19 && nowCal.get(Calendar.HOUR_OF_DAY) <= 23) ? 0 : 1;
+
     for (Element item : elementsJkAnime) {
       String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
 
+      // if (date.equals(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM")).toString()))  {
+      //   date = "Hoy";
+      // } else if (date.equals(LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("dd/MM")).toString())) {
+      //   date = "Ayer";
+      // }
+
+      // Todas las fechas se guardan en el formato dd/MM/yyyy y más adelante se formatean a "Hoy", "Ayer", "Hace x días" o dd/MM
       if (date.equals("Hoy") || date.equals("Ayer")) {
-        date = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        // Si es Hoy o Ayer pero actualmente es entre las 19:00 y 23:59, entonces es "Hoy" en foramto dd/MM/yyyy
+        if (date.equals("Hoy") ||
+            (date.equals("Ayer") && nowCal.get(Calendar.HOUR_OF_DAY) >= 19 && nowCal.get(Calendar.HOUR_OF_DAY) <= 23)) {
+          date = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        } else {
+          // Si es Ayer pero actualmente es entre las 00:00 y 18:59, entonces es "Ayer" en formato dd/MM/yyyy
+          date = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        }
       } else {
-        date = DataUtils.parseDate(date + "/" + year, "dd/MM/yyyy", 0);
+        // Si no es Hoy ni Ayer, entonces es una fecha en formato dd/MM/yyyy
+        date = DataUtils.parseDate(date + "/" + year, "dd/MM/yyyy", -daysToRest);
       }
 
       ChapterDataDTO data = ChapterDataDTO.builder()
@@ -133,7 +165,7 @@ public class HomeService {
                 .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
                 .map(Node::toString)
                 .collect(Collectors.joining()).trim())
-            .imgUrl(item.select("img").attr("src").trim())
+            .imgUrl(item.select("img").attr("src").trim().replace("?resize=247,350", ""))
             .chapter(item.select(".epx").text().replace("Ep 0", "").replace("Ep ", "").trim())
             .type(item.select(".typez").text().trim())
             .url(this.changeFormatUrl(item.select(".bsx a").attr("href"), providerAnimeLifeUrl))

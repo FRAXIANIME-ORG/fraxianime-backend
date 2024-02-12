@@ -19,6 +19,8 @@ import xyz.kiridepapel.fraxianimebackend.repository.AnimeRepository;
 @Service
 @Log
 public class TranslateService {
+  @Value("${APP_PRODUCTION}")
+  private Boolean isProduction;
   @Value("${RAPIDAPI_KEY}")
   private String rapidApiKey;
   private String RAPIDAPI_HOST = "microsoft-translator-text.p.rapidapi.com";
@@ -33,13 +35,17 @@ public class TranslateService {
       log.info("Se encontró el anime en la base de datos");
       return anime.getSynopsisTranslated();
     } else {
-      try {
-        String synopsisTranslated = this.translateWithMicrosoft(synopsis);
-        log.info("Se tradujo 'correctamente': " + synopsisTranslated);
-        animeRepository.save(new AnimeEntity(null, name, synopsisTranslated));
-        return synopsisTranslated;
-      } catch (Exception e) {
-        log.info("Error al traducir: " + e.getMessage());
+      if (isProduction == true) {
+        try {
+          String synopsisTranslated = this.translateWithMicrosoft(synopsis);
+          log.info("Se tradujo 'correctamente': " + synopsisTranslated);
+          animeRepository.save(new AnimeEntity(null, name, synopsisTranslated));
+          return synopsisTranslated;
+        } catch (Exception e) {
+          log.info("Error al traducir: " + e.getMessage());
+          return synopsis;
+        }
+      } else {
         return synopsis;
       }
     }
