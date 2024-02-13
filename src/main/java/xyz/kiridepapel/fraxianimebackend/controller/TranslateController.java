@@ -41,7 +41,7 @@ public class TranslateController {
     byte[] excelBytes = this.translateService.databaseToExcel();
 
     LocalDateTime now = LocalDateTime.now();
-    if (this.isProduction) {
+    if (this.isProduction == true) {
       now.minusHours(5);
     }
     
@@ -50,8 +50,10 @@ public class TranslateController {
       String.format("%02d", now.getHour()) + "-" + String.format("%02d", now.getMinute()) + ")";
     String fileame = "Translations " + dateTime + ".xlsx";
     
-    if (this.isProduction) {
+    if (this.isProduction == true) {
       dateTime = dateTime + " isProd";
+    } else {
+      dateTime = dateTime + " isDev";
     }
 
     HttpHeaders headers = new HttpHeaders();
