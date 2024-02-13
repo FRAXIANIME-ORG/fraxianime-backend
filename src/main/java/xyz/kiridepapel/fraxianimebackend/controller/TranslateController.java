@@ -51,9 +51,9 @@ public class TranslateController {
     String fileame = "Translations " + dateTime + ".xlsx";
     
     if (this.isProduction == true) {
-      dateTime = dateTime + " isProd";
+      fileame = fileame + " isProd";
     } else {
-      dateTime = dateTime + " isDev";
+      fileame = fileame + " isDev";
     }
 
     HttpHeaders headers = new HttpHeaders();
