@@ -14,8 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
+import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ConnectionFailed;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.NextTrySearch;
 
 @Log
@@ -25,11 +25,11 @@ public class DataUtils {
   private String providerAnimeLifeUrl;
 
   // ? Connection
-  public Document simpleConnect(String urlHome, String errorMessage) {
+  public Document simpleConnect(String url, String errorMessage) {
     try {
-      return Jsoup.connect(urlHome).get();
+      return Jsoup.connect(url).get();
     } catch (Exception x) {
-      throw new AnimeNotFound(errorMessage);
+      throw new ConnectionFailed(errorMessage);
     }
   }
   

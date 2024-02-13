@@ -10,6 +10,8 @@ import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.InvalidSearch;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.SearchException;
+import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ConnectionFailed;
+import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.NextTrySearch;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
@@ -19,26 +21,32 @@ public class GlobalExceptionHandler {
   // Security Exceptions
   @ExceptionHandler(ProtectedResource.class)
   public ResponseEntity<?> handleProtectedResource(ProtectedResource ex) {
-    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 401);
     return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
   }
 
   @ExceptionHandler(SQLInjectionException.class)
   public ResponseEntity<?> handleSQLInjectionException(SQLInjectionException ex) {
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 401);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
+
+  // Data Exceptions
+  @ExceptionHandler(ConnectionFailed.class)
+  public ResponseEntity<?> handleConnectionFailed(ConnectionFailed ex) {
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
+  
+  @ExceptionHandler(NextTrySearch.class)
+  public ResponseEntity<?> handleNextTrySearch(NextTrySearch ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
     return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
   }
 
-  @ExceptionHandler(NumberFormatException.class)
-  public ResponseEntity<?> handleNumberFormatException(NumberFormatException ex) {
-    ResponseDTO response = new ResponseDTO("El capitulo solicitado no existe", 404);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
-  }
-
-  // Connection Exceptions
-  @ExceptionHandler(NextTrySearch.class)
-  public ResponseEntity<?> handleNextTrySearch(NextTrySearch ex) {
-    ResponseDTO response = new ResponseDTO("Trying next search...", 404);
+  @ExceptionHandler(DataNotFound.class)
+  public ResponseEntity<?> handleDataNotFound(DataNotFound ex) {
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 200);
     return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
   }
 
@@ -64,6 +72,12 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(InvalidSearch.class)
   public ResponseEntity<?> handleInvalidSearch(InvalidSearch ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
+
+  @ExceptionHandler(NumberFormatException.class)
+  public ResponseEntity<?> handleNumberFormatException(NumberFormatException ex) {
+    ResponseDTO response = new ResponseDTO("El capitulo solicitado no existe", 404);
     return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
   }
 }

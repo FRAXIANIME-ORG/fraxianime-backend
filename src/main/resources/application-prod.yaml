@@ -1,4 +1,5 @@
 APP_PRODUCTION: true
+APP_SECRET: ${APP_SECRET}
 FRONTEND_URL: https://fraxianime.vercel.app
 
 # Colocar 30 segundos más en CacheScheduler.java (línea 24)

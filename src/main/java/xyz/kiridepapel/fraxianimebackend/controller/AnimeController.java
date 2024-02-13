@@ -33,9 +33,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/anime")
 @CrossOrigin(origins = { "https://fraxianime.vercel.app", "http://localhost:4200" }, allowedHeaders = "**")
-public class JKAnimeController {
+public class AnimeController {
   // Variables estaticas
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
