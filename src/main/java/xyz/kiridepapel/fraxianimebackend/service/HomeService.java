@@ -45,17 +45,19 @@ public class HomeService {
 
   @Cacheable(value = "home", key = "'animes'")
   public HomePageDTO homePage() {
-    Document docJkanime = this.dataUtils.simpleConnect(this.providerJkanimeUrl, "Proveedor 1 inactivo");
-    Document docAnimelife = this.dataUtils.simpleConnect(this.providerAnimeLifeUrl, "Proveedor 2 inactivo");
+    Document docAnimesJk = this.dataUtils.simpleConnect(this.providerJkanimeUrl, "Proveedor 1 inactivo");
+    Document docScheduleJk = this.dataUtils.simpleConnect(this.providerJkanimeUrl + "horario", "Proveedor 1 inactivo");
+    Document docAnimesLf = this.dataUtils.simpleConnect(this.providerAnimeLifeUrl, "Proveedor 2 inactivo");
 
     HomePageDTO animes = HomePageDTO.builder()
-        .sliderAnimes(this.sliderAnimes(docJkanime))
-        .ovasOnasSpecials(this.ovasOnasSpecials(docJkanime))
-        .animesProgramming(this.animesProgramming(docAnimelife, docJkanime))
-        .donghuasProgramming(this.donghuasProgramming(docJkanime))
-        .topAnimes(this.topAnimes(docJkanime))
-        .latestAddedAnimes(this.latestAddedAnimes(docJkanime))
-        .latestAddedList(this.latestAddedList(docJkanime))
+        .sliderAnimes(this.sliderAnimes(docAnimesJk))
+        .ovasOnasSpecials(this.ovasOnasSpecials(docAnimesJk))
+        .animesProgramming(this.animesProgramming(docAnimesLf, docAnimesJk))
+        .nextAnimesProgramming(this.nextAnimesProgramming(docScheduleJk))
+        .donghuasProgramming(this.donghuasProgramming(docAnimesJk))
+        .topAnimes(this.topAnimes(docAnimesJk))
+        .latestAddedAnimes(this.latestAddedAnimes(docAnimesJk))
+        .latestAddedList(this.latestAddedList(docAnimesJk))
         .build();
 
     return animes;
@@ -100,37 +102,43 @@ public class HomeService {
     return ovasOnasSpecials;
   }
 
-  public List<ChapterDataDTO> animesProgramming(Document docAnimeLife, Document docJkanime) {
-    Elements elementsAnimeLife = docAnimeLife.body().select(".excstf").first().select(".bs");
-    Elements elementsJkAnime = docJkanime.body().select(".listadoanime-home .anime_programing a");
+  public List<ChapterDataDTO> animesProgramming(Document docAnimesLf, Document docAnimesJk) {
+    Elements elementsAnimeLife = docAnimesLf.body().select(".excstf").first().select(".bs");
+    Elements elementsJkAnime = docAnimesJk.body().select(".listadoanime-home .anime_programing a");
 
     List<ChapterDataDTO> animesProgramming = new ArrayList<>();
     Map<String, ChapterDataDTO> animesJkanimes = new HashMap<>();
 
-    // Fecha exacta con tiempo UTC y 5 horas menos si esta en produccion (Hora de Perú)
-    Date todayD = this.dataUtils.getDateNow();
-    LocalDate todayLD = this.dataUtils.getLocalDateTimeNow().toLocalDate();
+    // Fecha exacta con tiempo UTC y 5 horas menos si esta en produccion (Hora de
+    // Perú)
+    Date todayD = DataUtils.getDateNow(isProduction);
+    LocalDate todayLD = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
 
     // Obtener los animes de Jkanime
-    String year = String.valueOf(this.dataUtils.getLocalDateTimeNow().getYear());
-    
+    String year = String.valueOf(DataUtils.getLocalDateTimeNow(isProduction).getYear());
+
     // Fecha en instancia de calendario
     Calendar nowCal = Calendar.getInstance();
     nowCal.setTime(todayD);
-    
+
     // int daysToRest = 0;
-    // daysToRest = (nowCal.get(Calendar.HOUR_OF_DAY) >= 19 && nowCal.get(Calendar.HOUR_OF_DAY) <= 23) ? 1 : 0;    
+    // daysToRest = (nowCal.get(Calendar.HOUR_OF_DAY) >= 19 &&
+    // nowCal.get(Calendar.HOUR_OF_DAY) <= 23) ? 1 : 0;
 
     for (Element item : elementsJkAnime) {
       String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
 
-      // Todas las fechas se guardan en el formato dd/MM/yyyy y más adelante se formatean a "Hoy", "Ayer", "Hace x días" o dd/MM
+      // Todas las fechas se guardan en el formato dd/MM/yyyy y más adelante se
+      // formatean a "Hoy", "Ayer", "Hace x días" o dd/MM
       if (date.equals("Hoy") || date.equals("Ayer")) {
-        // Si es Hoy o Ayer pero actualmente es entre las 19:00 y 23:59, entonces es "Hoy" en foramto dd/MM/yyyy
-        if (date.equals("Hoy") || (date.equals("Ayer") && nowCal.get(Calendar.HOUR_OF_DAY) >= 19 && nowCal.get(Calendar.HOUR_OF_DAY) <= 23)) {
+        // Si es Hoy o Ayer pero actualmente es entre las 19:00 y 23:59, entonces es
+        // "Hoy" en foramto dd/MM/yyyy
+        if (date.equals("Hoy") || (date.equals("Ayer") && nowCal.get(Calendar.HOUR_OF_DAY) >= 19
+            && nowCal.get(Calendar.HOUR_OF_DAY) <= 23)) {
           date = todayLD.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         }
-        // Si es Ayer pero actualmente es entre las 00:00 y 18:59, entonces es "Ayer" en formato dd/MM/yyyy
+        // Si es Ayer pero actualmente es entre las 00:00 y 18:59, entonces es "Ayer" en
+        // formato dd/MM/yyyy
         else {
           date = todayLD.minusDays(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         }
@@ -160,8 +168,8 @@ public class HomeService {
                 .map(Node::toString)
                 .collect(Collectors.joining()).trim())
             .imgUrl(item.select("img").attr("src").trim().replace("?resize=247,350", ""))
+            .type(item.select(".typez").text().trim().replace("TV", "Anime"))
             .chapter(item.select(".epx").text().replace("Ep 0", "").replace("Ep ", "").trim())
-            .type(item.select(".typez").text().trim())
             .url(this.changeFormatUrl(item.select(".bsx a").attr("href"), providerAnimeLifeUrl))
             .build();
 
@@ -169,8 +177,8 @@ public class HomeService {
 
         if (animesJkanimes.containsKey(anime.getName())) {
           // Si el anime está en Jkanime, usa la fecha y la imagen de Jkanime
-          anime.setDate(this.getFormattedDate(animesJkanimes.get(anime.getName()).getDate()));
           anime.setImgUrl(animesJkanimes.get(anime.getName()).getUrl());
+          anime.setDate(this.getPastFormattedDate(animesJkanimes.get(anime.getName()).getDate()));
           anime.setState(true);
         } else {
           // Si el anime no está en Jkanime, asigna una fecha a partir de la posición
@@ -214,30 +222,80 @@ public class HomeService {
     return animesProgramming;
   }
 
-  private ChapterDataDTO defineSpecialCases(ChapterDataDTO anime) {
-    // Elimina caracteres raros del nombre
-    anime.setName(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')));
-    anime.setName(this.animeUtils.specialNameOrUrlCases(anime.getName(), 'h')); // Nombres especiales
-    anime.setName(anime.getName().replace("Movie", "").trim()); // "Movie" en el nombre
-    anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h')); // Urls especiales
+  private List<ChapterDataDTO> nextAnimesProgramming(Document document) {
+    // Elimina el ultimo elemento (filtro)
+    Elements elements = document.select(".box.semana");
+    elements.remove(elements.size() - 1);
+    List<ChapterDataDTO> nextAnimesProgramming = new ArrayList<>();
 
-    // Si el número de capítulo tiene un "."
-    if (anime.getChapter().contains(".")) {
-      int chapter = Integer.parseInt(anime.getChapter().split("\\.")[0]) + 1;
+    // Obtener el indice del dia actual
+    Integer startIndex = -1;
+    outerloop:
+    for (Element item : elements) {
+      Elements animesDay = item.select(".cajas .box");
+      for (Element subItem : animesDay) {
+        String date = this.formattedNextDate(subItem.select(".last time").text().split(" ")[0]);
 
-      // Reconstruye la url sin el capítulo
-      String[] urlSplit = anime.getUrl().split("-");
-      String url = "";
-      for (int i = 0; i < urlSplit.length - 1; i++) {
-        url += (i != 0) ? "-" + urlSplit[i] : urlSplit[i];
+        // Verificar si la fecha es hoy
+        LocalDate ld = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
+        boolean isToday = date.equals(ld.format(DateTimeFormatter.ofPattern("dd/MM")));
+        
+        if (isToday) {
+          startIndex = elements.indexOf(item);
+          break outerloop;
+        }
       }
-
-      // Asigna el nuevo capítulo y la nueva url
-      anime.setChapter(String.valueOf(chapter));
-      anime.setUrl(url + "/" + chapter);
     }
 
-    return anime;
+    List<ChapterDataDTO> tempLastAnimes = new ArrayList<>();
+    int index = 0;
+    for (Element item : elements) {
+      String day = DataUtils.removeDiacritics(item.select("h2").text());
+      Elements animesDay = item.select(".cajas .box");
+
+      for (Element subItem : animesDay) {
+        String url = subItem.select("a").first().attr("href");
+        String date = this.formattedNextDate(subItem.select(".last time").text().split(" ")[0]);
+        String time = subItem.select(".last time").text().split(" ")[1];
+
+        ChapterDataDTO anime = ChapterDataDTO.builder()
+            .name(subItem.select("a").first().select("h3").text())
+            .imgUrl(subItem.select(".boxx img").attr("src"))
+            .type("Anime")
+            .chapter(this.nextChapterBasenOnDate(date, day, subItem.select(".last span").text().split(":")[1].trim()))
+            .date(date)
+            .time(time.substring(0, time.length() - 3))
+            .url(url.substring(0, url.length() - 1))
+            .build();
+
+        anime.setName(this.animeUtils.specialNameOrUrlCases(anime.getName(), 'h'));
+        anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h'));
+        
+        if (index < startIndex) {
+          tempLastAnimes.add(anime);
+        } else {
+          nextAnimesProgramming.add(anime);
+        }
+      }
+
+      index++;
+    }
+
+    nextAnimesProgramming.addAll(tempLastAnimes);
+
+    return nextAnimesProgramming;
+  }
+
+  private String nextChapterBasenOnDate(String dateTime, String day, String chapter) {
+    Integer intChapter = Integer.parseInt(chapter);
+    // dateTime: dd/MM
+
+    return String.valueOf(intChapter);
+  }
+
+  private String formattedNextDate(String recivedDate) {
+    String date = this.animeUtils.calcNextChapterDateSchedule(recivedDate, this.isProduction);
+    return date;
   }
 
   public List<ChapterDataDTO> donghuasProgramming(Document document) {
@@ -259,7 +317,7 @@ public class HomeService {
           .imgUrl(item.select(".anime__sidebar__comment__item__pic img").attr("src"))
           .chapter(item.select(".anime__sidebar__comment__item__text h6").text().replace("Episodio", "Capitulo"))
           .type("Donghua")
-          .date(this.getFormattedDate(date))
+          .date(this.getPastFormattedDate(date))
           .url(item.select("a").attr("href").replace(providerJkanimeUrl, ""))
           .state(true)
           .build();
@@ -345,7 +403,7 @@ public class HomeService {
     return latestAddedList;
   }
 
-  private String getFormattedDate(String dateText) {
+  private String getPastFormattedDate(String dateText) {
     if (dateText.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$")) {
       // Manejar el caso de que la fecha sea DIA/MES/AÑO
       LocalDate date = LocalDate.parse((dateText), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
@@ -366,6 +424,32 @@ public class HomeService {
     } else {
       return dateText;
     }
+  }
+
+  private ChapterDataDTO defineSpecialCases(ChapterDataDTO anime) {
+    // Elimina caracteres raros del nombre
+    anime.setName(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')));
+    anime.setName(this.animeUtils.specialNameOrUrlCases(anime.getName(), 'h')); // Nombres especiales
+    anime.setName(anime.getName().replace("Movie", "").trim()); // "Movie" en el nombre
+    anime.setUrl(this.animeUtils.specialNameOrUrlCases(anime.getUrl(), 'h')); // Urls especiales
+
+    // Si el número de capítulo tiene un "."
+    if (anime.getChapter().contains(".")) {
+      int chapter = Integer.parseInt(anime.getChapter().split("\\.")[0]) + 1;
+
+      // Reconstruye la url sin el capítulo
+      String[] urlSplit = anime.getUrl().split("-");
+      String url = "";
+      for (int i = 0; i < urlSplit.length - 1; i++) {
+        url += (i != 0) ? "-" + urlSplit[i] : urlSplit[i];
+      }
+
+      // Asigna el nuevo capítulo y la nueva url
+      anime.setChapter(String.valueOf(chapter));
+      anime.setUrl(url + "/" + chapter);
+    }
+
+    return anime;
   }
 
   private String changeFormatUrl(String url, String providerUrl) {

@@ -110,13 +110,14 @@ public class AnimeController {
 
   @GetMapping("/home")
   public ResponseEntity<?> homePage(HttpServletRequest request) {
-    this.verifyAllowedOrigin(request.getHeader("Origin"));
+    // this.verifyAllowedOrigin(request.getHeader("Origin"));
 
     HomePageDTO animes = this.homePageService.homePage();
 
     if (isNotNullOrEmpty(animes.getSliderAnimes()) &&
         isNotNullOrEmpty(animes.getOvasOnasSpecials()) &&
         isNotNullOrEmpty(animes.getAnimesProgramming()) &&
+        isNotNullOrEmpty(animes.getNextAnimesProgramming()) &&
         isNotNullOrEmpty(animes.getDonghuasProgramming()) &&
         isNotNullOrEmpty(animes.getTopAnimes()) &&
         isNotNullOrEmpty(animes.getLatestAddedAnimes()) &&

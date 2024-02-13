@@ -23,6 +23,7 @@ public class HomePageDTO implements Serializable {
   List<ChapterDataDTO> sliderAnimes;
   List<AnimeDataDTO> ovasOnasSpecials;
   List<ChapterDataDTO> animesProgramming;
+  List<ChapterDataDTO> nextAnimesProgramming;
   List<ChapterDataDTO> donghuasProgramming;
   List<TopDataDTO> topAnimes;
   List<AnimeDataDTO> latestAddedAnimes;

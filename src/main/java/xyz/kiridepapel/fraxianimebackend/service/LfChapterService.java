@@ -1,14 +1,10 @@
 package xyz.kiridepapel.fraxianimebackend.service;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,7 +17,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
@@ -29,8 +24,9 @@ import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
-@Log
 public class LfChapterService {
+  @Value("${APP_PRODUCTION}")
+  private Boolean isProduction;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
   @Autowired
@@ -78,7 +74,7 @@ public class LfChapterService {
       // Si no tiene siguiente capítulo, se obtiene la fecha de emisión del último capítulo y se le suma 7 días
       if (!chapterInfo.getHaveNextChapter()) {
         String date = DataUtils.parseDate(docAnimeLife.body().select(".year .updated").text().trim(), "MMMM d, yyyy", 0);
-        chapterInfo.setNextChapterDate(this.calcNextChapterDate(date));
+        chapterInfo.setNextChapterDate(this.animeUtils.calcNextChapterDate(date, this.isProduction));
       }
 
       // Establece el estado del ánime (en emisión o completado)
@@ -177,28 +173,6 @@ public class LfChapterService {
     } catch (Exception e) {
       throw new ChapterNotFound("3: " + e.getMessage());
     }
-  }
-
-  private String calcNextChapterDate(String lastChapterDate) {
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
-    
-    LocalDate todayLDT = this.dataUtils.getLocalDateTimeNow().toLocalDate();
-    
-    LocalDate date = LocalDate.parse(lastChapterDate, formatter);
-    DayOfWeek weekDay = date.getDayOfWeek();
-
-    log.info("retrieved date: " + lastChapterDate);
-
-    int daysToAdd = weekDay.getValue() - todayLDT.getDayOfWeek().getValue();
-    if (daysToAdd == 0 || date.isEqual(todayLDT)) {
-      daysToAdd += 7;
-    }
-
-    String finalDate = todayLDT.plusDays(daysToAdd).format(formatter);
-
-    log.info("final date: " + finalDate);
-
-    return finalDate;
   }
 
   private ChapterDTO setFirstAndLastChapters(ChapterDTO chapterInfo, Document docAnimeLife, Integer chapter) {

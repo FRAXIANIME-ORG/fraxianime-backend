@@ -1,7 +1,11 @@
 package xyz.kiridepapel.fraxianimebackend.utils;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,6 +92,18 @@ public class AnimeUtils {
     return urlChapter;
   }
 
+  // Recorre un mapa y cambia las claves por las que se le indiquen
+  public static Map<String, Object> specialDataKeys(Map<String, Object> originalMap, Map<String, String> specialKeys) {
+    Map<String, Object> newMap = new HashMap<>();
+    
+    for (Map.Entry<String, Object> entry : originalMap.entrySet()) {
+      String newKey = specialKeys.getOrDefault(entry.getKey(), entry.getKey());
+      newMap.put(newKey, entry.getValue());
+    }
+
+    return newMap;
+  }
+
   // Convierte: one-piece-04 -> one-piece-4
   public static String urlChapterWithoutZero(String urlChapter) {
     String urlWithoutZero = urlChapter.replaceAll("-0(\\d+)$", "-$1");
@@ -115,16 +131,33 @@ public class AnimeUtils {
     return chapterCache != null ? chapterCache : null;
   }
 
-  // Recorre un mapa y cambia las claves por las que se le indiquen
-  public static Map<String, Object> specialDataKeys(Map<String, Object> originalMap, Map<String, String> specialKeys) {
-    Map<String, Object> newMap = new HashMap<>();
+  public String calcNextChapterDate(String lastChapterDate, Boolean isProduction) {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
     
-    for (Map.Entry<String, Object> entry : originalMap.entrySet()) {
-      String newKey = specialKeys.getOrDefault(entry.getKey(), entry.getKey());
-      newMap.put(newKey, entry.getValue());
+    LocalDate todayLDT = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
+    
+    LocalDate date = LocalDate.parse(lastChapterDate, formatter);
+    DayOfWeek weekDay = date.getDayOfWeek();
+
+    int daysToAdd = weekDay.getValue() - todayLDT.getDayOfWeek().getValue();
+    if (daysToAdd == 0 || date.isEqual(todayLDT)) {
+      daysToAdd += 7;
     }
 
-    return newMap;
+    String finalDate = date.plusDays(daysToAdd).format(formatter);
+
+    return finalDate;
+  }
+
+  public String calcNextChapterDateSchedule(String recivedDate, Boolean isProduction) {
+    DateTimeFormatter formatterInput = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "ES"));
+    DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("dd/MM", new Locale("es", "ES"));
+
+    LocalDate date = LocalDate.parse(recivedDate, formatterInput);
+
+    String finalDate = date.plusDays(7).format(formatterOutput);
+
+    return finalDate;
   }
   
 }

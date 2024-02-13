@@ -33,8 +33,6 @@ public class TranslateController {
   private String appSecret;
   // Inyeccion de dependencias
   @Autowired
-  private DataUtils dataUtils;
-  @Autowired
   private TranslateService translateService;
 
   @GetMapping("/export/{token}")
@@ -42,7 +40,7 @@ public class TranslateController {
     this.validateToken(token);
     
     byte[] excelBytes = this.translateService.databaseToExcel();
-    LocalDateTime now = this.dataUtils.getLocalDateTimeNow();
+    LocalDateTime now = DataUtils.getLocalDateTimeNow(isProduction);
 
     String dateTime =
       "(" + String.format("%02d", now.getDayOfMonth()) + "-" + String.format("%02d", now.getMonthValue()) + "-" + now.getYear() + ") (" +

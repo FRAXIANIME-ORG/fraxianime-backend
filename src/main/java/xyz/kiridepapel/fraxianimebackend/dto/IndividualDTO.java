@@ -21,6 +21,7 @@ public class IndividualDTO {
     private String type;
     private String chapter;
     private String date;
+    private String time;
     private String url;
     private Boolean state;
   }

@@ -1,5 +1,6 @@
 package xyz.kiridepapel.fraxianimebackend.utils;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -138,16 +139,21 @@ public class DataUtils {
       }
     }
   }
-
-  public LocalDateTime getLocalDateTimeNow() {
-    return this.isProduction ? LocalDateTime.now().minusHours(5) : LocalDateTime.now();
+    
+  public static String removeDiacritics(String input) {
+    String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
+    // Remover caracteres diacríticos
+    return normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
   }
 
-  public Date getDateNow() {
-    return this.isProduction ? new Date(System.currentTimeMillis() - 18000000) : new Date();
+  public static LocalDateTime getLocalDateTimeNow(Boolean isProduction) {
+    return isProduction ? LocalDateTime.now().minusHours(5) : LocalDateTime.now();
   }
 
-  // ? Utils
+  public static Date getDateNow(Boolean isProduction) {
+    return isProduction ? new Date(System.currentTimeMillis() - 18000000) : new Date();
+  }
+
   public static String parseDate(String date, String pattern, int daysToModify) {
     if (date == null || date.isEmpty()) {
       return null;
