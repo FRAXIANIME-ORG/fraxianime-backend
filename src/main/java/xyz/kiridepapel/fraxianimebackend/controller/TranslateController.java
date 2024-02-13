@@ -41,20 +41,14 @@ public class TranslateController {
     byte[] excelBytes = this.translateService.databaseToExcel();
 
     LocalDateTime now = LocalDateTime.now();
-    if (this.isProduction == true) {
-      now.minusHours(5);
+    if (this.isProduction) {
+      now = now.minusHours(5);
     }
-    
+
     String dateTime =
       "(" + String.format("%02d", now.getDayOfMonth()) + "-" + String.format("%02d", now.getMonthValue()) + "-" + now.getYear() + ") (" +
       String.format("%02d", now.getHour()) + "-" + String.format("%02d", now.getMinute()) + ")";
     String fileame = "Translations " + dateTime + ".xlsx";
-    
-    if (this.isProduction == true) {
-      fileame = fileame + " isProd";
-    } else {
-      fileame = fileame + " isDev";
-    }
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
