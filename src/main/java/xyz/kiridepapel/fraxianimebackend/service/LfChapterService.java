@@ -50,21 +50,20 @@ public class LfChapterService {
     }
 
     // Lógica para obtener el ChapterDTO si no está en caché (no se almacena en caché)
-    String modifiedUrlChapter = this.providerAnimeLifeUrl + this.animeUtils.specialNameOrUrlCases(url, 'c');
+    String modifiedUrlChapter = this.providerAnimeLifeUrl + this.animeUtils.specialNameOrUrlCase(url, 'c');
     modifiedUrlChapter = this.animeUtils.specialChapterCases(modifiedUrlChapter, url, chapter);
     return this.findChapter(modifiedUrlChapter, chapter);
   }
 
   public ChapterDTO findChapter(String modifiedUrlChapter, Integer chapter) {
     try {
-      Document docAnimeLife = this.dataUtils.chapterSearchConnect(
-          modifiedUrlChapter, chapter,
-          "No se encontró el capitulo solicitado.");
+      Document docAnimeLife = this.dataUtils.chapterSearchConnect(modifiedUrlChapter, chapter, "No se encontró el capitulo solicitado.");
+      
       // Obtiene los capítulos cercanos para determinar si hay capítulos anteriores o siguientes
       Elements nearChapters = docAnimeLife.body().select(".naveps .nvs");
 
       ChapterDTO chapterInfo = ChapterDTO.builder()
-        .name(this.animeUtils.specialNameOrUrlCases(docAnimeLife.select(".ts-breadcrumb li").get(1).select("span").text().trim(), 'n'))
+        .name(this.animeUtils.specialNameOrUrlCase(docAnimeLife.select(".ts-breadcrumb li").get(1).select("span").text().trim(), 'n'))
         .srcOptions(this.getSrcOptions(docAnimeLife))
         .downloadOptions(this.getDownloadOptions(docAnimeLife))
         .havePreviousChapter(this.havePreviousChapter(nearChapters))
@@ -181,7 +180,7 @@ public class LfChapterService {
       Element itemLastChapter = docAnimeLife.body().select(".episodelist ul li").first();
 
       // El nombre del ánime puede estar modificado en casos especiales
-      String chapterNameModified = this.animeUtils.specialNameOrUrlCases(chapterInfo.getName(), 'l');
+      String chapterNameModified = this.animeUtils.specialNameOrUrlCase(chapterInfo.getName(), 'l');
 
       if (itemFirstChapter != null && itemLastChapter != null) {
         // Imagen del capítulo

@@ -52,8 +52,8 @@ public class LfAnimeService {
   @Cacheable("anime")
   public AnimeInfoDTO animeInfo(String search) {
     try {
-      Document docJkanime = DataUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + this.animeUtils.specialNameOrUrlCases(search, 'j')), 1);
-      Document docAnimeLife = DataUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + this.animeUtils.specialNameOrUrlCases(search, 'a')), 2);
+      Document docJkanime = DataUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + this.animeUtils.specialNameOrUrlCase(search, 'j')), 1);
+      Document docAnimeLife = DataUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + this.animeUtils.specialNameOrUrlCase(search, 'a')), 2);
 
       Element mainAnimeLife = docAnimeLife.body().select(".wrapper").first();
 
@@ -65,9 +65,9 @@ public class LfAnimeService {
       if (trailer.isEmpty()) {
         trailer = null;
       }
-
+      
       AnimeInfoDTO animeInfo = AnimeInfoDTO.builder()
-        .name(this.animeUtils.specialNameOrUrlCases(mainAnimeLife.select(".entry-title").text().trim(), 'n'))
+        .name(this.animeUtils.specialNameOrUrlCase(mainAnimeLife.select(".entry-title").text().trim(), 'n'))
         .alternativeName(mainAnimeLife.select(".entry-title").text().trim())
         .imgUrl(mainAnimeLife.select(".thumbook img").attr("src").trim())
         .synopsis(mainAnimeLife.select(".synp p").text().trim())

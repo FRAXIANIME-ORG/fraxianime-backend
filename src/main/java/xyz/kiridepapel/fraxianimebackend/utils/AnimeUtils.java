@@ -23,7 +23,6 @@ import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
 public class AnimeUtils {
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
-
   @Autowired
   private SpecialCaseRepository specialCaseRepository;
 
@@ -47,37 +46,60 @@ public class AnimeUtils {
     "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin-04"
   );
 
-  public String specialNameOrUrlCases(String original, Character type) {
+  public String specialNameOrUrlCases(Map<String, String> mapListType, String original, Character type) {
     try {
       String mapped = "";
 
       if (original.contains("/")) {
-        mapped = this.specialCaseRepository.getMappedByOriginalAndType(original.split("/")[0].trim(), type); // Si es una url
+        String url = original.split("/")[0].trim();
+        mapped = mapListType.getOrDefault(url, null); // Si es una url
+      } else {
+        mapped = mapListType.getOrDefault(original, null); // Si es un nombre
+      }
+
+      return this.returnWithMsg(original, mapped, type);
+    } catch (Exception e) {
+      log.info("No se encontró un mapeo del original: " + original + " y el tipo: " + type + " en la base de datos. " + "Error: " + e.getMessage());
+      return "Valor vacio";
+    }
+  }
+
+  public String specialNameOrUrlCase(String original, Character type) {
+    try {
+      String mapped = "";
+
+      if (original.contains("/")) {
+        String url = original.split("/")[0].trim();
+        mapped = this.specialCaseRepository.getMappedByOriginalAndType(url, type); // Si es una url
       } else {
         mapped = this.specialCaseRepository.getMappedByOriginalAndType(original, type); // Si es un nombre
       }
 
-      if (mapped != null){
-        if (original.contains("/")) {
-          log.info("--------------------");
-          log.info("| " + type + " | Original: " + original);
-          log.info("| " + type + " | Final: " + original.replace(original.split("/")[0].trim(), mapped));
-          log.info("--------------------");
-          return original.replace(original.split("/")[0].trim(), mapped);
-        } else {
-          log.info("--------------------");
-          log.info("| " + type + " | Original: " + original);
-          log.info("| " + type + " | Final: " + original.replace(original, mapped));
-          log.info("--------------------");
-          return original.replace(original, mapped);
-        }
-      } else {
-        return original;
-      }
-
+      return this.returnWithMsg(original, mapped, type);
     } catch (Exception e) {
       log.info("No se encontró un mapeo del original: " + original + " y el tipo: " + type + " en la base de datos. " + "Error: " + e.getMessage());
       return "Valor vacio";
+    }
+  }
+
+  private String returnWithMsg(String original, String mapped, char type) {
+    if (mapped != null){
+      if (original.contains("/")) {
+        String url = original.split("/")[0].trim();
+        log.info("--------------------");
+        log.info("| " + type + " | Original: " + original);
+        log.info("| " + type + " | Final: " + original.replace(url, mapped));
+        log.info("--------------------");
+        return original.replace(url, mapped);
+      } else {
+        log.info("--------------------");
+        log.info("| " + type + " | Original: " + original);
+        log.info("| " + type + " | Final: " + original.replace(original, mapped));
+        log.info("--------------------");
+        return original.replace(original, mapped);
+      }
+    } else {
+      return original;
     }
   }
 
@@ -144,7 +166,34 @@ public class AnimeUtils {
       daysToAdd += 7;
     }
 
-    String finalDate = date.plusDays(daysToAdd).format(formatter);
+    String finalDate = todayLDT.plusDays(daysToAdd).format(formatter);
+
+    return finalDate;
+  }
+
+  public String calcDaysToNextChapter(String name, String chapterDate, Boolean isProduction) {
+    DateTimeFormatter formatterInput = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "ES"));
+    DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("dd/MM", new Locale("es", "ES"));
+
+    LocalDate todayLDT = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
+    
+    LocalDate date = LocalDate.parse(chapterDate, formatterInput);
+    DayOfWeek weekDay = date.getDayOfWeek();
+
+    int daysToAdd = weekDay.getValue() - todayLDT.getDayOfWeek().getValue();
+    if (daysToAdd < 0) {
+      daysToAdd = (daysToAdd * -1) + 7;
+    }
+
+    String finalDate = todayLDT.plusDays(daysToAdd).format(formatterOutput);
+
+    // log.info("Anime: " + name);
+    // log.info("Today: " + todayLDT);
+    // log.info("Chapter date: " + date);
+    // log.info("Week day: " + weekDay);
+    // log.info("Days to add: " + daysToAdd);
+    // log.info("Final date: " + finalDate);
+    // log.info("--------------------");
 
     return finalDate;
   }
