@@ -42,13 +42,17 @@ public class TranslateController {
 
     LocalDateTime now = LocalDateTime.now();
     if (this.isProduction) {
-      // now.minusHours(5);
+      now.minusHours(5);
     }
     
     String dateTime =
       "(" + String.format("%02d", now.getDayOfMonth()) + "-" + String.format("%02d", now.getMonthValue()) + "-" + now.getYear() + ") (" +
       String.format("%02d", now.getHour()) + "-" + String.format("%02d", now.getMinute()) + ")";
     String fileame = "Translations " + dateTime + ".xlsx";
+    
+    if (this.isProduction) {
+      dateTime = dateTime + " isProd";
+    }
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
