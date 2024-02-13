@@ -42,7 +42,7 @@ public class TranslateController {
 
     LocalDateTime now = LocalDateTime.now();
     if (this.isProduction) {
-      now.minusHours(5);
+      // now.minusHours(5);
     }
     
     String dateTime =
