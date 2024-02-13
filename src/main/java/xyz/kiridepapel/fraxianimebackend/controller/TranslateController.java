@@ -42,7 +42,7 @@ public class TranslateController {
     this.validateToken(token);
     
     byte[] excelBytes = this.translateService.databaseToExcel();
-    LocalDateTime now = this.dataUtils.getDateNow();
+    LocalDateTime now = this.dataUtils.getLocalDateTimeNow();
 
     String dateTime =
       "(" + String.format("%02d", now.getDayOfMonth()) + "-" + String.format("%02d", now.getMonthValue()) + "-" + now.getYear() + ") (" +

@@ -107,43 +107,37 @@ public class HomeService {
     List<ChapterDataDTO> animesProgramming = new ArrayList<>();
     Map<String, ChapterDataDTO> animesJkanimes = new HashMap<>();
 
-    // Obtener los animes de Jkanime
-    String year = String.valueOf(LocalDate.now().getYear());
-
     // Fecha exacta con tiempo UTC y 5 horas menos si esta en produccion (Hora de Perú)
-    Date today = new Date();
-    if (isProduction) {
-      today.setTime(today.getTime() - 18000000);
-    }
+    Date todayD = this.dataUtils.getDateNow();
+    LocalDate todayLD = this.dataUtils.getLocalDateTimeNow().toLocalDate();
 
+    // Obtener los animes de Jkanime
+    String year = String.valueOf(this.dataUtils.getLocalDateTimeNow().getYear());
+    
     // Fecha en instancia de calendario
     Calendar nowCal = Calendar.getInstance();
-    nowCal.setTime(today);
+    nowCal.setTime(todayD);
     
-    int daysToRest = (nowCal.get(Calendar.HOUR_OF_DAY) >= 19 && nowCal.get(Calendar.HOUR_OF_DAY) <= 23) ? 1 : 0;    
+    // int daysToRest = 0;
+    // daysToRest = (nowCal.get(Calendar.HOUR_OF_DAY) >= 19 && nowCal.get(Calendar.HOUR_OF_DAY) <= 23) ? 1 : 0;    
 
     for (Element item : elementsJkAnime) {
       String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
 
-      // if (date.equals(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM")).toString()))  {
-      //   date = "Hoy";
-      // } else if (date.equals(LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("dd/MM")).toString())) {
-      //   date = "Ayer";
-      // }
-
       // Todas las fechas se guardan en el formato dd/MM/yyyy y más adelante se formatean a "Hoy", "Ayer", "Hace x días" o dd/MM
       if (date.equals("Hoy") || date.equals("Ayer")) {
         // Si es Hoy o Ayer pero actualmente es entre las 19:00 y 23:59, entonces es "Hoy" en foramto dd/MM/yyyy
-        if (date.equals("Hoy") ||
-            (date.equals("Ayer") && nowCal.get(Calendar.HOUR_OF_DAY) >= 19 && nowCal.get(Calendar.HOUR_OF_DAY) <= 23)) {
-          date = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        } else {
-          // Si es Ayer pero actualmente es entre las 00:00 y 18:59, entonces es "Ayer" en formato dd/MM/yyyy
-          date = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        if (date.equals("Hoy") || (date.equals("Ayer") && nowCal.get(Calendar.HOUR_OF_DAY) >= 19 && nowCal.get(Calendar.HOUR_OF_DAY) <= 23)) {
+          date = todayLD.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         }
-      } else {
-        // Si no es Hoy ni Ayer, entonces es una fecha en formato dd/MM/yyyy
-        date = DataUtils.parseDate(date + "/" + year, "dd/MM/yyyy", -daysToRest);
+        // Si es Ayer pero actualmente es entre las 00:00 y 18:59, entonces es "Ayer" en formato dd/MM/yyyy
+        else {
+          date = todayLD.minusDays(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        }
+      }
+      // Si no es Hoy ni Ayer, entonces es una fecha en formato dd/MM/yyyy
+      else {
+        date = DataUtils.parseDate(date + "/" + year, "dd/MM/yyyy", 0);
       }
 
       ChapterDataDTO data = ChapterDataDTO.builder()

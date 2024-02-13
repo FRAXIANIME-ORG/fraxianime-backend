@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -138,8 +139,12 @@ public class DataUtils {
     }
   }
 
-  public LocalDateTime getDateNow() {
+  public LocalDateTime getLocalDateTimeNow() {
     return this.isProduction ? LocalDateTime.now().minusHours(5) : LocalDateTime.now();
+  }
+
+  public Date getDateNow() {
+    return this.isProduction ? new Date(System.currentTimeMillis() - 18000000) : new Date();
   }
 
   // ? Utils
