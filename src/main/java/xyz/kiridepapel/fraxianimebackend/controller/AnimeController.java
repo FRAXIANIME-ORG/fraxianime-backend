@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
-@RequestMapping("/api/v1/anime")
+@RequestMapping("/api/v1")
 @CrossOrigin(origins = { "https://fraxianime.vercel.app", "http://localhost:4200" }, allowedHeaders = "**")
 public class AnimeController {
   // Variables estaticas
@@ -107,7 +107,7 @@ public class AnimeController {
     return new ResponseEntity<>("today: " + today + " - nowCal: " + nowCal.get(Calendar.HOUR_OF_DAY) + " - newDate: " + date, HttpStatus.OK);
   }
 
-  @GetMapping("/animes")
+  @GetMapping("/home")
   public ResponseEntity<?> homePage(HttpServletRequest request) {
     this.verifyAllowedOrigin(request.getHeader("Origin"));
 
