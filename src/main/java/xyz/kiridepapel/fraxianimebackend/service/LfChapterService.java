@@ -179,7 +179,8 @@ public class LfChapterService {
 
   private String calcNextChapterDate(String lastChapterDate) {
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
-    LocalDate today = LocalDate.now();
+    
+    LocalDate today = this.dataUtils.getDateNow().toLocalDate();
     
     LocalDate date = LocalDate.parse(lastChapterDate, formatter);
     DayOfWeek weekDay = date.getDayOfWeek();
