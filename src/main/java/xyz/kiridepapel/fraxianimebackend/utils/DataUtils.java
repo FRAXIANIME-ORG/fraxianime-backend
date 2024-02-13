@@ -1,6 +1,7 @@
 package xyz.kiridepapel.fraxianimebackend.utils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Locale;
@@ -21,6 +22,8 @@ import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.NextTrySearch;
 @Log
 @Component
 public class DataUtils {
+  @Value("${APP_PRODUCTION}")
+  private Boolean isProduction;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
 
@@ -133,6 +136,10 @@ public class DataUtils {
         return decodedString;
       }
     }
+  }
+
+  public LocalDateTime getDateNow() {
+    return this.isProduction ? LocalDateTime.now().minusHours(5) : LocalDateTime.now();
   }
 
   // ? Utils

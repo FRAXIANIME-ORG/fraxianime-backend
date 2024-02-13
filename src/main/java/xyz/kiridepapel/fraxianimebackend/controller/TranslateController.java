@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
 import xyz.kiridepapel.fraxianimebackend.service.TranslateService;
+import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -30,7 +31,9 @@ public class TranslateController {
   private Boolean isProduction;
   @Value("${APP_SECRET}")
   private String appSecret;
-
+  // Inyeccion de dependencias
+  @Autowired
+  private DataUtils dataUtils;
   @Autowired
   private TranslateService translateService;
 
@@ -39,11 +42,7 @@ public class TranslateController {
     this.validateToken(token);
     
     byte[] excelBytes = this.translateService.databaseToExcel();
-
-    LocalDateTime now = LocalDateTime.now();
-    if (this.isProduction) {
-      now = now.minusHours(5);
-    }
+    LocalDateTime now = this.dataUtils.getDateNow();
 
     String dateTime =
       "(" + String.format("%02d", now.getDayOfMonth()) + "-" + String.format("%02d", now.getMonthValue()) + "-" + now.getYear() + ") (" +

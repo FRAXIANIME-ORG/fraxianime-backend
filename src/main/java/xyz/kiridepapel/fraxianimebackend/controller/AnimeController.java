@@ -71,7 +71,8 @@ public class AnimeController {
       DayOfWeek weekDay = date.getDayOfWeek();
 
       int daysToAdd = weekDay.getValue() - today.getDayOfWeek().getValue();
-      if (daysToAdd != 0 || !date.isBefore(today)) {
+      // if (daysToAdd != 0 || !date.isBefore(today)) {
+      if (daysToAdd == 0 || date.isEqual(today)) {
         daysToAdd += 7;
       }
 

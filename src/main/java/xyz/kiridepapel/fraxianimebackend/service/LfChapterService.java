@@ -180,12 +180,12 @@ public class LfChapterService {
   private String calcNextChapterDate(String lastChapterDate) {
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
     LocalDate today = LocalDate.now();
-
+    
     LocalDate date = LocalDate.parse(lastChapterDate, formatter);
     DayOfWeek weekDay = date.getDayOfWeek();
 
     int daysToAdd = weekDay.getValue() - today.getDayOfWeek().getValue();
-    if (daysToAdd != 0 || !date.isBefore(today)) {
+    if (daysToAdd == 0 || date.isEqual(today)) {
       daysToAdd += 7;
     }
 
