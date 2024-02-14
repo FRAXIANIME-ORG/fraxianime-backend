@@ -48,7 +48,7 @@ public class JkAnimeService {
     Map.entry("Derivado", "derived")
   );
 
-  public AnimeInfoDTO getAnimeInfo(AnimeInfoDTO animeInfo, Document docJkanime, String search) {
+  public AnimeInfoDTO getAnimeInfo(AnimeInfoDTO animeInfo, Document docJkanime, String search, Map<String, String> tradMap, boolean isMinDateInAnimeLf) {
     Element mainJkanime = docJkanime.body().select(".contenido").first();
     Elements keys = docJkanime.select(".anime__details__text .anime__details__widget .aninfo ul li");
 
@@ -92,11 +92,16 @@ public class JkAnimeService {
       }
     }
     if (this.isValidData(emited)) {
-      animeInfo.getData().put("Publicado el", emited);
+      String newEmited = this.defaultDateName(tradMap, emited);
+      animeInfo.getData().put("Publicado el", newEmited.substring(0, 1).toUpperCase() + newEmited.substring(1));
+      
+      if (isMinDateInAnimeLf == true) {
+        animeInfo.setLastChapterDate(newEmited);
+      }
 
       // Asignar lastChapterDate
       if (emited.contains(" a ")) {
-        animeInfo.setLastChapterDate(emited.split(" a ")[1].trim().replace(" de ", ", ").toLowerCase());
+        animeInfo.setLastChapterDate(this.defaultDateName(tradMap, emited.split(" a ")[1].trim().toLowerCase()));
       }
     }
     if (this.isValidData(duration) && !duration.equals("Desconocido")) {
@@ -116,6 +121,16 @@ public class JkAnimeService {
     }
 
     return animeInfo;
+  }
+
+  public String defaultDateName(Map<String, String> map, String date) {
+    date = date.replace(" de ", ", ");
+    String partMonth = date.split(" ")[0];
+    if (!map.containsKey(partMonth)) {
+      return date;
+    } else {
+      return date.replace(partMonth, map.get(partMonth));
+    }
   }
 
   private Map<String, Object> getAlternativeTitles(Document docJkanime) {

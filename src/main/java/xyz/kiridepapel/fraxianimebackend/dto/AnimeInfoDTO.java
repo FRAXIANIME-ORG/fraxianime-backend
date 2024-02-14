@@ -1,6 +1,7 @@
 package xyz.kiridepapel.fraxianimebackend.dto;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -10,6 +11,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 // import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LastAnimeDataDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 
 @Data
 @NoArgsConstructor
@@ -21,7 +23,7 @@ public class AnimeInfoDTO implements Serializable {
   private String alternativeName;
   private String imgUrl;
   private String synopsis;
-  private String synopsisTranslated;
+  private String synopsisEnglish;
   private String trailer;
   private Integer likes;
 
@@ -29,10 +31,14 @@ public class AnimeInfoDTO implements Serializable {
   private Map<String, Object> alternativeTitles;
   private Map<String, Object> history;
 
-  private Integer firstChapter;
   private Integer lastChapter;
   private String lastChapterDate;
   private String nextChapterDate;
+
+  // Alter
+  private Boolean isNewestChapter;
+
+  private List<ChapterDataDTO> chapterList;
 
   // private List<LastAnimeDataDTO> recomendations;
 }

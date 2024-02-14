@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.time.DayOfWeek;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -129,9 +131,8 @@ public class HomeService {
     String year = String.valueOf(DataUtils.getLocalDateTimeNow(isProduction).getYear());
     Calendar nowCal = Calendar.getInstance();
     nowCal.setTime(todayD);
-    // daysToRest = (nowCal.get(Calendar.HOUR_OF_DAY) >= 19 &&
-    // nowCal.get(Calendar.HOUR_OF_DAY) <= 23) ? 1 : 0;
-
+    
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("es", "ES"));
     for (Element item : elementsJkAnime) {
       String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
 
@@ -142,17 +143,17 @@ public class HomeService {
         // "Hoy" en foramto dd/MM/yyyy
         if (date.equals("Hoy") || (date.equals("Ayer") && nowCal.get(Calendar.HOUR_OF_DAY) >= 19
             && nowCal.get(Calendar.HOUR_OF_DAY) <= 23)) {
-          date = todayLD.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+          date = todayLD.format(formatter);
         }
         // Si es Ayer pero actualmente es entre las 00:00 y 18:59, entonces es "Ayer" en
         // formato dd/MM/yyyy
         else {
-          date = todayLD.minusDays(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+          date = todayLD.minusDays(1).format(formatter);
         }
       }
       // Si no es Hoy ni Ayer, entonces es una fecha en formato dd/MM/yyyy
       else {
-        date = DataUtils.parseDate(date + "/" + year, "dd/MM/yyyy", 0);
+        date = DataUtils.parseDate(date + "/" + year, formatter, 0);
       }
 
       ChapterDataDTO data = ChapterDataDTO.builder()
@@ -238,7 +239,7 @@ public class HomeService {
     outerloop: for (Element item : elements) {
       Elements animesDay = item.select(".cajas .box");
       for (Element subItem : animesDay) {
-        String date = this.animeUtils.calcNextChapterDateSchedule(subItem.select(".last time").text().split(" ")[0], this.isProduction);
+        String date = this.calcNextChapterDateSchedule(subItem.select(".last time").text().split(" ")[0]);
 
         // Verificar si la fecha es hoy
         LocalDate ld = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
@@ -345,7 +346,7 @@ public class HomeService {
   }
 
   private String formattedNextDate(String name, String recivedDate) {
-    String date = this.animeUtils.calcDaysToNextChapter(name, recivedDate, this.isProduction);
+    String date = this.calcDaysToNextChapter(name, recivedDate);
     date = this.getNextFormattedDate(date);
     return date;
   }
@@ -355,13 +356,14 @@ public class HomeService {
     List<ChapterDataDTO> lastChapters = new ArrayList<>();
 
     String year = String.valueOf(LocalDate.now().getYear());
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("es", "ES"));
     for (Element item : elementsJkAnime) {
       String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
 
       if (date.equals("Hoy") || date.equals("Ayer")) {
-        date = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        date = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
       } else {
-        date = DataUtils.parseDate(date + "/" + year, "dd/MM/yyyy", 0);
+        date = DataUtils.parseDate(date + "/" + year, formatter, 0);
       }
 
       ChapterDataDTO anime = ChapterDataDTO.builder()
@@ -455,53 +457,7 @@ public class HomeService {
     return latestAddedList;
   }
 
-  private String getNextFormattedDate(String dateText) {
-    if (dateText.matches("^\\d{1,2}/\\d{1,2}$")) {
-      // Manejar el caso de que la fecha sea DIA/MES/AÑO
-      LocalDate todayLD = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
-      LocalDate date = LocalDate.parse((dateText + "/" + todayLD.getYear()), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-      long daysBetween = ChronoUnit.DAYS.between(todayLD, date);
-
-      if (daysBetween <= 7) {
-        if (daysBetween == 0) {
-          return "Hoy";
-        } else if (daysBetween == 1) {
-          return "Mañana";
-        } else {
-          return "En " + (1 * daysBetween) + " días";
-        }
-      } else {
-        String[] dateArray = dateText.split("/");
-        return dateArray[0] + "/" + dateArray[1];
-      }
-    } else {
-      return dateText;
-    }
-  }
-
-  private String getPastFormattedDate(String dateText) {
-    if (dateText.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$")) {
-      // Manejar el caso de que la fecha sea DIA/MES/AÑO
-      LocalDate date = LocalDate.parse((dateText), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-      long daysBetween = ChronoUnit.DAYS.between(date, LocalDate.now());
-
-      if (daysBetween <= 7) {
-        if (daysBetween == 0) {
-          return "Hoy";
-        } else if (daysBetween == 1) {
-          return "Ayer";
-        } else {
-          return "Hace " + daysBetween + " días";
-        }
-      } else {
-        String[] dateArray = dateText.split("/");
-        return dateArray[0] + "/" + dateArray[1];
-      }
-    } else {
-      return dateText;
-    }
-  }
-
+  // Text
   private ChapterDataDTO defineSpecialCases(Map<String, String> mapListType, char type, ChapterDataDTO anime) {
     // Elimina caracteres raros del nombre
     anime.setName(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')));
@@ -550,4 +506,81 @@ public class HomeService {
     return newUrl;
   }
 
+  // Dates
+  private String getPastFormattedDate(String dateText) {
+    if (dateText.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$")) {
+      // Manejar el caso de que la fecha sea DIA/MES/AÑO
+      LocalDate date = LocalDate.parse((dateText), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+      long daysBetween = ChronoUnit.DAYS.between(date, LocalDate.now());
+
+      if (daysBetween <= 7) {
+        if (daysBetween == 0) {
+          return "Hoy";
+        } else if (daysBetween == 1) {
+          return "Ayer";
+        } else {
+          return "Hace " + daysBetween + " días";
+        }
+      } else {
+        String[] dateArray = dateText.split("/");
+        return dateArray[0] + "/" + dateArray[1];
+      }
+    } else {
+      return dateText;
+    }
+  }
+
+  private String getNextFormattedDate(String dateText) {
+    if (dateText.matches("^\\d{1,2}/\\d{1,2}$")) {
+      // Manejar el caso de que la fecha sea DIA/MES/AÑO
+      LocalDate todayLD = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
+      LocalDate date = LocalDate.parse((dateText + "/" + todayLD.getYear()), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+      long daysBetween = ChronoUnit.DAYS.between(todayLD, date);
+
+      if (daysBetween <= 7) {
+        if (daysBetween == 0) {
+          return "Hoy";
+        } else if (daysBetween == 1) {
+          return "Mañana";
+        } else {
+          return "En " + (1 * daysBetween) + " días";
+        }
+      } else {
+        String[] dateArray = dateText.split("/");
+        return dateArray[0] + "/" + dateArray[1];
+      }
+    } else {
+      return dateText;
+    }
+  }
+
+  private String calcDaysToNextChapter(String name, String chapterDate) {
+    DateTimeFormatter formatterInput = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "ES"));
+    DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("dd/MM", new Locale("es", "ES"));
+
+    LocalDate todayLDT = DataUtils.getLocalDateTimeNow(this.isProduction).toLocalDate();
+    
+    LocalDate date = LocalDate.parse(chapterDate, formatterInput);
+    DayOfWeek weekDay = date.getDayOfWeek();
+
+    int daysToAdd = weekDay.getValue() - todayLDT.getDayOfWeek().getValue();
+    if (daysToAdd < 0) {
+      daysToAdd = (daysToAdd * -1) + 7;
+    }
+
+    String finalDate = todayLDT.plusDays(daysToAdd).format(formatterOutput);
+
+    return finalDate;
+  }
+
+  private String calcNextChapterDateSchedule(String recivedDate) {
+    DateTimeFormatter formatterInput = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "ES"));
+    DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("dd/MM", new Locale("es", "ES"));
+
+    LocalDate date = LocalDate.parse(recivedDate, formatterInput);
+
+    String finalDate = date.plusDays(7).format(formatterOutput);
+
+    return finalDate;
+  }
 }

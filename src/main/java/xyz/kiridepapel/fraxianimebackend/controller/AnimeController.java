@@ -110,7 +110,7 @@ public class AnimeController {
 
   @GetMapping("/home")
   public ResponseEntity<?> homePage(HttpServletRequest request) {
-    // this.verifyAllowedOrigin(request.getHeader("Origin"));
+    this.verifyAllowedOrigin(request.getHeader("Origin"));
 
     HomePageDTO animes = this.homePageService.homePage();
 
@@ -131,8 +131,7 @@ public class AnimeController {
   @GetMapping("/{anime}")
   public ResponseEntity<?> animeInfo(HttpServletRequest request,
       @PathVariable("anime") String anime) {
-
-    this.verifyAllowedOrigin(request.getHeader("Origin"));
+    // this.verifyAllowedOrigin(request.getHeader("Origin"));
     this.verifySQLInjection(anime);
 
     AnimeInfoDTO animeInfo = this.animeService.animeInfo(anime);

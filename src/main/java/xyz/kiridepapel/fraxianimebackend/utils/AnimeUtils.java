@@ -1,11 +1,7 @@
 package xyz.kiridepapel.fraxianimebackend.utils;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,62 +147,6 @@ public class AnimeUtils {
     Cache cache = cacheManager.getCache(cacheName);
     T chapterCache = cache != null ? cache.get(cacheKey, type) : null;
     return chapterCache != null ? chapterCache : null;
-  }
-
-  public String calcNextChapterDate(String lastChapterDate, Boolean isProduction) {
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
-    
-    LocalDate todayLDT = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
-    
-    LocalDate date = LocalDate.parse(lastChapterDate, formatter);
-    DayOfWeek weekDay = date.getDayOfWeek();
-
-    int daysToAdd = weekDay.getValue() - todayLDT.getDayOfWeek().getValue();
-    if (daysToAdd == 0 || date.isEqual(todayLDT)) {
-      daysToAdd += 7;
-    }
-
-    String finalDate = todayLDT.plusDays(daysToAdd).format(formatter);
-
-    return finalDate;
-  }
-
-  public String calcDaysToNextChapter(String name, String chapterDate, Boolean isProduction) {
-    DateTimeFormatter formatterInput = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "ES"));
-    DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("dd/MM", new Locale("es", "ES"));
-
-    LocalDate todayLDT = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
-    
-    LocalDate date = LocalDate.parse(chapterDate, formatterInput);
-    DayOfWeek weekDay = date.getDayOfWeek();
-
-    int daysToAdd = weekDay.getValue() - todayLDT.getDayOfWeek().getValue();
-    if (daysToAdd < 0) {
-      daysToAdd = (daysToAdd * -1) + 7;
-    }
-
-    String finalDate = todayLDT.plusDays(daysToAdd).format(formatterOutput);
-
-    // log.info("Anime: " + name);
-    // log.info("Today: " + todayLDT);
-    // log.info("Chapter date: " + date);
-    // log.info("Week day: " + weekDay);
-    // log.info("Days to add: " + daysToAdd);
-    // log.info("Final date: " + finalDate);
-    // log.info("--------------------");
-
-    return finalDate;
-  }
-
-  public String calcNextChapterDateSchedule(String recivedDate, Boolean isProduction) {
-    DateTimeFormatter formatterInput = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "ES"));
-    DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("dd/MM", new Locale("es", "ES"));
-
-    LocalDate date = LocalDate.parse(recivedDate, formatterInput);
-
-    String finalDate = date.plusDays(7).format(formatterOutput);
-
-    return finalDate;
   }
   
 }

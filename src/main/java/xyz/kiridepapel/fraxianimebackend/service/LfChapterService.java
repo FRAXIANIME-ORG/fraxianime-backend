@@ -1,10 +1,14 @@
 package xyz.kiridepapel.fraxianimebackend.service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -72,8 +76,10 @@ public class LfChapterService {
       
       // Si no tiene siguiente capítulo, se obtiene la fecha de emisión del último capítulo y se le suma 7 días
       if (!chapterInfo.getHaveNextChapter()) {
-        String date = DataUtils.parseDate(docAnimeLife.body().select(".year .updated").text().trim(), "MMMM d, yyyy", 0);
-        chapterInfo.setNextChapterDate(this.animeUtils.calcNextChapterDate(date, this.isProduction));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
+        String date = docAnimeLife.body().select(".year .updated").text().trim();
+        date = DataUtils.parseDate(date, formatter, 0);
+        chapterInfo.setNextChapterDate(this.calcNextChapterDate(date));
       }
 
       // Establece el estado del ánime (en emisión o completado)
@@ -215,6 +221,24 @@ public class LfChapterService {
     } catch (Exception e) {
       throw new ChapterNotFound("4: " + e.getMessage());
     }
+  }
+
+  public String calcNextChapterDate(String lastChapterDate) {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
+    
+    LocalDate todayLDT = DataUtils.getLocalDateTimeNow(this.isProduction).toLocalDate();
+    
+    LocalDate date = LocalDate.parse(lastChapterDate, formatter);
+    DayOfWeek weekDay = date.getDayOfWeek();
+
+    int daysToAdd = weekDay.getValue() - todayLDT.getDayOfWeek().getValue();
+    if (daysToAdd == 0 || date.isEqual(todayLDT)) {
+      daysToAdd += 7;
+    }
+
+    String finalDate = todayLDT.plusDays(daysToAdd).format(formatter);
+
+    return finalDate;
   }
 
   private String getProviderName(String url) {

@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Date;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -154,18 +153,15 @@ public class DataUtils {
     return isProduction ? new Date(System.currentTimeMillis() - 18000000) : new Date();
   }
 
-  public static String parseDate(String date, String pattern, int daysToModify) {
+  public static String parseDate(String date, DateTimeFormatter formatter, int daysToModify) {
     if (date == null || date.isEmpty()) {
       return null;
     }
 
-    DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern(pattern, new Locale("es", "ES"));
-    DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern(pattern, new Locale("es", "ES"));
-
-    LocalDate currentDate = LocalDate.parse(date, inputFormatter);
+    LocalDate currentDate = LocalDate.parse(date, formatter);
     LocalDate nextChapterDate = currentDate.plusDays(daysToModify);
 
-    return nextChapterDate.format(outputFormatter);
+    return nextChapterDate.format(formatter);
   }
-    
+  
 }
