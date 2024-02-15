@@ -4,24 +4,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
+import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
+import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
+import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.NextTrySearch;
+import xyz.kiridepapel.fraxianimebackend.service.ScheduleService;
 
 @Service
 @Log
-@SuppressWarnings("null")
 public class AnimeUtils {
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
+  // Inyección de dependencias
   @Autowired
-  private SpecialCaseRepository specialCaseRepository;
-
+  private ScheduleService scheduleService;
+  // Variables
   private List<String> animesWithoutZeroCases = List.of(
     // Anime url: one-piece-0X -> one-piece-X
     "shigatsu-wa-kimi-no-uso",
@@ -36,44 +40,141 @@ public class AnimeUtils {
     "maou-gakuin-no-futekigousha-2nd-season",
     "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita"
   );
-
   private List<String> chapterScriptCases = List.of(
     // Chapter url: one-piece-04 -> one-piece-03-2
     "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin-04"
   );
-
-  public String specialNameOrUrlCases(Map<String, String> mapListType, String original, Character type) {
+  
+  public static Document tryConnectOrReturnNull(String urlAnimeInfo, Integer provider) {
     try {
-      String mapped = "";
+      Document document = Jsoup.connect(urlAnimeInfo).get();
 
-      if (original.contains("/")) {
-        String url = original.split("/")[0].trim();
-        mapped = mapListType.getOrDefault(url, null); // Si es una url
-      } else {
-        mapped = mapListType.getOrDefault(original, null); // Si es un nombre
+      // JkAnime
+      if (provider == 1) {
+        // Si existe .container, NO está en la página de error
+        Element test = document.body().select(".container").first();
+        return test != null ? document : null;
+      }
+      // AnimeLife
+      if (provider == 2) {
+        // Si existe .postbody, NO está en la página de error
+        Element test = document.body().select(".postbody").first();
+        return test != null ? document : null;
       }
 
-      return this.returnWithMsg(original, mapped, type);
+      // En cualquier otro caso, retornar null;
+      return null;
     } catch (Exception e) {
-      log.info("No se encontró un mapeo del original: " + original + " y el tipo: " + type + " en la base de datos. " + "Error: " + e.getMessage());
-      return "Valor vacio";
+      return null;
     }
   }
 
-  public String specialNameOrUrlCase(String original, Character type) {
+  public Document chapterSearchConnect(String urlChapter, Integer chapter, String errorMessage) {
+    try {
+      log.info("[] Last request url: " + urlChapter);
+      Document doc = tryConnectOrReturnNull(urlChapter, 2);
+      if (doc != null) {
+        log.info("[] Founded!");
+        return doc;
+      } else {
+        throw new NextTrySearch();
+      }
+    } catch (NextTrySearch x) {
+      // Si ya busca 0 y no encuentra, el capitulo no existe
+      if (chapter == 0) {
+        throw new ChapterNotFound(errorMessage);
+      } else {
+        try {
+          // No lo intenta si el capitulo es mayor a 9
+          if (chapter >= 0 && chapter <= 9) {
+            // Intenta: one-piece-04 -> one-piece-4
+            String url1 = this.urlChapterWithoutZero(urlChapter);
+            log.info("[] Trying without zero (-0X): " + url1);
+            Document doc = tryConnectOrReturnNull(url1, 2);
+            if (doc != null) {
+              log.info("[] Founded!");
+              return doc;
+            }
+          }
+          throw new NextTrySearch();
+        } catch (NextTrySearch xx) {
+          try {
+            // Intenta: one-piece-15 -> one-piece-14-2
+            String url2 = this.urlChapterWithScript(urlChapter);
+            log.info("[] Trying with script (-2): " + url2);
+            Document doc = tryConnectOrReturnNull(url2, 2);
+            if (doc != null) {
+              log.info("[] Founded!");
+              return doc;
+            } else {
+              throw new NextTrySearch();
+            }
+          } catch (NextTrySearch xxx) {
+            try {
+              // Intenta: one-piece-15 -> one-piece-14-5
+              String url3 = this.urlChapterWithPoint(urlChapter);
+              log.info("[] Trying with point (-5): " + url3);
+              Document doc = tryConnectOrReturnNull(url3, 2);
+              if (doc != null) {
+                log.info("[] Founded!");
+                return doc;
+              } else {
+                throw new NextTrySearch();
+              }
+            } catch (NextTrySearch xxxx) {
+              throw new ChapterNotFound(errorMessage);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Convierte: one-piece-04 -> one-piece-4
+  public String urlChapterWithoutZero(String urlChapter) {
+    String urlWithoutZero = urlChapter.replaceAll("-0(\\d+)$", "-$1");
+    return urlWithoutZero;
+  }
+
+  // Convierte: anime-13 -> anime-12-2
+  public String urlChapterWithScript(String urlChapter) {
+    int number = Integer.parseInt(urlChapter.replaceAll("^.*-(\\d+)$", "$1")) - 1;
+    String urlWithScript = urlChapter.replaceAll("-(\\d+)$", "-" + String.format("%02d", number) + "-2");
+    return urlWithScript;
+  }
+
+  // Convierte: chapter-55 -> chapter-54-5
+  public String urlChapterWithPoint(String urlChapter) {
+    int number = Integer.parseInt(urlChapter.replaceAll("^.*-(\\d+)$", "$1")) - 1;
+    String urlWithPoint = urlChapter.replaceAll("-(\\d+)$", "-" + String.format("%02d", number) + "-5");
+    return urlWithPoint;
+  }
+  
+  // Mapea los casos especiales de nombres o urls (si no se manda el map, busca en cache en base al type)
+  public String specialNameOrUrlCases(Map<String, String> mapListType, String original, Character type) {
     try {
       String mapped = "";
+      Map<String, String> useMapListType = new HashMap<>();
+
+      if (mapListType != null) {
+        useMapListType = Map.copyOf(mapListType);
+      } else {
+        // Busca en cache en base al type
+        for (SpecialCaseEntity specialCase : this.scheduleService.getSpecialCases(type)) {
+          useMapListType.put(specialCase.getOriginal(), specialCase.getMapped());
+        }
+      }
 
       if (original.contains("/")) {
         String url = original.split("/")[0].trim();
-        mapped = this.specialCaseRepository.getMappedByOriginalAndType(url, type); // Si es una url
+        mapped = useMapListType.getOrDefault(url, null); // Si es una url
       } else {
-        mapped = this.specialCaseRepository.getMappedByOriginalAndType(original, type); // Si es un nombre
+        mapped = useMapListType.getOrDefault(original, null); // Si es un nombre
       }
 
       return this.returnWithMsg(original, mapped, type);
     } catch (Exception e) {
-      log.info("No se encontró un mapeo del original: " + original + " y el tipo: " + type + " en la base de datos. " + "Error: " + e.getMessage());
+      log.severe("Ocurrió un error al intentar mapear '" + original + "': " + e.getMessage());
       return "Valor vacio";
     }
   }
@@ -120,33 +221,6 @@ public class AnimeUtils {
     }
 
     return newMap;
-  }
-
-  // Convierte: one-piece-04 -> one-piece-4
-  public static String urlChapterWithoutZero(String urlChapter) {
-    String urlWithoutZero = urlChapter.replaceAll("-0(\\d+)$", "-$1");
-    return urlWithoutZero;
-  }
-
-  // Convierte: anime-13 -> anime-12-2
-  public static String urlChapterWithScript(String urlChapter) {
-    int number = Integer.parseInt(urlChapter.replaceAll("^.*-(\\d+)$", "$1")) - 1;
-    String urlWithScript = urlChapter.replaceAll("-(\\d+)$", "-" + String.format("%02d", number) + "-2");
-    return urlWithScript;
-  }
-
-  // Convierte: chapter-55 -> chapter-54-5
-  public static String urlChapterWithPoint(String urlChapter) {
-    int number = Integer.parseInt(urlChapter.replaceAll("^.*-(\\d+)$", "$1")) - 1;
-    String urlWithPoint = urlChapter.replaceAll("-(\\d+)$", "-" + String.format("%02d", number) + "-5");
-    return urlWithPoint;
-  }
-  
-  // Busca en caché
-  public <T> T searchFromCache(CacheManager cacheManager, String cacheName, String cacheKey, Class<T> type) {
-    Cache cache = cacheManager.getCache(cacheName);
-    T chapterCache = cache != null ? cache.get(cacheKey, type) : null;
-    return chapterCache != null ? chapterCache : null;
   }
   
 }

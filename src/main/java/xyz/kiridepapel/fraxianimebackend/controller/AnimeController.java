@@ -1,8 +1,5 @@
 package xyz.kiridepapel.fraxianimebackend.controller;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -11,6 +8,7 @@ import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,12 +27,14 @@ import xyz.kiridepapel.fraxianimebackend.service.LfAnimeService;
 import xyz.kiridepapel.fraxianimebackend.service.HomeService;
 import xyz.kiridepapel.fraxianimebackend.service.LfSearchService;
 import xyz.kiridepapel.fraxianimebackend.service.LfChapterService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = { "https://fraxianime.vercel.app", "http://localhost:4200" }, allowedHeaders = "**")
+@CrossOrigin(
+  origins = {
+    "https://fraxianime.vercel.app",
+    "http://localhost:4200",
+  }, allowedHeaders = "**")
 public class AnimeController {
   // Variables estaticas
   @Value("${PROVIDER_JKANIME_URL}")
@@ -49,11 +49,14 @@ public class AnimeController {
   @Autowired
   private HomeService homePageService;
   @Autowired
-  private LfAnimeService animeService;
+  private LfAnimeService lfAnimeService;
   @Autowired
   private LfChapterService chapterService;
   @Autowired
   private LfSearchService searchService;
+  // Language
+  @Autowired
+  private MessageSource msg;
 
   @PostConstruct
   public void init() {
@@ -61,31 +64,7 @@ public class AnimeController {
   }
 
   @GetMapping("/test")
-  public ResponseEntity<?> test(
-      @RequestParam("date") String lastChapterDate) {
-    try {
-      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
-      LocalDate today = LocalDate.now();
-
-      LocalDate date = LocalDate.parse(lastChapterDate, formatter);
-      DayOfWeek weekDay = date.getDayOfWeek();
-
-      int daysToAdd = weekDay.getValue() - today.getDayOfWeek().getValue();
-      // if (daysToAdd != 0 || !date.isBefore(today)) {
-      if (daysToAdd == 0 || date.isEqual(today)) {
-        daysToAdd += 7;
-      }
-
-      String newDate = today.plusDays(daysToAdd).format(formatter);
-
-      return new ResponseEntity<>(newDate, HttpStatus.OK);
-    } catch (Exception e) {
-      return new ResponseEntity<>("Ocurrió un error: " + e.getMessage(), HttpStatus.valueOf(500));
-    }
-  }
-
-  @GetMapping("/test2")
-  public ResponseEntity<?> test2() {
+  public ResponseEntity<?> test1() {
     // Fecha exacta con tiempo UTC y 5 horas menos (Hora de Perú)
     String date = "Ayer"; // Ayer, dd/MM
     Date today = new Date();
@@ -106,6 +85,23 @@ public class AnimeController {
     }
 
     return new ResponseEntity<>("today: " + today + " - nowCal: " + nowCal.get(Calendar.HOUR_OF_DAY) + " - newDate: " + date, HttpStatus.OK);
+  }
+
+  @GetMapping("/locale")
+  public ResponseEntity<?> locate(
+      HttpServletRequest request, @RequestParam(value = "lang", defaultValue = "en") String lang) {
+    this.verifyAllowedOrigin(request.getHeader("Origin"));
+    this.verifySQLInjection(lang);
+
+    Locale locale;
+    try {
+      locale = new Locale(lang);
+    } catch (Exception e) {
+      locale = new Locale("en");
+    }
+
+    String greeting = msg.getMessage("greeting", null, locale);
+    return new ResponseEntity<>(greeting, HttpStatus.OK);
   }
 
   @GetMapping("/home")
@@ -129,12 +125,11 @@ public class AnimeController {
   }
 
   @GetMapping("/{anime}")
-  public ResponseEntity<?> animeInfo(HttpServletRequest request,
-      @PathVariable("anime") String anime) {
-    // this.verifyAllowedOrigin(request.getHeader("Origin"));
+  public ResponseEntity<?> animeInfo(HttpServletRequest request, @PathVariable("anime") String anime) {
+    this.verifyAllowedOrigin(request.getHeader("Origin"));
     this.verifySQLInjection(anime);
 
-    AnimeInfoDTO animeInfo = this.animeService.animeInfo(anime);
+    AnimeInfoDTO animeInfo = this.lfAnimeService.animeInfo(anime);
 
     if (isNotNullOrEmpty(animeInfo)) {
       return new ResponseEntity<>(animeInfo, HttpStatus.OK);
@@ -145,9 +140,7 @@ public class AnimeController {
 
   @GetMapping("/{anime}/{chapter}")
   public ResponseEntity<?> chapter(HttpServletRequest request,
-      @PathVariable("anime") String anime,
-      @PathVariable("chapter") Integer chapter) {
-
+      @PathVariable("anime") String anime, @PathVariable("chapter") Integer chapter) {
     this.verifyAllowedOrigin(request.getHeader("Origin"));
     this.verifySQLInjection(anime);
 
@@ -166,18 +159,14 @@ public class AnimeController {
 
   @GetMapping("/search/{anime}/{page}")
   public ResponseEntity<?> searchAnimesWithoutMax(HttpServletRequest request,
-      @PathVariable("anime") String anime,
-      @PathVariable("page") Integer page) {
-
+      @PathVariable("anime") String anime, @PathVariable("page") Integer page) {
     return new ResponseEntity<>(this.searchAnimes(request, anime, page, null), HttpStatus.OK);
   }
 
   @GetMapping("/search/{anime}/{page}/{maxItems}")
   public ResponseEntity<?> searchAnimesWithMax(HttpServletRequest request,
-      @PathVariable("anime") String anime,
-      @PathVariable("page") Integer page,
+      @PathVariable("anime") String anime, @PathVariable("page") Integer page,
       @PathVariable("maxItems") Integer maxItems) {
-
     return new ResponseEntity<>(this.searchAnimes(request, anime, page, maxItems), HttpStatus.OK);
   }
 

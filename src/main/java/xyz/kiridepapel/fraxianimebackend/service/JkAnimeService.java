@@ -10,18 +10,29 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeHistoryDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
+import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
 public class JkAnimeService {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
+  // Inyeccion de dependencias
+  @Autowired
+  private ScheduleService scheduleService;
+  @Autowired
+  private AnimeUtils animeUtils;
+  // Variables
+  private Map<String, String> specialCases = new HashMap<>();
   private Map<String, String> specialKeys = Map.ofEntries(
     Map.entry("Sinónimos", "synonyms"),
     Map.entry("Sinonimos", "synonyms"),
@@ -48,7 +59,16 @@ public class JkAnimeService {
     Map.entry("Derivado", "derived")
   );
 
+  @PostConstruct
+  public void init() {
+    for (SpecialCaseEntity sce : this.scheduleService.getSpecialCases('y')) {
+      this.specialCases.put(sce.getOriginal(), sce.getMapped());
+    }
+  }
+
   public AnimeInfoDTO getAnimeInfo(AnimeInfoDTO animeInfo, Document docJkanime, String search, Map<String, String> tradMap, boolean isMinDateInAnimeLf) {
+    
+    
     Element mainJkanime = docJkanime.body().select(".contenido").first();
     Elements keys = docJkanime.select(".anime__details__text .anime__details__widget .aninfo ul li");
 
@@ -93,15 +113,19 @@ public class JkAnimeService {
     }
     if (this.isValidData(emited)) {
       String newEmited = this.defaultDateName(tradMap, emited);
-      animeInfo.getData().put("Publicado el", newEmited.substring(0, 1).toUpperCase() + newEmited.substring(1));
+      animeInfo.getData().put("Publicado el", DataUtils.firstUpper(newEmited));
       
       if (isMinDateInAnimeLf == true) {
         animeInfo.setLastChapterDate(newEmited);
       }
 
-      // Asignar lastChapterDate
+      // Si hay un rango de fechas
       if (emited.contains(" a ")) {
-        animeInfo.setLastChapterDate(this.defaultDateName(tradMap, emited.split(" a ")[1].trim().toLowerCase()));
+        String lastEmited = this.defaultDateName(tradMap, emited.split(" a ")[1].trim());
+        // Fecha de publicación [1]
+        animeInfo.getData().put("Publicado el", DataUtils.firstUpper(lastEmited.split(" a ")[0].trim()));
+        // Fecha del último capítulo [2]
+        animeInfo.setLastChapterDate(lastEmited);
       }
     }
     if (this.isValidData(duration) && !duration.equals("Desconocido")) {
@@ -132,7 +156,7 @@ public class JkAnimeService {
       return date.replace(partMonth, map.get(partMonth));
     }
   }
-
+  
   private Map<String, Object> getAlternativeTitles(Document docJkanime) {
     Map<String, Object> alternativeTitles = new HashMap<>();
     Elements elements = docJkanime.select(".related_div");
@@ -165,31 +189,44 @@ public class JkAnimeService {
     return alternativeTitles;
   }
 
-  private Map<String, Object> getHistory(Document docJkanime) {
-    Elements allChilds = docJkanime.body().select(".aninfo").last().children();
+  // private Map<String, Object> getHistory(Document docJkanime, Map<String, String> specialCases) {
+    private Map<String, Object> getHistory(Document docJkanime) {
+      Elements allChilds = docJkanime.body().select(".aninfo").last().children();
     Map<String, Object> history = new LinkedHashMap<>();
     String currentKey = null;
     List<AnimeHistoryDTO> currentLinks = null;
 
     // Si hay elementos en el contenedor
     if (allChilds != null && !allChilds.isEmpty()) {
+      // 1. En el primer ciclo:
+      //   - se guarda el titulo de la sublista
+      //   - se ignora porque no hay nada que guardar
+      // 2. En el segundo ciclo:
+      //   - se guarda la lista anterior en el mapa junto con su titulo (guardado en el anterior ciclo)
+      // 3. En todos los ciclos:
+      //   - se inicializa la lista desde 0
       for (Element item : allChilds) {
-        // Verificar si el elemento es un <h5>
+        // Si es un titulo de una sublista (Precuela, Secuela, etc.)
         if (item.tagName().equals("h5")) {
-          // Si ya se ha establecido un <h5>, guardar la lista anterior en el mapa
           if (currentKey != null) {
-            history.put(currentKey, currentLinks);
+            String name = this.animeUtils.specialNameOrUrlCases(null, currentKey, 'y');
+            history.put(name, currentLinks);
           }
-          // Inicializar una nueva lista para el nuevo <h5>
           currentKey = item.text();
           currentLinks = new ArrayList<>();
-        // Verificar si es un link <a>
+        // Si es un link
         } else if (item.tagName().equals("a") && currentLinks != null) {
           String[] parts = item.text().split("\\(");
+          
+          String name = parts[0].trim();
+          String url = item.attr("href").replace(this.providerJkanimeUrl, "").replace("/", "");
+          name = this.animeUtils.specialNameOrUrlCases(this.specialCases, name, 'y');
+          url = this.animeUtils.specialNameOrUrlCases(this.specialCases, url, 'y');
+
           AnimeHistoryDTO link = AnimeHistoryDTO.builder()
-            .name(parts[0].trim())
+            .name(name)
+            .url(url)
             .type(parts[parts.length - 1].replace(")", ""))
-            .url(item.attr("href").replace(this.providerJkanimeUrl, "").replace("/", ""))
             .build();
           currentLinks.add(link);
         }

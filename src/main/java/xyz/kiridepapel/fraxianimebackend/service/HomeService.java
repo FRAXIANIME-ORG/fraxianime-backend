@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.sql.Time;
 import java.time.DayOfWeek;
 import java.util.List;
 import java.util.Locale;
@@ -29,7 +30,6 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.TopDataDTO;
 import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
-import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
@@ -43,7 +43,7 @@ public class HomeService {
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
   @Autowired
-  private SpecialCaseRepository specialCaseRepository;
+  private ScheduleService scheduleService;
   @Autowired
   private DataUtils dataUtils;
   @Autowired
@@ -57,7 +57,7 @@ public class HomeService {
 
     char type = 'h';
     Map<String, String> mapListType = new HashMap<>();
-    for (SpecialCaseEntity sce : this.specialCaseRepository.findByTypes(type, type)) {
+    for (SpecialCaseEntity sce : this.scheduleService.getSpecialCases(type)) {
       mapListType.put(sce.getOriginal(), sce.getMapped());
     }
 
@@ -73,8 +73,10 @@ public class HomeService {
         .donghuasProgramming(donghuasProgramming)
         .topAnimes(this.topAnimes(docAnimesJk))
         .latestAddedAnimes(this.latestAddedAnimes(docAnimesJk))
-        .latestAddedList(this.latestAddedList(docAnimesJk))
         .build();
+
+    animes.setLatestAddedList(this.latestAddedList(docAnimesJk, animes.getLatestAddedAnimes()));
+    animes.setLatestAddedAnimes(this.removeOnasFromLatestAddedAnimes(animes.getLatestAddedAnimes()));
 
     return animes;
   }
@@ -239,11 +241,11 @@ public class HomeService {
     outerloop: for (Element item : elements) {
       Elements animesDay = item.select(".cajas .box");
       for (Element subItem : animesDay) {
-        String date = this.calcNextChapterDateSchedule(subItem.select(".last time").text().split(" ")[0]);
+        String date = this.parseAndSetNextChapterDateSchedule(subItem.select(".last time").text().split(" ")[0]);
 
         // Verificar si la fecha es hoy
-        LocalDate ld = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
-        boolean isToday = date.equals(ld.format(DateTimeFormatter.ofPattern("dd/MM")));
+        LocalDate todayLD = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
+        boolean isToday = date.equals(todayLD.format(DateTimeFormatter.ofPattern("dd/MM")));
 
         if (isToday) {
           startIndex = elements.indexOf(item);
@@ -255,25 +257,35 @@ public class HomeService {
     List<ChapterDataDTO> tempLastAnimes = new ArrayList<>();
     int index = 0;
     for (Element item : elements) {
-      String day = DataUtils.removeDiacritics(item.select("h2").text());
+      // String day = DataUtils.removeDiacritics(item.select("h2").text());
       Elements animesDay = item.select(".cajas .box");
 
       for (Element subItem : animesDay) {
         String name = subItem.select("a").first().select("h3").text();
         String url = subItem.select("a").first().attr("href");
+        String chapter = subItem.select(".last span").text().split(":")[1].trim();
         String date = this.formattedNextDate(name, subItem.select(".last time").text().split(" ")[0]);
-        String time = subItem.select(".last time").text().split(" ")[1];
+        String timeStr = subItem.select(".last time").text().split(" ")[1].replace("21", "11");
+        
+        // Si el tiempo es 21:xx o 20:xx, restarle 10 horas
+        String[] listBadTimes = { "21:", "20:" };
+        if (List.of(listBadTimes).contains(timeStr.substring(0, 3))) {
+          Time time = Time.valueOf(timeStr);
+          time.setTime(time.getTime() - 36000000);
+          timeStr = time.toString();
+        }
 
         ChapterDataDTO anime = ChapterDataDTO.builder()
           .name(name)
           .imgUrl(subItem.select(".boxx img").attr("src"))
           .type("Anime")
-          .chapter(this.nextChapterBasenOnDate(date, day, subItem.select(".last span").text().split(":")[1].trim()))
+          .chapter(String.valueOf(Integer.parseInt(chapter) + 1))
           .date(date)
-          .time(time.substring(0, time.length() - 3))
+          .time(timeStr.substring(0, timeStr.length() - 3))
           .url(url.substring(0, url.length() - 1))
           .build();
 
+        // Casos especiales de nombres y urls
         anime.setName(this.animeUtils.specialNameOrUrlCases(mapListType, anime.getName(), type));
         anime.setUrl(this.animeUtils.specialNameOrUrlCases(mapListType, anime.getUrl(), type));
 
@@ -292,6 +304,7 @@ public class HomeService {
     return nextAnimesProgramming;
   }
 
+  // Cambia las URLs de imagen de animesProgramming por las URLs de imagen de nextAnimesProgramming
   private List<ChapterDataDTO> changeImgAnimesProgramming(List<ChapterDataDTO> animesProgramming, List<ChapterDataDTO> nextAnimesProgramming) {
     Map<String, String> imgUrlsMap = new HashMap<>();
 
@@ -311,7 +324,7 @@ public class HomeService {
     return animesProgramming;
   }
 
-  // Elimina los animes que ya fueron subidos en la lista de animes por subir
+  // Elimina los animes que ya fueron subidos en la lista de animes programados
   private List<ChapterDataDTO> removeNextAnimesIfWasUploaded(List<ChapterDataDTO> animes, List<ChapterDataDTO> nextAnimes) {
     List<ChapterDataDTO> nextAnimesCopy = new ArrayList<>(nextAnimes);
 
@@ -332,17 +345,12 @@ public class HomeService {
 
     return nextAnimesCopy;
   }
-  // Función de ayuda para obtener la prioridad de la fecha
+  // Función para ordenar las fechas formateadas de los próximos capítulos que serán subidos
   private int getPriority(String date) {
     if (date.equals("Hoy")) return 1;
     if (date.equals("Mañana")) return 2;
     if (date.startsWith("En ")) return 3;
     return 4; // Es dd/MM
-  }
-
-  private String nextChapterBasenOnDate(String dateTime, String day, String chapter) {
-    Integer intChapter = Integer.parseInt(chapter) + 1;
-    return String.valueOf(intChapter);
   }
 
   private String formattedNextDate(String name, String recivedDate) {
@@ -426,38 +434,63 @@ public class HomeService {
 
     for (Element element : elements) {
       AnimeDataDTO anime = AnimeDataDTO.builder()
-          .name(element.select(".anime__item__text h5 a").text())
-          .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
-          .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
-          .state(element.select(".anime__item__text ul li").first().text())
-          .type(element.select(".anime__item__text ul li").last().text())
-          .build();
+        .name(element.select(".anime__item__text h5 a").text())
+        .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
+        .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
+        .state(element.select(".anime__item__text ul li").first().text())
+        .type(element.select(".anime__item__text ul li").last().text())
+        .build();
 
-      if (!anime.getType().equals("ONA")) {
-        latestAddedAnimes.add(anime);
-      }
+      latestAddedAnimes.add(anime);
     }
 
     return latestAddedAnimes;
   }
+  // Elimina los ONAs de los animes recién agregados
+  private List<AnimeDataDTO> removeOnasFromLatestAddedAnimes(List<AnimeDataDTO> latestAddedAnimes) {
+    List<AnimeDataDTO> latestAddedAnimesCopy = new ArrayList<>(latestAddedAnimes);
 
-  public List<LinkDTO> latestAddedList(Document document) {
+    for (AnimeDataDTO anime : latestAddedAnimes) {
+      if (anime.getType().equals("ONA")) {
+        latestAddedAnimesCopy.remove(anime);
+      }
+    }
+
+    return latestAddedAnimesCopy;
+  }
+
+  public List<LinkDTO> latestAddedList(Document document, List<AnimeDataDTO> latestAddedAnimes) {
     Elements elements = document.select(".trending_div .side-menu li");
     List<LinkDTO> latestAddedList = new ArrayList<>();
+    Map<String, String> mapOnasNames = new HashMap<>();
+
+    // Llenar el mapa con los nombres de los ONAs
+    latestAddedAnimes.stream().filter(a -> a.getType().equals("ONA")).forEach(a -> {
+      mapOnasNames.put(a.getName(), "f");
+    });
 
     for (Element element : elements) {
-      LinkDTO anime = LinkDTO.builder()
-          .name(element.select("a").text())
+      String name = element.select("a").text();
+      
+      // Si el nombre coincide con uno de los ONAs, no lo agrega a la lista
+      if (mapOnasNames.get(name) != null) {
+        continue;
+      } else {
+        // Si es un anime
+        
+        LinkDTO anime = LinkDTO.builder()
+          .name(name)
           .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
           .build();
-
-      latestAddedList.add(anime);
+  
+        latestAddedList.add(anime);
+      }
     }
 
     return latestAddedList;
   }
 
-  // Text
+  // ? Text
   private ChapterDataDTO defineSpecialCases(Map<String, String> mapListType, char type, ChapterDataDTO anime) {
     // Elimina caracteres raros del nombre
     anime.setName(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')));
@@ -506,7 +539,8 @@ public class HomeService {
     return newUrl;
   }
 
-  // Dates
+  // ? Dates
+  // Formatea la fecha en la que se publicaron los capítulos
   private String getPastFormattedDate(String dateText) {
     if (dateText.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$")) {
       // Manejar el caso de que la fecha sea DIA/MES/AÑO
@@ -529,7 +563,8 @@ public class HomeService {
       return dateText;
     }
   }
-
+  
+  // Formatea la fecha en la que se publicarán los siguientes capítulos
   private String getNextFormattedDate(String dateText) {
     if (dateText.matches("^\\d{1,2}/\\d{1,2}$")) {
       // Manejar el caso de que la fecha sea DIA/MES/AÑO
@@ -553,7 +588,9 @@ public class HomeService {
       return dateText;
     }
   }
-
+  
+  // Calcula los días que faltan para el siguiente capítulo en base
+  // a la fecha de publicación y a la fecha actual
   private String calcDaysToNextChapter(String name, String chapterDate) {
     DateTimeFormatter formatterInput = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "ES"));
     DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("dd/MM", new Locale("es", "ES"));
@@ -573,7 +610,8 @@ public class HomeService {
     return finalDate;
   }
 
-  private String calcNextChapterDateSchedule(String recivedDate) {
+  // Establece la fecha del siguiente capítulo en base a la fecha del último capítulo
+  private String parseAndSetNextChapterDateSchedule(String recivedDate) {
     DateTimeFormatter formatterInput = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "ES"));
     DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("dd/MM", new Locale("es", "ES"));
 

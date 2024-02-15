@@ -39,7 +39,7 @@ public class TranslateController {
   public ResponseEntity<byte[]> export(@PathVariable("token") String token)  {
     this.validateToken(token);
     
-    byte[] excelBytes = this.translateService.databaseToExcel();
+    byte[] excelBytes = this.translateService.exportExcel();
     LocalDateTime now = DataUtils.getLocalDateTimeNow(isProduction);
 
     String dateTime =
@@ -63,7 +63,7 @@ public class TranslateController {
         byte[] bytes = file.getBytes();
         ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
         
-        String msg = this.translateService.excelToDatabase(inputStream);
+        String msg = this.translateService.importExcel(inputStream);
 
         ResponseDTO rps = ResponseDTO.builder()
           .message(msg).status(200).build();

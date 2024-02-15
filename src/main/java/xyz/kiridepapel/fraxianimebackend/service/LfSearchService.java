@@ -18,14 +18,14 @@ import xyz.kiridepapel.fraxianimebackend.dto.SearchDTO;
 import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.SearchException;
 import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
-import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 
 @Service
 @Log
 public class LfSearchService {
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
-
+  // Inyección de dependencias
   @Autowired
   private SpecialCaseRepository specialCaseRepository;
 
@@ -36,7 +36,7 @@ public class LfSearchService {
           + anime.replace(":", "%3A").replace("_", "+");
 
       SearchDTO searchDTO = new SearchDTO();
-      Document docAnimeLife = DataUtils.tryConnectOrReturnNull(searchUrl, 2);
+      Document docAnimeLife = AnimeUtils.tryConnectOrReturnNull(searchUrl, 2);
 
       if (docAnimeLife != null && docAnimeLife.body().select(".listupd center h3").first() == null) {
         Elements animes = docAnimeLife.body().select(".listupd article");

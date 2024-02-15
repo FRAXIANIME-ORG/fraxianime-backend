@@ -32,14 +32,14 @@ public class LfAnimeService {
   private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
-
+  // Inyeccion de dependencias
   @Autowired
   private JkAnimeService jkAnimeService;
   @Autowired
   private TranslateService translateService;
   @Autowired
   private AnimeUtils animeUtils;
-
+  // Variables
   private Map<String, String> specialKeys = Map.ofEntries(
     Map.entry("Tipo", "type"),
     Map.entry("Estudio", "studio"),
@@ -55,13 +55,13 @@ public class LfAnimeService {
   @Cacheable("anime")
   public AnimeInfoDTO animeInfo(String search) {
     try {
-      Document docJkanime = DataUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + this.animeUtils.specialNameOrUrlCase(search, 'j')), 1);
-      Document docAnimeLife = DataUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + this.animeUtils.specialNameOrUrlCase(search, 'a')), 2);
+      Document docJkanime = AnimeUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + this.animeUtils.specialNameOrUrlCases(null, search, 'j')), 1);
+      Document docAnimeLife = AnimeUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + this.animeUtils.specialNameOrUrlCases(null, search, 'a')), 2);
 
       Element mainAnimeLife = docAnimeLife.body().select(".wrapper").first();
 
       if (mainAnimeLife == null) {
-        throw new AnimeNotFound("Contenido del anime no disponible.");
+        throw new AnimeNotFound("Anime no disponible");
       }
 
       String trailer = mainAnimeLife.select(".trailerbutton").attr("href").replace("watch?v=", "embed/");
@@ -70,7 +70,7 @@ public class LfAnimeService {
       }
       
       AnimeInfoDTO animeInfo = AnimeInfoDTO.builder()
-        .name(this.animeUtils.specialNameOrUrlCase(mainAnimeLife.select(".entry-title").text().trim(), 'n'))
+        .name(this.animeUtils.specialNameOrUrlCases(null, mainAnimeLife.select(".entry-title").text().trim(), 'n'))
         .alternativeName(mainAnimeLife.select(".entry-title").text().trim())
         .imgUrl(mainAnimeLife.select(".thumbook img").attr("src").trim())
         .synopsis(mainAnimeLife.select(".synp p").text().trim())

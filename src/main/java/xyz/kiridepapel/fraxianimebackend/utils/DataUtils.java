@@ -11,17 +11,17 @@ import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ConnectionFailed;
-import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.NextTrySearch;
 
-@Log
 @Component
+@SuppressWarnings("null")
+@Log
 public class DataUtils {
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
@@ -36,92 +36,33 @@ public class DataUtils {
       throw new ConnectionFailed(errorMessage);
     }
   }
-  
-  public static Document tryConnectOrReturnNull(String urlAnimeInfo, Integer provider) {
-    try {
-      Document document = Jsoup.connect(urlAnimeInfo).get();
 
-      // JkAnime
-      if (provider == 1) {
-        // Si existe .container, NO está en la página de error
-        Element test = document.body().select(".container").first();
-        return test != null ? document : null;
-      }
-      // AnimeLife
-      if (provider == 2) {
-        // Si existe .postbody, NO está en la página de error
-        Element test = document.body().select(".postbody").first();
-        return test != null ? document : null;
-      }
-
-      // En cualquier otro caso, retornar null;
-      return null;
-    } catch (Exception e) {
-      return null;
-    }
+  // ? Redis
+  public <T> T searchFromCache(CacheManager cacheManager, Class<T> type, String cacheName, String cacheKey) {
+    Cache cache = cacheManager.getCache(cacheName);
+    T chapterCache = cache != null ? cache.get(cacheKey, type) : null;
+    return chapterCache != null ? chapterCache : null;
   }
+  
+  public static void deleteFromCache(CacheManager cacheManager, String cacheName, String cacheKey, boolean deleteAllCollection) {
+    Cache cache = cacheManager.getCache(cacheName);
 
-  public Document chapterSearchConnect(String urlChapter, Integer chapter, String errorMessage) {
-    try {
-      log.info("[] Last request url: " + urlChapter);
-      Document doc = tryConnectOrReturnNull(urlChapter, 2);
-      if (doc != null) {
-        log.info("[] Founded!");
-        return doc;
-      } else {
-        throw new NextTrySearch();
-      }
-    } catch (NextTrySearch x) {
-      // Si ya busca 0 y no encuentra, el capitulo no existe
-      if (chapter == 0) {
-        throw new ChapterNotFound(errorMessage);
-      } else {
+    if (cache != null) {
+      if (deleteAllCollection) {
+        cache.clear();
+        log.info("El cache de la coleccion '" + cacheName + "' fue eliminado");
+      } else if (cacheKey != null) {
         try {
-          // No lo intenta si el capitulo es mayor a 9
-          if (chapter >= 0 && chapter <= 9) {
-            // Intenta: one-piece-04 -> one-piece-4
-            String url1 = AnimeUtils.urlChapterWithoutZero(urlChapter);
-            log.info("[] Trying without zero (-0X): " + url1);
-            Document doc = tryConnectOrReturnNull(url1, 2);
-            if (doc != null) {
-              log.info("[] Founded!");
-              return doc;
-            }
-          }
-          throw new NextTrySearch();
-        } catch (NextTrySearch xx) {
-          try {
-            // Intenta: one-piece-15 -> one-piece-14-2
-            String url2 = AnimeUtils.urlChapterWithScript(urlChapter);
-            log.info("[] Trying with script (-2): " + url2);
-            Document doc = tryConnectOrReturnNull(url2, 2);
-            if (doc != null) {
-              log.info("[] Founded!");
-              return doc;
-            } else {
-              throw new NextTrySearch();
-            }
-          } catch (NextTrySearch xxx) {
-            try {
-              // Intenta: one-piece-15 -> one-piece-14-5
-              String url3 = AnimeUtils.urlChapterWithPoint(urlChapter);
-              log.info("[] Trying with point (-5): " + url3);
-              Document doc = tryConnectOrReturnNull(url3, 2);
-              if (doc != null) {
-                log.info("[] Founded!");
-                return doc;
-              } else {
-                throw new NextTrySearch();
-              }
-            } catch (NextTrySearch xxxx) {
-              throw new ChapterNotFound(errorMessage);
-            }
-          }
+          cache.evict(cacheKey);
+          log.info("El cache '" + cacheKey + "' de la coleccion '" + cacheName + "' fue eliminado");
+        } catch (Exception e) {
+          log.info("El cache '" + cacheKey + "' de la coleccion '" + cacheName + "' no existe");
         }
       }
     }
   }
 
+  // ? Data
   public static String decodeBase64(String encodedString, boolean isIframe) {
     if (!isIframe) {
       return new String(Base64.getDecoder().decode(encodedString));
@@ -138,13 +79,15 @@ public class DataUtils {
       }
     }
   }
-    
+
+  // ? Text
   public static String removeDiacritics(String input) {
     String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
     // Remover caracteres diacríticos
     return normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
   }
 
+  // ? Date
   public static LocalDateTime getLocalDateTimeNow(Boolean isProduction) {
     return isProduction ? LocalDateTime.now().minusHours(5) : LocalDateTime.now();
   }
@@ -163,5 +106,9 @@ public class DataUtils {
 
     return nextChapterDate.format(formatter);
   }
-  
+
+  public static String firstUpper(String text) {
+    return text.substring(0, 1).toUpperCase() + text.substring(1);
+  }
+
 }

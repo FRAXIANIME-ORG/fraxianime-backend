@@ -34,6 +34,9 @@ public class TranslateService {
   @Value("${RAPIDAPI_KEY}")
   private String rapidApiKey;
   private String RAPIDAPI_HOST = "microsoft-translator-text.p.rapidapi.com";
+  // Inyección de dependencias
+  @Autowired
+  private DatabaseManageService databaseManageService;
   @Autowired
   private AnimeRepository animeRepository;
 
@@ -89,7 +92,7 @@ public class TranslateService {
     }
   }
 
-  public byte[] databaseToExcel() {
+  public byte[] exportExcel() {
     List<AnimeEntity> animes = animeRepository.findAll();
 
     if (animes.size() > 0 && !animes.isEmpty()) {
@@ -125,7 +128,7 @@ public class TranslateService {
     }
   }
 
-  public String excelToDatabase(InputStream inputStream) {
+  public String importExcel(InputStream inputStream) {
     List<AnimeEntity> animeList = new ArrayList<>();
 
     try (Workbook workbook = new XSSFWorkbook(inputStream)) {
@@ -157,7 +160,8 @@ public class TranslateService {
       if (animeList.isEmpty()) {
         throw new DataNotFound("No hay datos para importar");
       } else {
-        animeRepository.deleteAll();
+        databaseManageService.resetTable("anime");
+        // animeRepository.deleteAll();
         animeRepository.saveAll(animeList);
       }
     } catch (IOException e) {

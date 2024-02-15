@@ -15,9 +15,10 @@ import xyz.kiridepapel.fraxianimebackend.service.MegaService;
 @RestController
 @RequestMapping("/api/v1/mega")
 @CrossOrigin(
-  origins = { "https://fraxianime.vercel.app", "http://localhost:4200" },
-  allowedHeaders = "**"
-)
+  origins = {
+    "https://fraxianime.vercel.app",
+    "http://localhost:4200",
+  }, allowedHeaders = "**")
 public class MegaController {
   @Autowired
   private MegaService megaService;
