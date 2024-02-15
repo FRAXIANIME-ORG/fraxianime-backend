@@ -231,11 +231,15 @@ public class LfChapterService {
     LocalDate date = LocalDate.parse(lastChapterDate, formatter);
     DayOfWeek weekDay = date.getDayOfWeek();
 
+    // Si la fecha por comparacion de dia de la semana es hoy
+    // y la fecha del ultimo capitulo es hoy, se suma 7 dias
     int daysToAdd = weekDay.getValue() - todayLDT.getDayOfWeek().getValue();
-    if (daysToAdd == 0 || date.isEqual(todayLDT)) {
+    if (daysToAdd == 0 && date.isEqual(todayLDT)) {
       daysToAdd += 7;
     }
 
+    // Se suman la cantidad de dias que hay desde hoy hasta
+    // el dia de la semana en el que salio el ultimo capitulo
     String finalDate = todayLDT.plusDays(daysToAdd).format(formatter);
 
     return finalDate;

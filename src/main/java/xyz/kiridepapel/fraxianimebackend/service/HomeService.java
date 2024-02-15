@@ -271,7 +271,8 @@ public class HomeService {
         String[] listBadTimes = { "21:", "20:" };
         if (List.of(listBadTimes).contains(timeStr.substring(0, 3))) {
           Time time = Time.valueOf(timeStr);
-          time.setTime(time.getTime() - 36000000);
+          // time.setTime(time.getTime() - 36000000); // -10 horas
+          time.setTime(time.getTime() - 32400000); // -9 Horas
           timeStr = time.toString();
         }
 

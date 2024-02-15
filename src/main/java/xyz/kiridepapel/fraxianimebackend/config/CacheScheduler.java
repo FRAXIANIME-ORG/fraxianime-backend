@@ -38,22 +38,27 @@ public class CacheScheduler {
   }
   
   public void updateCacheProgramming() {
-    // Espera 1 segundo
-    try {
-      Thread.sleep(1000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-
     // Actualiza el caché de los casos especiales
     this.updateSpecialCases();
+    
+    // Borra el caché de la página de inicio
+    DataUtils.deleteFromCache(cacheManager, "home", null, true);
+    log.info("-----------------------------");
 
-    // Obtiene o guarda en caché de toda la página de inicio
+    // Guarda en caché la página de inicio actualizada
     HomePageDTO home = this.homePageService.homePage();
-    List<ChapterDataDTO> animesProgramming = home.getAnimesProgramming();
+
+    // Guarda en caché los últimos capítulos
+    this.saveLastChapters(home.getAnimesProgramming());
+    log.info("-----------------------------");
+  }
+
+  // Obtiene o guarda en caché los últimos capítulos
+  private void saveLastChapters(List<ChapterDataDTO> animesProgramming) {
+    // Variables
     Random random = new Random();
     int counter = 1;
-    
+    // Guarda en caché los últimos capítulos
     for (ChapterDataDTO chapterInfo : animesProgramming) {
       try {
         boolean isCached = false;
@@ -95,8 +100,6 @@ public class CacheScheduler {
         counter++;
       }
     }
-      
-    log.info("-----------------------------");
   }
 
   // Obtiene o guarda en caché de los casos especiales
@@ -115,8 +118,8 @@ public class CacheScheduler {
     // Borra el caché de los casos especiales
     log.info("-----------------------------");
     DataUtils.deleteFromCache(cacheManager, "specialCases", null, true);
-    // Guarda en caché los casos especiales actualizados
     log.info("-----------------------------");
+    // Guarda en caché los casos especiales actualizados
     for (Character type : listSpecialCharacters) {
       this.scheduleService.getSpecialCases(type);
       log.info("00. Guardando en cache: '" + type + "'");

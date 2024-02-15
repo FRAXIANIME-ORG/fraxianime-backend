@@ -44,7 +44,7 @@ public class TranslateService {
     AnimeEntity anime = animeRepository.findByName(name);
 
     if (anime != null) {
-      log.info("Se encontró el anime en la base de datos");
+      log.info("Se encontro el anime en la base de datos");
       return anime.getSynopsisEnglish();
     } else {
       if (this.isProduction) {

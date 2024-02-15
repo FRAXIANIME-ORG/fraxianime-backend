@@ -79,7 +79,7 @@ public class TranslateController {
     if (this.appSecret.equals(token)) {
       return;
     } else {
-      throw new ProtectedResource("Acceso denegado");
+      throw new ProtectedResource("Acceso denegado TKN-001");
     }
   }
 
