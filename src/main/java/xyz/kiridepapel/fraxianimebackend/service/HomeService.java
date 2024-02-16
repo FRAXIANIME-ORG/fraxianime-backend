@@ -326,16 +326,23 @@ public class HomeService {
 
     return animesProgramming;
   }
-
+  
   // Elimina los animes que ya fueron subidos en la lista de animes programados
   private List<ChapterDataDTO> removeNextAnimesIfWasUploaded(List<ChapterDataDTO> animes, List<ChapterDataDTO> nextAnimes) {
     List<ChapterDataDTO> nextAnimesCopy = new ArrayList<>(nextAnimes);
 
     for (ChapterDataDTO nextAnime : nextAnimes) {
       if (animes.stream().anyMatch(aP ->
+          // Si esta en subidos "Hoy" y en programados "Hoy"
           aP.getName().equals(nextAnime.getName()) &&
           aP.getChapter().equals(nextAnime.getChapter()) &&
-          aP.getDate().equals("Hoy"))) {
+          aP.getDate().equals("Hoy") ||
+          // Si esta en subidos "Ayer" y en programados "Hoy" (ya fue subido ayer, por lo que es un bug)
+          aP.getName().equals(nextAnime.getName()) &&
+          aP.getChapter().equals(nextAnime.getChapter()) &&
+          aP.getDate().equals("Ayer") && nextAnime.getDate().equals("Hoy")
+        )
+      ) {
         nextAnimesCopy.remove(nextAnime);
       }
     }

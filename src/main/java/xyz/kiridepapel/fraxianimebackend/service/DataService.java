@@ -35,6 +35,7 @@ public class DataService<T> {
   // Inyección de dependencias
   @Autowired
   private DatabaseManageService databaseManageService;
+  // ! Repositorios (Agregar más según sea necesario)
   @Autowired
   private AnimeRepository animeRepository;
   @Autowired
@@ -44,6 +45,7 @@ public class DataService<T> {
     Class<?> clazz = null;
     List<? extends T> listRetrieved = null;
 
+    // ! Agregar más casos según sea necesario
     switch (dataName.toLowerCase()) {
       case "translations":
         clazz = AnimeEntity.class;
@@ -61,6 +63,7 @@ public class DataService<T> {
   }
 
   private void saveData(List<T> listRetrieved, String dataName) {
+    // ! Agregar más casos según sea necesario
     switch (dataName.toLowerCase()) {
       case "translations":
         databaseManageService.resetTable("anime");
