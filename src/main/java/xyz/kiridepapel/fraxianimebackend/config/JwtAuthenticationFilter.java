@@ -34,9 +34,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
     try {
       final String username;
       final String token = jwtUtils.getTokenFromRequest(request);
-
+      
       // Validar el token cuando no esta iniciando sesion
-      if (token == null && request.getRequestURI().startsWith("/api/v1/auth")) {
+      if (token == null && 
+          request.getRequestURI().startsWith("/api/v1/auth") ||
+          request.getRequestURI().startsWith("/api/v1/anime")
+      ) {
         filterChain.doFilter(request, response);
         return;
       } else if (token == null) {

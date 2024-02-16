@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.PostMapping;
     "https://fraxianime.vercel.app",
     "http://localhost:4200",
   }, allowedHeaders = "**")
+@SuppressWarnings("unused")
 @Log
 public class DataController {
   // Variables estaticas
@@ -84,7 +85,7 @@ public class DataController {
     return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
   }
 
-  @PreAuthorize("hasAnyRole('ADMIN')")
+  // @PreAuthorize("hasAnyRole('ADMIN')")
   @PostMapping("/{dataName}/import")
   public ResponseEntity<?> importFromExcel(HttpServletRequest request,
       MultipartFile file, @PathVariable("dataName") String dataName) {

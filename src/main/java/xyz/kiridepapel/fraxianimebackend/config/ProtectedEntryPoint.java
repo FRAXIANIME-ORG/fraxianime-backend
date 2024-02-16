@@ -19,9 +19,7 @@ public class ProtectedEntryPoint implements AuthenticationEntryPoint {
       HttpServletRequest request,
       HttpServletResponse response,
       AuthenticationException authException) throws IOException {
-    if (
-        !request.getRequestURI().startsWith("/api/v1/")
-    ) {
+    if (!request.getRequestURI().startsWith("/api/v1/")) {
       ResponseDTO responseDTO = new ResponseDTO("Acceso denegado", 401);
       response.setStatus(401);
       response.setContentType("application/json");
