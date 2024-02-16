@@ -1,5 +1,7 @@
 package xyz.kiridepapel.fraxianimebackend.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,7 +11,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResponseDTO {
   private String message;
   private Integer status;
+  private String token;
+
+  public ResponseDTO(String message, Integer status) {
+    this.message = message;
+    this.status = status;
+  }
 }

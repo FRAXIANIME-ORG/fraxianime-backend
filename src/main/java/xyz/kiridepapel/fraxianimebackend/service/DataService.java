@@ -20,7 +20,7 @@ import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.classes.AssignmentExportData;
 import xyz.kiridepapel.fraxianimebackend.entity.AnimeEntity;
 import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
-import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFound;
+import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFoundException;
 import xyz.kiridepapel.fraxianimebackend.repository.AnimeRepository;
 import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
@@ -56,7 +56,7 @@ public class DataService<T> {
         if (searchList) listRetrieved = (List<? extends T>) specialCaseRepository.findAll();
         break;
       default:
-        throw new DataNotFound("El nombre de los datos a exportar no es válido");
+        throw new DataNotFoundException("El nombre de los datos a exportar no es válido");
     }
 
     return new AssignmentExportData(clazz, listRetrieved);
@@ -74,7 +74,7 @@ public class DataService<T> {
         specialCaseRepository.saveAll((List<SpecialCaseEntity>) listRetrieved);
         break;
       default:
-        throw new DataNotFound("El nombre de los datos a importar no es válido");
+        throw new DataNotFoundException("El nombre de los datos a importar no es válido");
     }
   }
 
@@ -88,7 +88,7 @@ public class DataService<T> {
 
     // Validaciones
     if (clazz == null || listRetrieved == null) {
-      throw new DataNotFound("No se ha especificado la clase o los datos a exportar");
+      throw new DataNotFoundException("No se ha especificado la clase o los datos a exportar");
     }
 
     if (listRetrieved.size() > 0 && !listRetrieved.isEmpty()) {
@@ -132,10 +132,10 @@ public class DataService<T> {
 
         return outputStream.toByteArray();
       } catch (Exception e) {
-        throw new DataNotFound("Ocurrió un error al exportar los datos");
+        throw new DataNotFoundException("Ocurrió un error al exportar los datos");
       }
     } else {
-      throw new DataNotFound("No hay datos para exportar");
+      throw new DataNotFoundException("No hay datos para exportar");
     }
   }
 
@@ -169,7 +169,7 @@ public class DataService<T> {
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException
             | InvocationTargetException e) {
           log.severe("No se pudo crear una nueva instancia de la entidad: " + e.getMessage());
-          throw new DataNotFound("Ocurrió un error al importar los datos");
+          throw new DataNotFoundException("Ocurrió un error al importar los datos");
         }
 
         // Itera sobre los campos de la clase
@@ -212,7 +212,7 @@ public class DataService<T> {
 
             } catch (Exception e) {
               log.severe("No se pudo asignar el valor a la celda: " + e.getMessage());
-              throw new DataNotFound("La asignacion de celda no es válida para el campo '" + fields[i].getName() + "'");
+              throw new DataNotFoundException("La asignacion de celda no es válida para el campo '" + fields[i].getName() + "'");
             }
           }
         }
@@ -225,11 +225,11 @@ public class DataService<T> {
             try {
               Object value = requiredField.get(entity);
               if (value == null || value.toString().isEmpty()) {
-                throw new DataNotFound("El campo obligatorio '" + requiredField.getName() + "' es nulo en una de las filas.");
+                throw new DataNotFoundException("El campo obligatorio '" + requiredField.getName() + "' es nulo en una de las filas.");
               }
             } catch (IllegalAccessException e) {
               log.severe("No se pudo acceder al campo: " + e.getMessage());
-              throw new DataNotFound("No se pudo acceder al campo obligatorio: " + requiredField.getName());
+              throw new DataNotFoundException("No se pudo acceder al campo obligatorio: " + requiredField.getName());
             }
           }
           i++;
@@ -240,12 +240,12 @@ public class DataService<T> {
       }
 
       if (listRetrieved.isEmpty()) {
-        throw new DataNotFound("No hay datos para importar");
+        throw new DataNotFoundException("No hay datos para importar");
       } else {
         this.saveData(listRetrieved, dataName);
       }
     } catch (IOException e) {
-      throw new DataNotFound("Ocurrió un error al importar los datos");
+      throw new DataNotFoundException("Ocurrió un error al importar los datos");
     }
   }
 }

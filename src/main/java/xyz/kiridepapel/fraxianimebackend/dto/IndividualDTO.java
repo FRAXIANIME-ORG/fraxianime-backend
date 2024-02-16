@@ -9,7 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-public class IndividualDTO {
+public class IndividualDTO implements Serializable {
   @Data
   @NoArgsConstructor
   @AllArgsConstructor

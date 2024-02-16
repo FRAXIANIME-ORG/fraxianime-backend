@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDataDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.SearchDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.SearchDTO;
 import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.SearchException;
 import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;

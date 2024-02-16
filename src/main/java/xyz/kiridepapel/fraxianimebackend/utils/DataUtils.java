@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,7 +18,10 @@ import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.java.Log;
+import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ArgumentRequiredException;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ConnectionFailed;
+import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
+import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
 
 @Component
 @SuppressWarnings("null")
@@ -119,4 +123,34 @@ public class DataUtils {
     return nextChapterDate.format(formatter);
   }
 
+  // ? Validations
+  public static void verifyAllowedOrigin(List<String> allowedOrigins, String origin) {
+    if (origin == null || !allowedOrigins.contains(origin)) {
+      throw new ProtectedResource("Acceso denegado");
+    }
+  }
+
+  public static void isValidStr(String str, String errorMsg) {
+    if (str == null || str.isEmpty()) {
+      throw new ArgumentRequiredException(errorMsg);
+    }
+  }
+
+  public static boolean isNotNullOrEmpty(Object obj) {
+    return obj != null;
+  }
+  
+  public static boolean isNotNullOrEmpty(List<?> list) {
+    return list != null && !list.isEmpty();
+  }
+
+  public static void verifySQLInjection(String str) {
+    if (str.matches(".*(--|[;+*^$|?{}\\[\\]()'\"\\']).*") || str.contains("SELECT")) {
+      throw new SQLInjectionException("Esas cosas son del diablo.");
+    }
+  }
+
+  // public static boolean isNotNullOrEmpty(String str) {
+  //   return str != null && !str.isEmpty();
+  // }
 }

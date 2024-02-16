@@ -15,21 +15,20 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
-import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.SearchDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.AnimeInfoDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.HomePageDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.SearchDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.InvalidSearch;
-import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
-import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
-import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.service.LfAnimeService;
 import xyz.kiridepapel.fraxianimebackend.service.HomeService;
 import xyz.kiridepapel.fraxianimebackend.service.LfSearchService;
+import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 import xyz.kiridepapel.fraxianimebackend.service.LfChapterService;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/anime")
 @CrossOrigin(
   origins = {
     "https://fraxianime.vercel.app",
@@ -90,8 +89,8 @@ public class AnimeController {
   @GetMapping("/locale")
   public ResponseEntity<?> locate(
       HttpServletRequest request, @RequestParam(value = "lang", defaultValue = "en") String lang) {
-    this.verifyAllowedOrigin(request.getHeader("Origin"));
-    this.verifySQLInjection(lang);
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    DataUtils.verifySQLInjection(lang);
 
     Locale locale;
     try {
@@ -106,32 +105,32 @@ public class AnimeController {
 
   @GetMapping("/home")
   public ResponseEntity<?> homePage(HttpServletRequest request) {
-    this.verifyAllowedOrigin(request.getHeader("Origin"));
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
 
     HomePageDTO animes = this.homePageService.homePage();
 
-    if (isNotNullOrEmpty(animes.getSliderAnimes()) &&
-        isNotNullOrEmpty(animes.getOvasOnasSpecials()) &&
-        isNotNullOrEmpty(animes.getAnimesProgramming()) &&
-        isNotNullOrEmpty(animes.getNextAnimesProgramming()) &&
-        isNotNullOrEmpty(animes.getDonghuasProgramming()) &&
-        isNotNullOrEmpty(animes.getTopAnimes()) &&
-        isNotNullOrEmpty(animes.getLatestAddedAnimes()) &&
-        isNotNullOrEmpty(animes.getLatestAddedList())) {
+    if (DataUtils.isNotNullOrEmpty(animes.getSliderAnimes()) &&
+        DataUtils.isNotNullOrEmpty(animes.getOvasOnasSpecials()) &&
+        DataUtils.isNotNullOrEmpty(animes.getAnimesProgramming()) &&
+        DataUtils.isNotNullOrEmpty(animes.getNextAnimesProgramming()) &&
+        DataUtils.isNotNullOrEmpty(animes.getDonghuasProgramming()) &&
+        DataUtils.isNotNullOrEmpty(animes.getTopAnimes()) &&
+        DataUtils.isNotNullOrEmpty(animes.getLatestAddedAnimes()) &&
+        DataUtils.isNotNullOrEmpty(animes.getLatestAddedList())) {
       return new ResponseEntity<>(animes, HttpStatus.OK);
     } else {
-      return new ResponseEntity<>(new ResponseDTO("Error al recuperar los datos", 404), HttpStatus.NOT_FOUND);
+      return new ResponseEntity<>(new ResponseDTO("No se pudo recuperar todos los datos", 404), HttpStatus.NOT_FOUND);
     }
   }
 
   @GetMapping("/{anime}")
   public ResponseEntity<?> animeInfo(HttpServletRequest request, @PathVariable("anime") String anime) {
-    this.verifyAllowedOrigin(request.getHeader("Origin"));
-    this.verifySQLInjection(anime);
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    DataUtils.verifySQLInjection(anime);
 
     AnimeInfoDTO animeInfo = this.lfAnimeService.animeInfo(anime);
 
-    if (isNotNullOrEmpty(animeInfo)) {
+    if (DataUtils.isNotNullOrEmpty(animeInfo)) {
       return new ResponseEntity<>(animeInfo, HttpStatus.OK);
     } else {
       return new ResponseEntity<>("Ocurrió un error al recuperar los datos del ánime solicitado.", HttpStatus.OK);
@@ -141,8 +140,8 @@ public class AnimeController {
   @GetMapping("/{anime}/{chapter}")
   public ResponseEntity<?> chapter(HttpServletRequest request,
       @PathVariable("anime") String anime, @PathVariable("chapter") Integer chapter) {
-    this.verifyAllowedOrigin(request.getHeader("Origin"));
-    this.verifySQLInjection(anime);
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    DataUtils.verifySQLInjection(anime);
 
     if (chapter < 0) {
       return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.OK);
@@ -150,7 +149,7 @@ public class AnimeController {
 
     ChapterDTO chapterInfo = this.chapterService.constructChapter(anime, chapter);
 
-    if (isNotNullOrEmpty(chapterInfo)) {
+    if (DataUtils.isNotNullOrEmpty(chapterInfo)) {
       return new ResponseEntity<>(chapterInfo, HttpStatus.OK);
     } else {
       return new ResponseEntity<>("Ocurrió un error al recuperar los datos del capítulo solicitado.", HttpStatus.OK);
@@ -178,34 +177,10 @@ public class AnimeController {
       throw new InvalidSearch("El número de elementos solicitados no es válido.");
     }
 
-    this.verifyAllowedOrigin(request.getHeader("Origin"));
-    this.verifySQLInjection(anime);
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    DataUtils.verifySQLInjection(anime);
 
     return this.searchService.searchAnimes(anime, page, maxItems);
-  }
-
-  private void verifyAllowedOrigin(String origin) {
-    if (origin == null || !allowedOrigins.contains(origin)) {
-      throw new ProtectedResource("Acceso denegado");
-    }
-  }
-
-  private void verifySQLInjection(String str) {
-    if (str.matches(".*(--|[;+*^$|?{}\\[\\]()'\"\\']).*") || str.contains("SELECT")) {
-      throw new SQLInjectionException("Esas cosas son del diablo.");
-    }
-  }
-
-  private boolean isNotNullOrEmpty(List<?> list) {
-    return list != null && !list.isEmpty();
-  }
-
-  public boolean isNotNullOrEmpty(String str) {
-    return str != null && !str.isEmpty();
-  }
-
-  public boolean isNotNullOrEmpty(Object obj) {
-    return obj != null;
   }
 
 }

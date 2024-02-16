@@ -24,7 +24,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.HomePageDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;

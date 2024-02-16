@@ -22,7 +22,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
@@ -65,9 +65,10 @@ public class LfChapterService {
       
       // Obtiene los capítulos cercanos para determinar si hay capítulos anteriores o siguientes
       Elements nearChapters = docAnimeLife.body().select(".naveps .nvs");
-
+      
+      String name = docAnimeLife.select(".ts-breadcrumb li").get(1).select("span").text().trim();
       ChapterDTO chapterInfo = ChapterDTO.builder()
-        .name(this.animeUtils.specialNameOrUrlCases(null, docAnimeLife.select(".ts-breadcrumb li").get(1).select("span").text().trim(), 'n'))
+        .name(this.animeUtils.specialNameOrUrlCases(null, name, 'n'))
         .srcOptions(this.getSrcOptions(docAnimeLife))
         .downloadOptions(this.getDownloadOptions(docAnimeLife))
         .havePreviousChapter(this.havePreviousChapter(nearChapters))

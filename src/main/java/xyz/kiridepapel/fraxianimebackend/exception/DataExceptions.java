@@ -13,8 +13,14 @@ public class DataExceptions {
     }
   }
 
-  public static class DataNotFound extends RuntimeException {
-    public DataNotFound(String message) {
+  public static class DataNotFoundException extends RuntimeException {
+    public DataNotFoundException(String message) {
+      super(message);
+    }
+  }
+  
+  public static class ArgumentRequiredException extends RuntimeException {
+    public ArgumentRequiredException(String message) {
       super(message);
     }
   }

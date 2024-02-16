@@ -21,7 +21,7 @@ import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
-import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 
@@ -69,8 +69,9 @@ public class LfAnimeService {
         trailer = null;
       }
       
+      String name = mainAnimeLife.select(".entry-title").text().trim();
       AnimeInfoDTO animeInfo = AnimeInfoDTO.builder()
-        .name(this.animeUtils.specialNameOrUrlCases(null, mainAnimeLife.select(".entry-title").text().trim(), 'n'))
+        .name(this.animeUtils.specialNameOrUrlCases(null, name, 'n'))
         .alternativeName(mainAnimeLife.select(".entry-title").text().trim())
         .imgUrl(mainAnimeLife.select(".thumbook img").attr("src").trim())
         .synopsis(mainAnimeLife.select(".synp p").text().trim())
@@ -78,7 +79,7 @@ public class LfAnimeService {
         .trailer(trailer)
         .lastChapterDate(mainAnimeLife.select(".info-content .spe span").last().select("time").text().replace(" de ", ", "))
         .data(this.getAnimeData(docAnimeLife))
-        // .recomendations(this.getRecomendations(docAnimeLife));
+        // .recomendations(this.getRecomendations(docAnimeLife))
         .build();
 
       // Si el capitulo existe en JkAnime, modificar la infomación con la de este

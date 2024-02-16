@@ -1,6 +1,6 @@
 package xyz.kiridepapel.fraxianimebackend.dto;
 
-import java.util.List;
+import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -9,18 +9,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDataDTO;
 
+@Builder
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SearchDTO {
-  Integer lastPage;
-  List<AnimeDataDTO> searchList;
-
-  // Cuando no se encuentra nada
-  String message;
+public class AuthRequestDTO implements Serializable {
+  private String username;
+  private String password;
 }

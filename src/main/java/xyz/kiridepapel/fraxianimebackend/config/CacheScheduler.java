@@ -10,8 +10,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.HomePageDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.ChapterDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.HomePageDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 import xyz.kiridepapel.fraxianimebackend.service.LfChapterService;
 import xyz.kiridepapel.fraxianimebackend.service.ScheduleService;

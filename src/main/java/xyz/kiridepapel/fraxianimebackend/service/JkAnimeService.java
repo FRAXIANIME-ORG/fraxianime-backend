@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeHistoryDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;

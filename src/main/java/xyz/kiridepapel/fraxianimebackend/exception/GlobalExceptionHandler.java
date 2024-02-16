@@ -6,19 +6,19 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
-import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
-import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
-import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.InvalidSearch;
-import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.SearchException;
-import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ConnectionFailed;
-import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFound;
-import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.NextTrySearch;
-import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
-import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
+import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.*;
+import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.*;
+import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.*;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
   // Security Exceptions
+  @ExceptionHandler(InvalidUserOrPassword.class)
+  public ResponseEntity<?> handleInvalidUserOrPassword(InvalidUserOrPassword ex) {
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
+  
   @ExceptionHandler(ProtectedResource.class)
   public ResponseEntity<?> handleProtectedResource(ProtectedResource ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 401);
@@ -44,8 +44,14 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
   }
 
-  @ExceptionHandler(DataNotFound.class)
-  public ResponseEntity<?> handleDataNotFound(DataNotFound ex) {
+  @ExceptionHandler(DataNotFoundException.class)
+  public ResponseEntity<?> handleDataNotFoundException(DataNotFoundException ex) {
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+  }
+  
+  @ExceptionHandler(ArgumentRequiredException.class)
+  public ResponseEntity<?> handleIllegalArgumentException(ArgumentRequiredException ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
     return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
   }
