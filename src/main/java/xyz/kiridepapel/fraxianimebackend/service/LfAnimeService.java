@@ -74,6 +74,7 @@ public class LfAnimeService {
         .alternativeName(mainAnimeLife.select(".entry-title").text().trim())
         .imgUrl(mainAnimeLife.select(".thumbook img").attr("src").trim())
         .synopsis(mainAnimeLife.select(".synp p").text().trim())
+        .alternativeTitles(this.getAlternativeTitles(docAnimeLife))
         .trailer(trailer)
         .lastChapterDate(mainAnimeLife.select(".info-content .spe span").last().select("time").text().replace(" de ", ", "))
         .data(this.getAnimeData(docAnimeLife))
@@ -118,6 +119,24 @@ public class LfAnimeService {
     } catch (Exception e) {
       log.warning("Error 1: " + e.getMessage());
       throw new AnimeNotFound("Anime no encontrado.");
+    }
+  }
+
+  private Map<String, Object> getAlternativeTitles(Document docAnimeLife) {
+    Element altTitlesBlock = docAnimeLife.body().select(".alter").first();
+
+    if (altTitlesBlock == null || altTitlesBlock.text().isEmpty()) {
+      return null;
+    } else {
+      // String[] altTitles = altTitlesBlock.text().split(", ");
+      List<String> altTitles = List.of(altTitlesBlock.text().split(","));
+      Map<String, Object> alternativeTitles = new HashMap<>();
+
+      altTitles.stream().forEach(title -> {
+        alternativeTitles.put("others", title.trim());
+      });
+
+      return alternativeTitles;
     }
   }
 

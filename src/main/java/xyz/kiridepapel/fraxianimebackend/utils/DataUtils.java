@@ -81,10 +81,22 @@ public class DataUtils {
   }
 
   // ? Text
+  // Elimina las tildes
   public static String removeDiacritics(String input) {
     String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
-    // Remover caracteres diacríticos
     return normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+  }
+  
+  // Convierte la primera letra a mayúscula
+  public static String firstUpper(String text) {
+    return text.substring(0, 1).toUpperCase() + text.substring(1);
+  }
+
+  // Convierte el nombre de una variable a un nombre normal: "specialCase" -> "Special Case"
+  public static String formatToNormalName(String name) {
+    if (name.toLowerCase().equals("id")) return "ID";
+    String formattedName = name.replaceAll("(\\B[A-Z])", " $1");
+    return firstUpper(formattedName);
   }
 
   // ? Date
@@ -105,10 +117,6 @@ public class DataUtils {
     LocalDate nextChapterDate = currentDate.plusDays(daysToModify);
 
     return nextChapterDate.format(formatter);
-  }
-
-  public static String firstUpper(String text) {
-    return text.substring(0, 1).toUpperCase() + text.substring(1);
   }
 
 }

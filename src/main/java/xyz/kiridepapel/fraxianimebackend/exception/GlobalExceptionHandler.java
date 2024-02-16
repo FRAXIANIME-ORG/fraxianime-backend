@@ -46,7 +46,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(DataNotFound.class)
   public ResponseEntity<?> handleDataNotFound(DataNotFound ex) {
-    ResponseDTO response = new ResponseDTO(ex.getMessage(), 200);
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
     return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
   }
 

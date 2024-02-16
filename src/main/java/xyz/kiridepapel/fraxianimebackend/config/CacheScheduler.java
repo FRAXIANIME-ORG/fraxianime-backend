@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -20,16 +21,21 @@ import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 @Component
 @Log
 public class CacheScheduler {
-  @Autowired
-  private CacheManager cacheManager;
+  // Variables
+  @Value("${APP_PRODUCTION}")
+  private Boolean isProduction;
+  // Inyección de dependencias
   @Autowired
   private HomeService homePageService;
   @Autowired
   private LfChapterService chapterService;
   @Autowired
-  private DataUtils dataUtils;
-  @Autowired
   private ScheduleService scheduleService;
+  // Externos
+  @Autowired
+  private CacheManager cacheManager;
+  @Autowired
+  private DataUtils dataUtils;
   
   // ! Busca nuevo caché cada: 30 min. = 1800000 ms.
   @Scheduled(fixedRate = 1805000)
@@ -41,9 +47,11 @@ public class CacheScheduler {
     // Actualiza el caché de los casos especiales
     this.updateSpecialCases();
     
-    // Borra el caché de la página de inicio
-    DataUtils.deleteFromCache(cacheManager, "home", null, true);
-    log.info("-----------------------------");
+    // Borra el caché de la página de inicio si está en producción
+    if (isProduction == true) {
+      DataUtils.deleteFromCache(cacheManager, "home", null, true);
+      log.info("-----------------------------");
+    }
 
     // Guarda en caché la página de inicio actualizada
     HomePageDTO home = this.homePageService.homePage();

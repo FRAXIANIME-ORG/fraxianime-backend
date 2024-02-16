@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeHistoryDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
@@ -23,6 +24,8 @@ import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
+@Log
+@SuppressWarnings("unused")
 public class JkAnimeService {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
@@ -33,7 +36,7 @@ public class JkAnimeService {
   private AnimeUtils animeUtils;
   // Variables
   private Map<String, String> specialCases = new HashMap<>();
-  private Map<String, String> specialKeys = Map.ofEntries(
+  private Map<String, String> specialAltTitles = Map.ofEntries(
     Map.entry("Sinónimos", "synonyms"),
     Map.entry("Sinonimos", "synonyms"),
     Map.entry("sinonimos", "synonyms"),
@@ -81,7 +84,7 @@ public class JkAnimeService {
     String emited = String.valueOf(this.getSpecificKey(keys, "Emitido", false));
     String duration = String.valueOf(this.getSpecificKey(keys, "Duracion", false)).replace("por episodio", "").trim();
     String quality = String.valueOf(this.getSpecificKey(keys, "Calidad", false));
-    Map<String, Object> alternativeTitles = this.getAlternativeTitles(docJkanime);
+    Map<String, Object> alternativeTitles = this.getAlternativeTitlesJk(docJkanime);
     Map<String, Object> history = this.getHistory(docJkanime);
     String trailer = mainJkanime.select(".animeTrailer").attr("data-yt");
 
@@ -135,7 +138,7 @@ public class JkAnimeService {
       animeInfo.getData().put("quality", quality);
     }
     if (this.isValidData(alternativeTitles)) {
-      animeInfo.setAlternativeTitles(AnimeUtils.specialDataKeys(alternativeTitles, this.specialKeys));
+      animeInfo.setAlternativeTitles(AnimeUtils.specialDataKeys(alternativeTitles, this.specialAltTitles));
     }
     if (this.isValidData(history)) {
       animeInfo.setHistory(AnimeUtils.specialDataKeys(history, this.specialHistory));
@@ -157,7 +160,7 @@ public class JkAnimeService {
     }
   }
   
-  private Map<String, Object> getAlternativeTitles(Document docJkanime) {
+  private Map<String, Object> getAlternativeTitlesJk(Document docJkanime) {
     Map<String, Object> alternativeTitles = new HashMap<>();
     Elements elements = docJkanime.select(".related_div");
 
@@ -190,8 +193,8 @@ public class JkAnimeService {
   }
 
   // private Map<String, Object> getHistory(Document docJkanime, Map<String, String> specialCases) {
-    private Map<String, Object> getHistory(Document docJkanime) {
-      Elements allChilds = docJkanime.body().select(".aninfo").last().children();
+  private Map<String, Object> getHistory(Document docJkanime) {
+    Elements allChilds = docJkanime.body().select(".aninfo").last().children();
     Map<String, Object> history = new LinkedHashMap<>();
     String currentKey = null;
     List<AnimeHistoryDTO> currentLinks = null;
