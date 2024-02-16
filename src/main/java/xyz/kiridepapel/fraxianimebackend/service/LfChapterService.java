@@ -21,7 +21,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
@@ -29,7 +28,6 @@ import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
-@Log
 public class LfChapterService {
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
@@ -233,28 +231,18 @@ public class LfChapterService {
     LocalDate date = LocalDate.parse(lastChapterDate, formatter);
     DayOfWeek weekDay = date.getDayOfWeek();
 
-    // Si la fecha por comparacion de dia de la semana es hoy
-    // y la fecha del ultimo capitulo es hoy, se suma 7 dias
     int daysToAdd = weekDay.getValue() - todayLDT.getDayOfWeek().getValue();
-    System.out.println("date: " + date);
-    System.out.println("daysToAdd: " + daysToAdd);
-    System.out.println("weekDay: " + weekDay);
-    System.out.println("today weekDay: " + todayLDT.getDayOfWeek().getValue());
-    System.out.println("todayLDT: " + todayLDT);
-    log.info("daysToAdd: " + daysToAdd);
-    log.info("weekDay: " + weekDay);
-    log.info("today weekDay: " + todayLDT.getDayOfWeek().getValue());
-    log.info("todayLDT: " + todayLDT);
-    if (daysToAdd == 0 && date.isEqual(todayLDT)) {
-      daysToAdd += 7;
-    }
-    System.out.println("date is equal today: " + date.isEqual(todayLDT));
-    System.out.println("final daysToAdd: " + daysToAdd);
-    log.info("date is equal today: " + date.isEqual(todayLDT));
-    log.info("final daysToAdd: " + daysToAdd);
+    
+    // Si el capitulo sera emitido en los proximos dias, solo se suma la cantidad de dias
+    // que hay desde hoy hasta el dia de la semana en el que salio el ultimo capitulo
+    //
+    // Si el capitulo fue emitido antes de hoy, se suma 7 dias al dia de la semana de la fecha recibida
+    if (daysToAdd < 0) daysToAdd += 7;
+    // Si el capitulo fue emitido hoy, se suma 7 dias al dia de la semana de la fecha recibida
+    if (daysToAdd == 0 && date.isEqual(todayLDT)) daysToAdd += 7;
 
     // Se suman la cantidad de dias que hay desde hoy hasta
-    // el dia de la semana en el que salio el ultimo capitulo
+    // el dia de la semana en el que salio el ultimo capitulo tomando en cuenta las condiciones anteriores
     String finalDate = todayLDT.plusDays(daysToAdd).format(formatter);
 
     return finalDate;
