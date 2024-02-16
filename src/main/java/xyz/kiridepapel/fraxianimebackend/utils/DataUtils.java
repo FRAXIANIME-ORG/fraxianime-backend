@@ -126,7 +126,7 @@ public class DataUtils {
   // ? Validations
   public static void verifyAllowedOrigin(List<String> allowedOrigins, String origin) {
     if (origin == null || !allowedOrigins.contains(origin)) {
-      throw new ProtectedResource("Acceso denegado");
+      throw new ProtectedResource("Acceso denegado TK-001");
     }
   }
 

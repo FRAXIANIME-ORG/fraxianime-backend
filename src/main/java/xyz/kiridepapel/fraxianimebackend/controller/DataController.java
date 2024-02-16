@@ -6,6 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFoundException;
 import xyz.kiridepapel.fraxianimebackend.service.DataService;
@@ -35,7 +36,7 @@ import org.springframework.web.bind.annotation.PostMapping;
     "https://fraxianime.vercel.app",
     "http://localhost:4200",
   }, allowedHeaders = "**")
-@PreAuthorize("hasAnyRole('ADMIN')")
+@Log
 public class DataController {
   // Variables estaticas
   @Value("${APP_PRODUCTION}")
@@ -57,11 +58,12 @@ public class DataController {
     this.allowedDataNames = List.of("translations", "specialCases");
   }
 
+  // @PreAuthorize("hasAnyRole('USER')")
   @GetMapping("/{dataName}/export")
   public ResponseEntity<byte[]> export(
       HttpServletRequest request,  @PathVariable("dataName") String dataName)  {
     // Validaciones
-    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     if (!this.allowedDataNames.contains(dataName)) {
       throw new DataNotFoundException("No existen acciones para el recurso solicitado");
     }
@@ -82,11 +84,12 @@ public class DataController {
     return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
   }
 
+  @PreAuthorize("hasAnyRole('ADMIN')")
   @PostMapping("/{dataName}/import")
   public ResponseEntity<?> importFromExcel(HttpServletRequest request,
       MultipartFile file, @PathVariable("dataName") String dataName) {
     // Validaciones
-    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     if (!this.allowedDataNames.contains(dataName)) {
       throw new DataNotFoundException("No existen acciones para el recurso solicitado");
     }

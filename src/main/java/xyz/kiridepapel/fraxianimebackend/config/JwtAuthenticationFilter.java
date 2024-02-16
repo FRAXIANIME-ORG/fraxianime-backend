@@ -35,9 +35,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
       final String username;
       final String token = jwtUtils.getTokenFromRequest(request);
 
-      // Validar el token
-      if (token == null) {
+      // Validar el token cuando no esta iniciando sesion
+      if (token == null && request.getRequestURI().startsWith("/api/v1/auth")) {
         filterChain.doFilter(request, response);
+        return;
+      } else if (token == null) {
+        sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "El token es invalido");
         return;
       }
       if (jwtUtils.isTokenBlacklisted(token)) {
