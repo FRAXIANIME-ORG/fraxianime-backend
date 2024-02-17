@@ -118,7 +118,7 @@ public class LfAnimeService {
 
       return animeInfo;
     } catch (Exception e) {
-      log.warning("Error 1: " + e.getMessage());
+      log.warning("1: " + e.getMessage());
       throw new AnimeNotFound("Anime no encontrado.");
     }
   }
@@ -240,19 +240,15 @@ public class LfAnimeService {
             date = this.getChapterDateByIndex(date, formatter, ((chapters.size() - 1) + (-1 * index++)));
           }
 
-          // Si es un número decimal, convertirlo a entero y sumarle 1
-          if (chapter.contains(".")) {
-            chapter = String.valueOf(Integer.parseInt(chapter.split("\\.")[0]) + 1);
-          }
           // Si no es un número, asignarle 1 (Películas, Ovas, etc.)
-          if (!chapter.matches("[0-9]+")) {
+          if (!chapter.matches("[0-9]+") && !chapter.contains(".")) {
             chapter = String.valueOf(index);
           }
 
           // Establecer el ultimo capitulo y la cantidad de capítulos
           if (index == 1) {
             animeInfo.getData().put("Episodios", chapter);
-            animeInfo.setLastChapter(Integer.parseInt(chapter));
+            animeInfo.setLastChapter(String.valueOf(chapter));
             lastChapterDate = date.substring(0, 1).toUpperCase() + date.substring(1);
           }
 

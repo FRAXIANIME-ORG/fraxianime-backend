@@ -139,12 +139,22 @@ public class AnimeController {
 
   @GetMapping("/{anime}/{chapter}")
   public ResponseEntity<?> chapter(HttpServletRequest request,
-      @PathVariable("anime") String anime, @PathVariable("chapter") Integer chapter) {
+      @PathVariable("anime") String anime, @PathVariable("chapter") String chapter) {
     DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     DataUtils.verifySQLInjection(anime);
+    DataUtils.verifySQLInjection(chapter);
+    
+    if (chapter.contains("-")) {
+      Integer chapterNumberPart = Integer.parseInt(chapter.split("-")[0]);
+      Integer chapterSecondPart = Integer.parseInt(chapter.split("-")[1]);
 
-    if (chapter < 0) {
-      return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.OK);
+      if (chapterNumberPart < 0 || chapterSecondPart != 2 && chapterSecondPart != 5) {
+        return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.BAD_REQUEST);
+      }
+    };
+
+    if (!chapter.contains("-") && Integer.parseInt(chapter) < 0) {
+      return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.BAD_REQUEST);
     }
 
     ChapterDTO chapterInfo = this.chapterService.constructChapter(anime, chapter);
@@ -152,7 +162,7 @@ public class AnimeController {
     if (DataUtils.isNotNullOrEmpty(chapterInfo)) {
       return new ResponseEntity<>(chapterInfo, HttpStatus.OK);
     } else {
-      return new ResponseEntity<>("Ocurrió un error al recuperar los datos del capítulo solicitado.", HttpStatus.OK);
+      return new ResponseEntity<>("Ocurrió un error al recuperar los datos del capítulo solicitado.", HttpStatus.BAD_REQUEST);
     }
   }
 

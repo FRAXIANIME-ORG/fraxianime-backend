@@ -70,7 +70,7 @@ public class CacheScheduler {
     for (ChapterDataDTO chapterInfo : animesProgramming) {
       try {
         boolean isCached = false;
-        int chapter = Integer.parseInt(chapterInfo.getUrl().split("/")[1]);
+        String chapter = chapterInfo.getUrl().split("/")[1];
         String url = chapterInfo.getUrl().split("/")[0];
         
         if (url.contains("/")) {
@@ -83,9 +83,17 @@ public class CacheScheduler {
           isCached = true;
         }
 
+        // Le da formato al capitulo si es necesario
+        String chapterFormatted;
+        if (!chapter.contains("-")) {
+          chapterFormatted = String.format("%02d", Integer.parseInt(chapter));
+        } else {
+          chapterFormatted = chapter;
+        }
+
         // Si está en caché, pasa al siguiente capítulo
         if (isCached) {
-          log.info(String.format("%02d", counter++) + ". Ya esta en cache: '" + url + "' (" + String.format("%02d", chapter) + ")");
+          log.info(String.format("%02d", counter++) + ". Ya esta en cache: '" + url + "' (" + chapterFormatted + ")");
           continue;
         } else {
           // Si no está en caché, busca el capítulo en la web y lo guarda en caché
@@ -93,7 +101,7 @@ public class CacheScheduler {
             // Espera de 3 a 5 segundos antes de buscar el capítulo en la web
             int randomTime = 3000 + (random.nextInt(2001));
             Thread.sleep(randomTime);
-            log.info(String.format("%02d", counter++) + ". Guardando en cache: '" + url + "' (" + String.format("%02d", chapter) + ")");
+            log.info(String.format("%02d", counter++) + ". Guardando en cache: '" + url + "' (" + chapterFormatted + ")");
             this.chapterService.cacheChapter(url, chapter);
           } catch (InterruptedException e) {
             log.severe("Error Schedule: " + e.getMessage());

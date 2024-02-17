@@ -52,7 +52,7 @@ public class PageDTO implements Serializable {
     private Map<String, Object> alternativeTitles;
     private Map<String, Object> history;
 
-    private Integer lastChapter;
+    private String lastChapter;
     private String lastChapterDate;
     private String nextChapterDate;
 
@@ -78,10 +78,13 @@ public class PageDTO implements Serializable {
     private Boolean inEmision;
 
     // External
+    private String actualChapter;
+    private String previousChapter;
+    private String nextChapter;
+    private String firstChapter;
+    private String lastChapter;
+
     private String chapterImg;
-    private Integer actualChapter;
-    private Integer firstChapter;
-    private Integer lastChapter;
     private String lastChapterDate;
   }
 

@@ -69,7 +69,15 @@ public class AnimeUtils {
     }
   }
 
-  public Document chapterSearchConnect(String urlChapter, Integer chapter, String errorMessage) {
+  public Document chapterSearchConnect(String urlChapter, String chapter, String errorMessage) {
+    Integer chapterPart = null;
+
+    if (chapter.contains("-")) {
+      chapterPart = Integer.parseInt(chapter.split("-")[0]);
+    } else {
+      chapterPart = Integer.parseInt(chapter);
+    }
+
     try {
       log.info("[] Last request url: " + urlChapter);
       Document doc = tryConnectOrReturnNull(urlChapter, 2);
@@ -81,12 +89,12 @@ public class AnimeUtils {
       }
     } catch (NextTrySearch x) {
       // Si ya busca 0 y no encuentra, el capitulo no existe
-      if (chapter == 0) {
+      if (chapterPart == 0) {
         throw new ChapterNotFound(errorMessage);
       } else {
         try {
           // No lo intenta si el capitulo es mayor a 9
-          if (chapter >= 0 && chapter <= 9) {
+          if (chapterPart >= 0 && chapterPart <= 9) {
             // Intenta: one-piece-04 -> one-piece-4
             String url1 = this.urlChapterWithoutZero(urlChapter);
             log.info("[] Trying without zero (-0X): " + url1);
@@ -110,20 +118,21 @@ public class AnimeUtils {
               throw new NextTrySearch();
             }
           } catch (NextTrySearch xxx) {
-            try {
-              // Intenta: one-piece-15 -> one-piece-14-5
-              String url3 = this.urlChapterWithPoint(urlChapter);
-              log.info("[] Trying with point (-5): " + url3);
-              Document doc = tryConnectOrReturnNull(url3, 2);
-              if (doc != null) {
-                log.info("[] Founded!");
-                return doc;
-              } else {
-                throw new NextTrySearch();
-              }
-            } catch (NextTrySearch xxxx) {
-              throw new ChapterNotFound(errorMessage);
-            }
+            throw new ChapterNotFound(errorMessage);
+            // try {
+            //   // Intenta: one-piece-15 -> one-piece-14-5
+            //   String url3 = this.urlChapterWithPoint(urlChapter);
+            //   log.info("[] Trying with point (-5): " + url3);
+            //   Document doc = tryConnectOrReturnNull(url3, 2);
+            //   if (doc != null) {
+            //     log.info("[] Founded!");
+            //     return doc;
+            //   } else {
+            //     throw new NextTrySearch();
+            //   }
+            // } catch (NextTrySearch xxxx) {
+            //   throw new ChapterNotFound(errorMessage);
+            // }
           }
         }
       }
@@ -143,12 +152,12 @@ public class AnimeUtils {
     return urlWithScript;
   }
 
-  // Convierte: chapter-55 -> chapter-54-5
-  public String urlChapterWithPoint(String urlChapter) {
-    int number = Integer.parseInt(urlChapter.replaceAll("^.*-(\\d+)$", "$1")) - 1;
-    String urlWithPoint = urlChapter.replaceAll("-(\\d+)$", "-" + String.format("%02d", number) + "-5");
-    return urlWithPoint;
-  }
+  // // Convierte: chapter-55 -> chapter-54-5
+  // public String urlChapterWithPoint(String urlChapter) {
+  //   int number = Integer.parseInt(urlChapter.replaceAll("^.*-(\\d+)$", "$1")) - 1;
+  //   String urlWithPoint = urlChapter.replaceAll("-(\\d+)$", "-" + String.format("%02d", number) + "-5");
+  //   return urlWithPoint;
+  // }
   
   // Mapea los casos especiales de nombres o urls (si no se manda el map, busca en cache en base al type)
   public String specialNameOrUrlCases(Map<String, String> mapListType, String original, Character type) {
@@ -200,12 +209,21 @@ public class AnimeUtils {
     }
   }
 
-  public String specialChapterCases(String urlChapter, String inputName, Integer chapter) {
-    urlChapter = urlChapter + "-" + String.format("%02d", chapter); // chapter-05
-    if (this.animesWithoutZeroCases.contains(inputName) && chapter < 10) {
+  public String specialChapterCases(String urlChapter, String inputName, String chapter) {
+    // Le da formato al capitulo si es necesario
+    String chapterFormatted;
+    if (!chapter.contains("-")) {
+      chapterFormatted = String.format("%02d", Integer.parseInt(chapter));
+    } else {
+      chapterFormatted = chapter;
+    }
+
+    urlChapter = urlChapter + "-" + chapterFormatted; // chapter-05
+    if (this.animesWithoutZeroCases.contains(inputName)) {
       urlChapter = urlChapterWithoutZero(urlChapter);
     }
-    if (this.chapterScriptCases.contains(urlChapter.replace(this.providerAnimeLifeUrl, ""))) {
+    if (this.chapterScriptCases.contains(urlChapter.replace(this.providerAnimeLifeUrl, "")) &&
+        urlChapter.contains("-2")) {
       urlChapter = urlChapterWithScript(urlChapter);
     }
     return urlChapter;
