@@ -123,7 +123,7 @@ public class LfChapterService {
   
       // Ordena los servidores de reproducción
       Comparator<LinkDTO> comparator = (src1, src2) -> {
-        List<String> order = Arrays.asList("Voe", "YourUpload", "VidGuard");
+        List<String> order = Arrays.asList("Voe", "YourUpload", "FileMoon", "VidGuard");
         int index1 = order.indexOf(src1.getName());
         int index2 = order.indexOf(src2.getName());
 
@@ -225,13 +225,18 @@ public class LfChapterService {
   }
 
   public String calcNextChapterDate(String lastChapterDate) {
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
+    if (lastChapterDate == null || lastChapterDate.isEmpty()) {
+      return null;
+    }
+    
+    DateTimeFormatter formatterIn = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
+    DateTimeFormatter formatterOut = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
     
     LocalDate todayLDT = DataUtils.getLocalDateTimeNow(this.isProduction).toLocalDate();
     
-    LocalDate date = LocalDate.parse(lastChapterDate, formatter);
+    LocalDate date = LocalDate.parse(lastChapterDate, formatterIn);
     DayOfWeek weekDay = date.getDayOfWeek();
-
+    
     int daysToAdd = weekDay.getValue() - todayLDT.getDayOfWeek().getValue();
     
     // Si el capitulo sera emitido en los proximos dias, solo se suma la cantidad de dias
@@ -244,7 +249,7 @@ public class LfChapterService {
 
     // Se suman la cantidad de dias que hay desde hoy hasta
     // el dia de la semana en el que salio el ultimo capitulo tomando en cuenta las condiciones anteriores
-    String finalDate = todayLDT.plusDays(daysToAdd).format(formatter);
+    String finalDate = todayLDT.plusDays(daysToAdd).format(formatterOut);
 
     return finalDate;
   }

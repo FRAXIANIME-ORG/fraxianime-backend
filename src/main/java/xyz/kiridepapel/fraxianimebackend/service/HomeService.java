@@ -209,25 +209,7 @@ public class HomeService {
       }
     }
 
-    animesProgramming.sort((a, b) -> {
-      if (a.getDate().equals("Hoy") && b.getDate().equals("Hoy")) {
-        if (!a.getState() && b.getState()) {
-          return -1;
-        } else if (a.getState() && !b.getState()) {
-          return 1;
-        } else {
-          return 0;
-        }
-      } else if (a.getDate().equals("Hoy") && !b.getDate().equals("Hoy")) {
-        return -1;
-      } else if (!a.getDate().equals("Hoy") && b.getDate().equals("Hoy")) {
-        return 1;
-      } else {
-        return a.getDate().compareTo(b.getDate());
-      }
-    });
-
-    return animesProgramming;
+    return this.sortAnimeList(animesProgramming, true);
   }
 
   public List<ChapterDataDTO> nextAnimesProgramming(Document document, List<ChapterDataDTO> animesProgramming, Map<String, String> mapListType, char type) {
@@ -264,17 +246,16 @@ public class HomeService {
         String name = subItem.select("a").first().select("h3").text();
         String url = subItem.select("a").first().attr("href");
         String chapter = subItem.select(".last span").text().split(":")[1].trim();
-        String date = this.formattedNextDate(name, subItem.select(".last time").text().split(" ")[0]);
-        String timeStr = subItem.select(".last time").text().split(" ")[1].replace("21", "11");
-        
-        // Si el tiempo es 21:xx o 20:xx, restarle 10 horas
-        String[] listBadTimes = { "21:", "20:" };
-        if (List.of(listBadTimes).contains(timeStr.substring(0, 3))) {
-          Time time = Time.valueOf(timeStr);
-          // time.setTime(time.getTime() - 36000000); // -10 horas
-          // time.setTime(time.getTime() - 32400000); // -9 Horas
-          time.setTime(time.getTime() - 28800000); // -8 Horas
 
+        String[] dateWithTime = subItem.select(".last time").text().split(" ");
+        String date = this.formattedNextDate(name, dateWithTime[0]);
+        String timeStr = dateWithTime[1];
+        
+        // Corregir la hora si es mayor a las 20:00
+        String[] listBadTimes = { "20", "21", "22", "23" };
+        if (List.of(listBadTimes).contains(timeStr.substring(0, 2))) {
+          Time time = Time.valueOf(timeStr);
+          time.setTime(time.getTime() - 28800000); // -8 Horas
           timeStr = time.toString();
         }
 
@@ -291,7 +272,7 @@ public class HomeService {
         // Casos especiales de nombres y urls
         anime.setName(this.animeUtils.specialNameOrUrlCases(mapListType, anime.getName(), type));
         anime.setUrl(this.animeUtils.specialNameOrUrlCases(mapListType, anime.getUrl(), type));
-
+        
         if (index < startIndex) {
           tempLastAnimes.add(anime);
         } else {
@@ -304,7 +285,7 @@ public class HomeService {
 
     nextAnimesProgramming.addAll(tempLastAnimes);
 
-    return nextAnimesProgramming;
+    return this.sortAnimeList(nextAnimesProgramming, false);
   }
 
   // Cambia las URLs de imagen de animesProgramming por las URLs de imagen de nextAnimesProgramming
@@ -332,18 +313,37 @@ public class HomeService {
     List<ChapterDataDTO> nextAnimesCopy = new ArrayList<>(nextAnimes);
 
     for (ChapterDataDTO nextAnime : nextAnimes) {
-      if (animes.stream().anyMatch(aP ->
-          // Si esta en subidos "Hoy" y en programados "Hoy"
-          aP.getName().equals(nextAnime.getName()) &&
-          aP.getChapter().equals(nextAnime.getChapter()) &&
-          aP.getDate().equals("Hoy") ||
-          // Si esta en subidos "Ayer" y en programados "Hoy" (ya fue subido ayer, por lo que es un bug)
-          aP.getName().equals(nextAnime.getName()) &&
-          aP.getChapter().equals(nextAnime.getChapter()) &&
-          aP.getDate().equals("Ayer") && nextAnime.getDate().equals("Hoy")
-        )
-      ) {
-        nextAnimesCopy.remove(nextAnime);
+      try {
+        // Si coincide el nombre y el capítulo del anime de "Hoy" con el anime de "Hoy" o "Ayer" en subidos
+        Integer pastChapter = Integer.parseInt(nextAnime.getChapter()) - 1;
+        if (animes.stream().anyMatch(aP ->
+            // Si esta en subidos "Hoy" y en programados "Hoy"
+            aP.getName().equals(nextAnime.getName()) &&
+            // Si el capítulo de "Hoy" es igual al capítulo en programados o al capítulo anterior
+            (aP.getChapter().equals(nextAnime.getChapter()) || aP.getChapter().equals(pastChapter.toString())) &&
+            aP.getDate().equals("Hoy") ||
+            // Si esta en subidos "Ayer" y en programados "Hoy" (ya fue subido ayer, por lo que es un bug)
+            aP.getName().equals(nextAnime.getName()) &&
+            aP.getChapter().equals(nextAnime.getChapter()) &&
+            aP.getDate().equals("Ayer") && nextAnime.getDate().equals("Hoy")
+          )
+        ) {
+          nextAnimesCopy.remove(nextAnime);
+          // log.info("Se elimino el anime " + nextAnime.getName() + " de la lista de próximos animes programados");
+        }
+      } catch (NumberFormatException e) {
+        // Si el capítulo no es un número, prueba sin la validación de capítulo
+        log.warning("Error al convertir el capitulo: " + nextAnime.getChapter() + " del anime: '" + nextAnime.getName() + "'. Probando sin validación de capítulo.");
+        if (animes.stream().anyMatch(aP ->
+            aP.getName().equals(nextAnime.getName()) &&
+            aP.getDate().equals("Hoy") ||
+            aP.getName().equals(nextAnime.getName()) &&
+            aP.getDate().equals("Ayer") && nextAnime.getDate().equals("Hoy")
+          )
+        ) {
+          log.warning("Se elimino '" + nextAnime.getName() + "' de la lista de próximos animes programados sin validar el capítulo.");
+          nextAnimesCopy.remove(nextAnime); 
+        }
       }
     }
 
@@ -367,6 +367,32 @@ public class HomeService {
     String date = this.calcDaysToNextChapter(name, recivedDate);
     date = this.getNextFormattedDate(date);
     return date;
+  }
+  
+  private List<ChapterDataDTO> sortAnimeList(List<ChapterDataDTO> animeList, boolean validateStateToo) {
+    animeList.sort((a, b) -> {
+      if (a.getDate().equals("Hoy") && b.getDate().equals("Hoy")) {
+        if (validateStateToo) {
+          if (!a.getState() && b.getState()) {
+            return -1;
+          } else if (a.getState() && !b.getState()) {
+            return 1;
+          } else {
+            return 0;
+          }
+        } else {
+          return 0;
+        }
+      } else if (a.getDate().equals("Hoy") && !b.getDate().equals("Hoy")) {
+        return -1;
+      } else if (!a.getDate().equals("Hoy") && b.getDate().equals("Hoy")) {
+        return 1;
+      } else {
+        return a.getDate().compareTo(b.getDate());
+      }
+    });
+
+    return animeList;
   }
 
   public List<ChapterDataDTO> donghuasProgramming(Document document, Map<String, String> mapListType, char type) {
@@ -554,9 +580,10 @@ public class HomeService {
   private String getPastFormattedDate(String dateText) {
     if (dateText.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$")) {
       // Manejar el caso de que la fecha sea DIA/MES/AÑO
+      LocalDate todayLD = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
       LocalDate date = LocalDate.parse((dateText), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-      long daysBetween = ChronoUnit.DAYS.between(date, LocalDate.now());
-
+      long daysBetween = ChronoUnit.DAYS.between(date, todayLD);
+      
       if (daysBetween <= 7) {
         if (daysBetween == 0) {
           return "Hoy";
@@ -610,14 +637,17 @@ public class HomeService {
     LocalDate date = LocalDate.parse(chapterDate, formatterInput);
     DayOfWeek weekDay = date.getDayOfWeek();
 
-    int daysToAdd = weekDay.getValue() - todayLDT.getDayOfWeek().getValue();
-    if (daysToAdd < 0) {
-      daysToAdd = (daysToAdd * -1) + 7;
+    int todayValue = todayLDT.getDayOfWeek().getValue();
+    int dateValue = weekDay.getValue();
+    
+    int daysUntilDate = Math.abs(dateValue - todayValue);
+
+    // Si hoy es un día posterior al date, cuenta los días hasta el próximo date en la semana siguiente
+    if (todayValue > dateValue) {
+      daysUntilDate = 7 - daysUntilDate;
     }
 
-    String finalDate = todayLDT.plusDays(daysToAdd).format(formatterOutput);
-
-    return finalDate;
+    return todayLDT.plusDays(daysUntilDate).format(formatterOutput);
   }
 
   // Establece la fecha del siguiente capítulo en base a la fecha del último capítulo

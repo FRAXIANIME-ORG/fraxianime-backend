@@ -69,7 +69,7 @@ public class FraxianimeBackendApplication {
         specialCases.add(new SpecialCaseEntity(null, 'a', "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita", "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node"));
         specialCases.add(new SpecialCaseEntity(null, 'a', "mushoku-tensei-isekai-ittara-honki-dasu-2nd-season", "mushoku-tensei-isekai-ittara-honki-dasu-part-2"));
         specialCases.add(new SpecialCaseEntity(null, 'a', "twi-yaba", "boku-no-kokoro-no-yabai-yatsu-twi-yaba"));
-        specialCases.add(new SpecialCaseEntity(null, 'a', "alice-to-therese-no-maboroshi-koujou", "maboroshi"));
+        // specialCases.add(new SpecialCaseEntity(null, 'a', "alice-to-therese-no-maboroshi-koujou", "maboroshi"));
         specialCases.add(new SpecialCaseEntity(null, 'a', "maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e-kayou-ii", "maou-gakuin-no-futekigousha-2nd-season"));
         // specialCases.add(new SpecialCaseEntity(null, 'a', "", ""));
         
