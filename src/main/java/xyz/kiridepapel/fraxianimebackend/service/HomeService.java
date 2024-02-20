@@ -55,15 +55,14 @@ public class HomeService {
     Document docScheduleJk = this.dataUtils.simpleConnect(this.providerJkanimeUrl + "horario", "Proveedor 1 inactivo");
     Document docAnimesLf = this.dataUtils.simpleConnect(this.providerAnimeLifeUrl, "Proveedor 2 inactivo");
 
-    char type = 'h';
-    Map<String, String> mapListType = new HashMap<>();
-    for (SpecialCaseEntity sce : this.scheduleService.getSpecialCases(type)) {
-      mapListType.put(sce.getOriginal(), sce.getMapped());
-    }
+    // Mapa de casos especiales donde JkAnime se acopla a AnimeLife (normalmente es al revés)
+    Map<String, String> mapListTypeJk = new HashMap<>();
+    this.scheduleService.getSpecialCases('k').forEach(sce -> mapListTypeJk.put(sce.getOriginal(), sce.getMapped()));
 
-    List<ChapterDataDTO> animesProgramming = this.animesProgramming(docAnimesLf, docAnimesJk, mapListType, type);
-    List<ChapterDataDTO> nextAnimesProgramming = this.nextAnimesProgramming(docScheduleJk, animesProgramming, mapListType, type);
-    List<ChapterDataDTO> donghuasProgramming = this.donghuasProgramming(docAnimesJk, mapListType, type);
+    // Listas de animes programados y próximos animes programados
+    List<ChapterDataDTO> animesProgramming = this.animesProgrammingLife(docAnimesLf, docAnimesJk, mapListTypeJk);
+    List<ChapterDataDTO> donghuasProgramming = this.donghuasProgramming(docAnimesJk, mapListTypeJk);
+    List<ChapterDataDTO> nextAnimesProgramming = this.nextAnimesProgramming(docScheduleJk, donghuasProgramming, mapListTypeJk);
 
     HomePageDTO animes = HomePageDTO.builder()
         .sliderAnimes(this.sliderAnimes(docAnimesJk))
@@ -81,7 +80,7 @@ public class HomeService {
     return animes;
   }
 
-  public List<ChapterDataDTO> sliderAnimes(Document document) {
+  private List<ChapterDataDTO> sliderAnimes(Document document) {
     Elements elements = document.select(".hero__items");
     List<ChapterDataDTO> sliderAnimes = new ArrayList<>();
 
@@ -102,7 +101,7 @@ public class HomeService {
     return sliderAnimes;
   }
 
-  public List<AnimeDataDTO> ovasOnasSpecials(Document document) {
+  private List<AnimeDataDTO> ovasOnasSpecials(Document document) {
     Elements elements = document.select(".solopc").last().select(".anime__item");
     List<AnimeDataDTO> ovasOnasSpecials = new ArrayList<>();
 
@@ -120,99 +119,149 @@ public class HomeService {
     return ovasOnasSpecials;
   }
 
-  public List<ChapterDataDTO> animesProgramming(Document docAnimesLf, Document docAnimesJk, Map<String, String> mapListType, char type) {
+  private List<ChapterDataDTO> animesProgrammingLife(Document docAnimesLf, Document docAnimesJk, Map<String, String> mapListTypeJk) {
+    // Lista de animes programados en AnimeLife
     Elements elementsAnimeLife = docAnimesLf.body().select(".excstf").first().select(".bs");
-    Elements elementsJkAnime = docAnimesJk.body().select(".listadoanime-home .anime_programing a");
 
-    List<ChapterDataDTO> animesProgramming = new ArrayList<>();
-    Map<String, ChapterDataDTO> animesJkanimes = new HashMap<>();
+    // Mapa de animes programados en JkAnime
+    Map<String, ChapterDataDTO> listJkAnime = this.animesProgrammingJkAnime(docAnimesJk, mapListTypeJk);
+
+    // lista de animes en Animelife (utiliza el mapa de los animes de JkAnime para compararlos y usar las fechas y las imagenes de JkAnime)
+    List<ChapterDataDTO> listLife = new ArrayList<>();
+
+    // Mapa en base a la combinacion de los casos especiales 's' y 'n' (h) para AnimeLife
+    Map<String, String> mapListH = new HashMap<>();
+    List<SpecialCaseEntity> homeList = this.scheduleService.getSpecialCases('s');
+    homeList.addAll(this.scheduleService.getSpecialCases('n'));
+    homeList.forEach(hsce -> mapListH.put(hsce.getOriginal(), hsce.getMapped()));
+
+    // Recorre, guarda y compara los animes de AnimeLife con los de JkAnime
+    int index = 0;
+    for (Element item : elementsAnimeLife) {
+      String url = this.getNameAndChapterFromUrl(item.select(".bsx a").attr("href"));
+
+      if (url.contains("/")) {
+        String chapter = item.select(".epx").text().replace("Ep 0", "").replace("Ep ", "").trim();
+        
+        if (chapter != null && !chapter.isEmpty()) {
+          // * Crea el objeto del anime con los datos obtenidos
+          ChapterDataDTO anime = ChapterDataDTO.builder()
+              .name(item.select(".tt").first().childNodes().stream()
+                  .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
+                  .map(Node::toString)
+                  .collect(Collectors.joining()).trim())
+              .imgUrl(item.select("img").attr("src").trim().replace("?resize=247,350", ""))
+              .type(item.select(".typez").text().trim().replace("TV", "Anime"))
+              .chapter(chapter)
+              .url(url)
+              .build();
+          
+          // * Define los casos especiales de nombres y URLs
+          anime = this.defineSpecialCases(mapListH, anime, 'h');
+          
+          // * Toma la imagen y la fecha de JkAnime si es que el anime está en JkAnime, si no,
+          // * asigna una fecha a partir de la posición en la lista de animes de AnimeLife
+          if (listJkAnime.containsKey(anime.getName())) {
+            // Si el anime está en Jkanime, usa la fecha y la imagen de Jkanime
+            anime.setImgUrl(listJkAnime.get(anime.getName()).getUrl());
+            anime.setDate(this.getPastFormattedDate(listJkAnime.get(anime.getName()).getDate()));
+            anime.setState(true);
+          } else {
+            // Si el anime no está en Jkanime, asigna una fecha a partir de la posición en la lista de animes de AnimeLife
+            if (index <= 10)
+              anime.setDate("Hoy");
+            else if (index <= 15)
+              anime.setDate("Ayer");
+            else if (index <= 20)
+              anime.setDate("Hace 2 días");
+            else if (index <= 25)
+              anime.setDate("Hace 3 días");
+            anime.setState(false);
+          }
+  
+          listLife.add(anime);
+        }
+
+        index++;
+      }
+    }
+
+    return this.sortAnimeList(listLife, true);
+  }
+
+  private ChapterDataDTO defineSpecialCases(Map<String, String> mapListH, ChapterDataDTO anime, char type) {
+    // Elimina caracteres raros del nombre
+    anime.setName(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')));
+    // Nombres de casos especiales
+    anime.setName(this.animeUtils.specialNameOrUrlCases(mapListH, anime.getName(), type, "animesProgrammingLife()"));
+    // Elimina "Movie" del nombre
+    anime.setName(anime.getName().replace("Movie", "").trim());
+    // URLs de casos especiales
+    anime.setUrl(this.animeUtils.specialNameOrUrlCases(mapListH, anime.getUrl(), type, "animesProgrammingLife()")); // Urls especiales
+
+    // Si el número de capítulo tiene un "."
+    if (anime.getChapter().contains(".")) {
+      int chapter = Integer.parseInt(anime.getChapter().split("\\.")[0]) + 1;
+
+      // Reconstruye la url sin el capítulo
+      String[] urlSplit = anime.getUrl().split("-");
+      String url = "";
+      for (int i = 0; i < urlSplit.length - 1; i++) {
+        url += (i != 0) ? "-" + urlSplit[i] : urlSplit[i];
+      }
+
+      // Asigna el nuevo capítulo y la nueva url
+      anime.setChapter(String.valueOf(chapter));
+      anime.setUrl(url + "/" + chapter);
+    }
+
+    return anime;
+  }
+
+  private Map<String, ChapterDataDTO> animesProgrammingJkAnime(Document docAnimesJk, Map<String, String> mapListTypeJk) {
+    // Lista de animes programados en JkAnime
+    Elements elementsJkAnime = docAnimesJk.body().select(".listadoanime-home .anime_programing a");
+    // Mapa para guardar los animes de JkAnime (key: Nombre, Value: Datos del anime)
+    Map<String, ChapterDataDTO> listJkAnime = new HashMap<>();
 
     // Fecha exacta con tiempo UTC y 5 horas menos si esta en produccion (Hora de Perú)
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("es", "ES"));
     Date todayD = DataUtils.getDateNow(isProduction);
     LocalDate todayLD = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
     String year = String.valueOf(DataUtils.getLocalDateTimeNow(isProduction).getYear());
     Calendar nowCal = Calendar.getInstance();
     nowCal.setTime(todayD);
     
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("es", "ES"));
+    // Guarda en un mapa los animes de JkAnime (clave: nombre del anime, valor: datos del anime)
     for (Element item : elementsJkAnime) {
+      String name = item.select("h5").first().text().trim();
+      String url = item.select(".anime__sidebar__comment__item__pic img").attr("src").trim();
       String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
 
-      // Todas las fechas se guardan en el formato dd/MM/yyyy y más adelante se
-      // formatean a "Hoy", "Ayer", "Hace x días" o dd/MM
+      // Todas las fechas se guardan en el formato dd/MM/yyyy y más adelante se formatean a "Hoy", "Ayer", "Hace x días" o dd/MM
       if (date.equals("Hoy") || date.equals("Ayer")) {
-        // Si es Hoy o Ayer pero actualmente es entre las 19:00 y 23:59, entonces es
-        // "Hoy" en foramto dd/MM/yyyy
-        if (date.equals("Hoy") || (date.equals("Ayer") && nowCal.get(Calendar.HOUR_OF_DAY) >= 19
-            && nowCal.get(Calendar.HOUR_OF_DAY) <= 23)) {
+        // Si es Hoy o Ayer pero actualmente es entre las 19:00 y 23:59, entonces es "Hoy" en foramto dd/MM/yyyy
+        if (date.equals("Hoy") || (date.equals("Ayer") && nowCal.get(Calendar.HOUR_OF_DAY) >= 19 && nowCal.get(Calendar.HOUR_OF_DAY) <= 23))
           date = todayLD.format(formatter);
-        }
-        // Si es Ayer pero actualmente es entre las 00:00 y 18:59, entonces es "Ayer" en
-        // formato dd/MM/yyyy
-        else {
-          date = todayLD.minusDays(1).format(formatter);
-        }
+        // Si es Ayer pero actualmente es entre las 00:00 y 18:59, entonces es "Ayer" en formato dd/MM/yyyy
+        else date = todayLD.minusDays(1).format(formatter);
       }
       // Si no es Hoy ni Ayer, entonces es una fecha en formato dd/MM/yyyy
-      else {
-        date = DataUtils.parseDate(date + "/" + year, formatter, 0);
-      }
+      else date = DataUtils.parseDate(date + "/" + year, formatter, 0);
 
       ChapterDataDTO data = ChapterDataDTO.builder()
-          .name(item.select("h5").first().text().trim())
+          .name(this.animeUtils.specialNameOrUrlCases(mapListTypeJk, name, 'k', "animesProgrammingJkAnime()"))
           .date(date)
-          .url(item.select(".anime__sidebar__comment__item__pic img").attr("src").trim())
+          .url(this.animeUtils.specialNameOrUrlCases(mapListTypeJk, url, 'k', "animesProgrammingJkAnime()"))
           .build();
-      animesJkanimes.put(data.getName(), data);
+      
+      listJkAnime.put(data.getName(), data);
     }
 
-    // Obtener los animes de AnimeLife
-    int index = 0;
-    for (Element item : elementsAnimeLife) {
-      String url = this.changeFormatUrl(item.select(".bsx a").attr("href"), providerAnimeLifeUrl);
-
-      if (url.contains("/")) {
-        ChapterDataDTO anime = ChapterDataDTO.builder()
-            .name(item.select(".tt").first().childNodes().stream()
-                .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
-                .map(Node::toString)
-                .collect(Collectors.joining()).trim())
-            .imgUrl(item.select("img").attr("src").trim().replace("?resize=247,350", ""))
-            .type(item.select(".typez").text().trim().replace("TV", "Anime"))
-            .chapter(item.select(".epx").text().replace("Ep 0", "").replace("Ep ", "").trim())
-            .url(this.changeFormatUrl(item.select(".bsx a").attr("href"), providerAnimeLifeUrl))
-            .build();
-
-        anime = this.defineSpecialCases(mapListType, type, anime);
-
-        if (animesJkanimes.containsKey(anime.getName())) {
-          // Si el anime está en Jkanime, usa la fecha y la imagen de Jkanime
-          anime.setImgUrl(animesJkanimes.get(anime.getName()).getUrl());
-          anime.setDate(this.getPastFormattedDate(animesJkanimes.get(anime.getName()).getDate()));
-          anime.setState(true);
-        } else {
-          // Si el anime no está en Jkanime, asigna una fecha a partir de la posición
-          // en del anime en la lista de animes de AnimeLife
-          if (index <= 10)
-            anime.setDate("Hoy");
-          else if (index <= 15)
-            anime.setDate("Ayer");
-          else if (index <= 20)
-            anime.setDate("Hace 2 días");
-          else if (index <= 25)
-            anime.setDate("Hace 3 días");
-          anime.setState(false);
-        }
-
-        animesProgramming.add(anime);
-        index++;
-      }
-    }
-
-    return this.sortAnimeList(animesProgramming, true);
+    return listJkAnime;
   }
 
-  public List<ChapterDataDTO> nextAnimesProgramming(Document document, List<ChapterDataDTO> animesProgramming, Map<String, String> mapListType, char type) {
+  private List<ChapterDataDTO> nextAnimesProgramming(Document document, List<ChapterDataDTO> donghuasProgramming, Map<String, String> mapListTypeJk) {
     // Elimina el ultimo elemento (filtro)
     Elements elements = document.select(".box.semana");
     elements.remove(elements.size() - 1);
@@ -236,6 +285,7 @@ public class HomeService {
       }
     }
 
+    // Recorre los animes emitidos en el apartado 'horario' de JkAnime
     List<ChapterDataDTO> tempLastAnimes = new ArrayList<>();
     int index = 0;
     for (Element item : elements) {
@@ -244,7 +294,7 @@ public class HomeService {
 
       for (Element subItem : animesDay) {
         String name = subItem.select("a").first().select("h3").text();
-        String url = subItem.select("a").first().attr("href");
+        String url = subItem.select("a").first().attr("href").replace("/", "");
         String chapter = subItem.select(".last span").text().split(":")[1].trim();
 
         String[] dateWithTime = subItem.select(".last time").text().split(" ");
@@ -260,18 +310,14 @@ public class HomeService {
         }
 
         ChapterDataDTO anime = ChapterDataDTO.builder()
-          .name(name)
+          .name(this.animeUtils.specialNameOrUrlCases(mapListTypeJk, name, 'k', "nextAnimesProgramming()"))
           .imgUrl(subItem.select(".boxx img").attr("src"))
           .type("Anime")
           .chapter(String.valueOf(Integer.parseInt(chapter) + 1))
           .date(date)
           .time(timeStr.substring(0, timeStr.length() - 3))
-          .url(url.substring(0, url.length() - 1))
+          .url(this.animeUtils.specialNameOrUrlCases(mapListTypeJk, url, 'k', "nextAnimesProgramming()"))
           .build();
-
-        // Casos especiales de nombres y urls
-        anime.setName(this.animeUtils.specialNameOrUrlCases(mapListType, anime.getName(), type));
-        anime.setUrl(this.animeUtils.specialNameOrUrlCases(mapListType, anime.getUrl(), type));
         
         if (index < startIndex) {
           tempLastAnimes.add(anime);
@@ -287,6 +333,8 @@ public class HomeService {
 
     return this.sortAnimeList(nextAnimesProgramming, false);
   }
+
+  // private Map<String, ChapterDataDTO> add
 
   // Cambia las URLs de imagen de animesProgramming por las URLs de imagen de nextAnimesProgramming
   private List<ChapterDataDTO> changeImgAnimesProgramming(List<ChapterDataDTO> animesProgramming, List<ChapterDataDTO> nextAnimesProgramming) {
@@ -355,20 +403,23 @@ public class HomeService {
 
     return nextAnimesCopy;
   }
-  // Función para ordenar las fechas formateadas de los próximos capítulos que serán subidos
   private int getPriority(String date) {
+    // Función para ordenar las fechas formateadas de los próximos capítulos que serán subidos
+
     if (date.equals("Hoy")) return 1;
     if (date.equals("Mañana")) return 2;
     if (date.startsWith("En ")) return 3;
     return 4; // Es dd/MM
   }
 
+  // 
   private String formattedNextDate(String name, String recivedDate) {
     String date = this.calcDaysToNextChapter(name, recivedDate);
     date = this.getNextFormattedDate(date);
     return date;
   }
   
+  // 
   private List<ChapterDataDTO> sortAnimeList(List<ChapterDataDTO> animeList, boolean validateStateToo) {
     animeList.sort((a, b) -> {
       if (a.getDate().equals("Hoy") && b.getDate().equals("Hoy")) {
@@ -395,38 +446,35 @@ public class HomeService {
     return animeList;
   }
 
-  public List<ChapterDataDTO> donghuasProgramming(Document document, Map<String, String> mapListType, char type) {
+  // 
+  private List<ChapterDataDTO> donghuasProgramming(Document document, Map<String, String> mapListTypeJk) {
     Elements elementsJkAnime = document.select(".donghuas_programing a.bloqq");
     List<ChapterDataDTO> lastChapters = new ArrayList<>();
 
     String year = String.valueOf(LocalDate.now().getYear());
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("es", "ES"));
     for (Element item : elementsJkAnime) {
+      String name = item.select(".anime__sidebar__comment__item__text h5").text();
+      String url = item.select("a").attr("href").replace(providerJkanimeUrl, "");
       String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
 
-      if (date.equals("Hoy") || date.equals("Ayer")) {
-        date = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-      } else {
-        date = DataUtils.parseDate(date + "/" + year, formatter, 0);
-      }
+      date = date.equals("Hoy") || date.equals("Ayer")
+        ? DataUtils.getLocalDateTimeNow(isProduction).toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        : DataUtils.parseDate(date + "/" + year, formatter, 0);
 
       ChapterDataDTO anime = ChapterDataDTO.builder()
-          .name(item.select(".anime__sidebar__comment__item__text h5").text())
+          .name(this.animeUtils.specialNameOrUrlCases(mapListTypeJk, name, 'k', "donghuasProgramming()"))
           .imgUrl(item.select(".anime__sidebar__comment__item__pic img").attr("src"))
           .chapter(item.select(".anime__sidebar__comment__item__text h6").text().replace("Episodio", "Capitulo"))
           .type("Donghua")
           .date(this.getPastFormattedDate(date))
-          .url(item.select("a").attr("href").replace(providerJkanimeUrl, ""))
+          .url(this.animeUtils.specialNameOrUrlCases(mapListTypeJk, url, 'k', "donghuasProgramming()"))
           .state(true)
           .build();
 
       // Quitar el "/" final de la url
-      if (anime.getUrl().endsWith("/")) {
+      if (anime.getUrl().endsWith("/"))
         anime.setUrl(anime.getUrl().substring(0, anime.getUrl().length() - 1));
-      }
-
-      anime.setName(this.animeUtils.specialNameOrUrlCases(mapListType, anime.getName(), type));
-      anime.setUrl(this.animeUtils.specialNameOrUrlCases(mapListType, anime.getUrl(), type));
 
       lastChapters.add(anime);
     }
@@ -434,7 +482,8 @@ public class HomeService {
     return lastChapters;
   }
 
-  public List<TopDataDTO> topAnimes(Document document) {
+  // 
+  private List<TopDataDTO> topAnimes(Document document) {
     Element data = document.select(".destacados").last().select(".container div").first();
     List<TopDataDTO> topAnimes = new ArrayList<>(10);
 
@@ -464,7 +513,8 @@ public class HomeService {
     return topAnimes;
   }
 
-  public List<AnimeDataDTO> latestAddedAnimes(Document document) {
+  // 
+  private List<AnimeDataDTO> latestAddedAnimes(Document document) {
     Elements elements = document.select(".trending__anime .anime__item");
     List<AnimeDataDTO> latestAddedAnimes = new ArrayList<>();
 
@@ -482,20 +532,22 @@ public class HomeService {
 
     return latestAddedAnimes;
   }
-  // Elimina los ONAs de los animes recién agregados
+  
+  // 
   private List<AnimeDataDTO> removeOnasFromLatestAddedAnimes(List<AnimeDataDTO> latestAddedAnimes) {
-    List<AnimeDataDTO> latestAddedAnimesCopy = new ArrayList<>(latestAddedAnimes);
+    List<AnimeDataDTO> listWithoutOnas = new ArrayList<>();
 
     for (AnimeDataDTO anime : latestAddedAnimes) {
-      if (anime.getType().equals("ONA")) {
-        latestAddedAnimesCopy.remove(anime);
+      if (!anime.getType().equals("ONA")) {
+        listWithoutOnas.add(anime);
       }
     }
 
-    return latestAddedAnimesCopy;
+    return listWithoutOnas;
   }
 
-  public List<LinkDTO> latestAddedList(Document document, List<AnimeDataDTO> latestAddedAnimes) {
+  // 
+  private List<LinkDTO> latestAddedList(Document document, List<AnimeDataDTO> latestAddedAnimes) {
     Elements elements = document.select(".trending_div .side-menu li");
     List<LinkDTO> latestAddedList = new ArrayList<>();
     Map<String, String> mapOnasNames = new HashMap<>();
@@ -508,12 +560,9 @@ public class HomeService {
     for (Element element : elements) {
       String name = element.select("a").text();
       
-      // Si el nombre coincide con uno de los ONAs, no lo agrega a la lista
-      if (mapOnasNames.get(name) != null) {
-        continue;
-      } else {
+      // Si no está en la lista de ONAS, es un anime y lo agrega a la lista
+      if (mapOnasNames.get(name) == null) {
         // Si es un anime
-        
         LinkDTO anime = LinkDTO.builder()
           .name(name)
           .url(element.select("a").attr("href").replace(providerJkanimeUrl, ""))
@@ -527,34 +576,9 @@ public class HomeService {
   }
 
   // ? Text
-  private ChapterDataDTO defineSpecialCases(Map<String, String> mapListType, char type, ChapterDataDTO anime) {
-    // Elimina caracteres raros del nombre
-    anime.setName(anime.getName().trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"')));
-    anime.setName(this.animeUtils.specialNameOrUrlCases(mapListType, anime.getName(), type)); // Nombres especiales
-    anime.setName(anime.getName().replace("Movie", "").trim()); // "Movie" en el nombre
-    anime.setUrl(this.animeUtils.specialNameOrUrlCases(mapListType, anime.getUrl(), type)); // Urls especiales
-
-    // Si el número de capítulo tiene un "."
-    if (anime.getChapter().contains(".")) {
-      int chapter = Integer.parseInt(anime.getChapter().split("\\.")[0]) + 1;
-
-      // Reconstruye la url sin el capítulo
-      String[] urlSplit = anime.getUrl().split("-");
-      String url = "";
-      for (int i = 0; i < urlSplit.length - 1; i++) {
-        url += (i != 0) ? "-" + urlSplit[i] : urlSplit[i];
-      }
-
-      // Asigna el nuevo capítulo y la nueva url
-      anime.setChapter(String.valueOf(chapter));
-      anime.setUrl(url + "/" + chapter);
-    }
-
-    return anime;
-  }
-
-  private String changeFormatUrl(String url, String providerUrl) {
-    String newUrl = url.replace(providerUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
+  // * Obtiene el nombre junto al capítulo del anime a partir de la URL (https://animelife.net/one-piece-1090 -> [one-piece/1090])
+  private String getNameAndChapterFromUrl(String url) {
+    String newUrl = url.replace(this.providerAnimeLifeUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
     // Verifica si la URL termina con el patrón -xx-2
     if (url.matches(".*-\\d{2}-2/?$")) {
       // Extrae el número y lo incrementa
@@ -562,13 +586,13 @@ public class HomeService {
       try {
         int number = Integer.parseInt(numberPart) + 1;
         newUrl = url.replaceFirst("-\\d{2}-2/?$", "/" + number);
-        return newUrl.replace(providerUrl, "");
+        return newUrl.replace(this.providerAnimeLifeUrl, "");
       } catch (NumberFormatException e) {
         log.warning("Error parsing number from URL: " + url);
       }
     } else {
       // Si no termina con -xx-2, solo elimina los ceros a la izquierda
-      newUrl = url.replace(providerUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
+      newUrl = url.replace(this.providerAnimeLifeUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
       return newUrl;
     }
 

@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
   // Data Exceptions
   @ExceptionHandler(ConnectionFailed.class)
   public ResponseEntity<?> handleConnectionFailed(ConnectionFailed ex) {
-    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
+    ResponseDTO response = new ResponseDTO(ex.getMessage(), 500);
     return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
   }
   

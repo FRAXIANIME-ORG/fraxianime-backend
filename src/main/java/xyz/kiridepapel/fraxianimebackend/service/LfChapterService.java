@@ -25,11 +25,12 @@ import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
+import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFoundException;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.CacheHelper;
 
 @Service
-
 @Log
 public class LfChapterService {
   @Value("${APP_PRODUCTION}")
@@ -40,33 +41,54 @@ public class LfChapterService {
   private CacheManager cacheManager;
   @Autowired
   private AnimeUtils animeUtils;
-  @Autowired
-  private DataUtils dataUtils;
+  // Ignorar la búsqueda del primer y el último capítulo, simplemente usa de forma estática el primer y último elemento de la lista
+  private List<String> ignoreSearchChapterCases = List.of(
+    "one-piece", "naruto"
+  );
 
   // Este método lo usa el sistema para guardar la información de los últimos 9 capítulos salidos automáticamente
   @Cacheable(value = "chapter", key = "#url.concat('/').concat(#chapter)")
-  public ChapterDTO cacheChapter(String url, String chapter) {
+  public ChapterDTO saveLongCacheChapter(String url, String chapter) {
     return this.constructChapter(url, chapter);
   }
-
+  
   // Obtener la información de un capítulo, desde caché si existe o desde la web si no existe
   public ChapterDTO constructChapter(String url, String chapter) {
     try {
-      ChapterDTO chapterCache = this.dataUtils.searchFromCache(cacheManager, ChapterDTO.class, "chapter", (url + "/" + chapter));
+      // Verifica si o está buscando como está en AnimeLife y no en JkAnime
+      url = this.animeUtils.specialNameOrUrlCases(null, url, 's', "constructChapter()");
+      
+      // Si no lo encontró en los casos especiales 'z', retorna la url a su estado original
+      url = this.animeUtils.specialNameOrUrlCases(null, url + "_" + chapter, 'z', "constructChapter()");
+      if (url.contains("_")) url = url.split("_")[0];
+
+      // Obtiene el ChapterDTO si está en caché
+      ChapterDTO chapterCache = CacheHelper.searchFromCache(cacheManager, ChapterDTO.class, "chapter", (url + "/" + chapter));
       if (chapterCache != null) {
         return chapterCache;
       }
 
-      // Lógica para obtener el ChapterDTO si no está en caché (no se almacena en caché)
-      String modifiedUrlChapter = this.providerAnimeLifeUrl + this.animeUtils.specialNameOrUrlCases(null, url, 'c');
+      // Modifica la URL si es necesario (casos especiales 'c')
+      String modifiedUrlChapter = this.animeUtils.specialNameOrUrlCases(null, url, 'c', "constructChapter()");
+      modifiedUrlChapter = this.providerAnimeLifeUrl + modifiedUrlChapter;
       modifiedUrlChapter = this.animeUtils.specialChapterCases(modifiedUrlChapter, url, chapter);
+
       return this.findChapter(modifiedUrlChapter, chapter);
     } catch (Exception e) {
-      log.info("Error en constructChapter: " + e.getMessage());
-      throw new ChapterNotFound("Error construyendo el capítulo");
+      throw new ChapterNotFound("Capítulo no disponible");
     }
   }
 
+  
+  @Cacheable(value = "test", key = "#url.concat('/').concat(#chapter)")
+  public ChapterDTO test(String url, String chapter, Long time) {
+    return ChapterDTO.builder()
+      .name(url + " - " + chapter)
+      .expiration(time)
+      .build();
+  }
+
+  //
   public ChapterDTO findChapter(String modifiedUrlChapter, String chapter) {
     try {
       Document docAnimeLife = this.animeUtils.chapterSearchConnect(modifiedUrlChapter, chapter, "No se encontró el capitulo solicitado.");
@@ -76,7 +98,7 @@ public class LfChapterService {
       
       String name = docAnimeLife.select(".ts-breadcrumb li").get(1).select("span").text().trim();
       ChapterDTO chapterInfo = ChapterDTO.builder()
-        .name(this.animeUtils.specialNameOrUrlCases(null, name, 'n'))
+        .name(this.animeUtils.specialNameOrUrlCases(null, name, 'n', "findChapter()"))
         .srcOptions(this.getSrcOptions(docAnimeLife))
         .downloadOptions(this.getDownloadOptions(docAnimeLife))
         .havePreviousChapter(this.havePreviousChapter(nearChapters))
@@ -100,12 +122,12 @@ public class LfChapterService {
       }
       
       // Establece la información de los capítulos cercanos al actual (anterior y siguiente)
-      chapterInfo = this.setPrevAndNextChapters(chapterInfo, docAnimeLife, nearChapters, chapter);
+      chapterInfo = this.setPrevAndNextChapters(chapterInfo, docAnimeLife, nearChapters, modifiedUrlChapter, chapter);
 
       return chapterInfo;
     } catch (Exception e) {
-      log.info("Error en findChapter: " + e.getMessage());
-      throw new ChapterNotFound("Error buscando el capítulo");
+      log.severe("LfAnimeService ERROR " + e.getMessage());
+      throw new ChapterNotFound("Capítulo no disponible");
     }
   }
 
@@ -148,7 +170,7 @@ public class LfChapterService {
   
       return list;
     } catch (Exception e) {
-      throw new ChapterNotFound("2: " + e.getMessage());
+      throw new DataNotFoundException("(getSrcOptions): " + e.getMessage() + " ");
     }
   }
 
@@ -186,27 +208,45 @@ public class LfChapterService {
         }
       }
     } catch (Exception e) {
-      throw new ChapterNotFound("3: " + e.getMessage());
+      throw new DataNotFoundException("(getDownloadOptions): " + e.getMessage() + " ");
     }
   }
 
-  private ChapterDTO setPrevAndNextChapters(ChapterDTO chapterInfo, Document docAnimeLife, Elements nearChapters, String chapter) {
+  private ChapterDTO setPrevAndNextChapters(ChapterDTO chapterInfo, Document docAnimeLife, Elements nearChapters, String modifiedUrlChapter, String chapter) {
     try {
+      // Busca y guarda la imagen de los capítulos
+      String chapterImg = docAnimeLife.body().select(".headlist img").attr("src");
+      chapterInfo.setChapterImg(chapterImg.replace("?resize=60,70", ""));
+      
+      // * Obtiene y guarda el primer y último elemento de la lista (busca por el número del capítulo, no por su posición en la lista)
       Elements episodeList = docAnimeLife.body().select(".episodelist ul li");
+      Element itemFirstChapter = null;
+      Element itemLastChapter = null;
+      // Si no está en la lista de casos especiales: busca el primer y último elemento de forma dinámica
+      if (!this.ignoreSearchChapterCases.contains(this.getNameFromUrl(modifiedUrlChapter))) {
+        itemFirstChapter = episodeList.stream()
+            .min((e1, e2) -> Float.compare(Float.parseFloat(getChapterItem(e1)), Float.parseFloat(getChapterItem(e2))))
+            .orElse(null);
+        itemLastChapter = episodeList.stream()
+            .max((e1, e2) -> Float.compare(Float.parseFloat(getChapterItem(e1)), Float.parseFloat(getChapterItem(e2))))
+            .orElse(null);
+      } else {
+        // Usa el primer y último elemento de la lista de forma estática
+        itemFirstChapter = episodeList.last();
+        itemLastChapter = episodeList.first();
+      }
 
-      // Variables de los capitulos
-      String actualChapter = chapter.replace("-", ".");
-      Element itemFirstChapter = episodeList.last();
-      Element itemLastChapter = episodeList.first();
+      // Guardar capítulo actual, primer capítulo y último capítulo
+      chapterInfo.setActualChapter(chapter.replace("-", "."));
+      chapterInfo.setFirstChapter(this.getChapterItem(itemFirstChapter));
+      chapterInfo.setLastChapter(this.getChapterItem(itemLastChapter));
 
+      // Establece el capítulo anterior y siguiente si es que existen
       if (itemFirstChapter != null && itemLastChapter != null) {
-        // Imagen del capítulo
-        String chapterImg = itemLastChapter.select(".thumbnel img").attr("src").replace("?resize=130,130", "");
-        // El nombre del ánime puede estar modificado en casos especiales
-        String chapterNameModified = this.animeUtils.specialNameOrUrlCases(null, chapterInfo.getName(), 'l');
-
-        // Obtiene el numero del capitulo anterior si es que existe
-        Pattern patternNumber = Pattern.compile("-(\\d{1,2})(?:-(\\d+))?/?$");
+        // * Obtiene y guarda el capítulo anterior y siguiente si es que existen
+        Pattern patternNumber = Pattern.compile("-(\\d{1,4})(?:-(\\d+))?/?$");
+        List<String> ignoreCases = List.of("part", "season");
+        // Capítulo anterior
         if (chapterInfo.getHavePreviousChapter()) {
           String previousChapterUrl = nearChapters.first().select("a").attr("href").replace(providerAnimeLifeUrl, "");
           Matcher matcherNumber = patternNumber.matcher(previousChapterUrl);
@@ -216,22 +256,31 @@ public class LfChapterService {
             // Si el capitulo es name-anime-12-2, se obtiene 12-2
             if (matcherNumber.group(2) != null) {
               String chapterGroup = matcherNumber.group(1) + "-" + matcherNumber.group(2);
-              // Si el capitulo es 12-2, se obtiene 11, si es 12-5, se queda así.
-              if (chapterGroup.contains("-2")) {
-                chapterNumber = String.valueOf(Integer.parseInt(matcherNumber.group(1)) - 1);
+
+              // Si termina con "part" o "season", se ignora el caso
+              if (ignoreCases.contains(this.getLastPartOfUrl(previousChapterUrl, chapterGroup))) {
+                chapterNumber = String.valueOf(Integer.parseInt(matcherNumber.group(2)));
               } else {
-                chapterNumber = chapterGroup;
+                // Si el capitulo es 12-2, se obtiene 11, si es 12-5, se queda así.
+                if (chapterGroup.contains("-2")) {
+                  chapterNumber = String.valueOf(Integer.parseInt(matcherNumber.group(1)) - 1);
+                } else {
+                  chapterNumber = chapterGroup;
+                }
               }
             } else {
               chapterNumber = String.valueOf(Integer.parseInt(matcherNumber.group(1)));
             }
+          // } else {
+          //   log.info("No have matcherNumber");
           }
 
+          // Convierte el número del capítulo a un formato más legible: 11-5 -> 13.5
+          chapterNumber = chapterNumber.replace("-", ".");
           chapterInfo.setPreviousChapter(chapterNumber);
         }
-        
-        // Obtiene el numero del capitulo siguiente si es que existe
-        if (chapterInfo.getHaveNextChapter()) {
+        // Capítulo siguiente
+        if (chapterInfo.getHaveNextChapter() || Float.parseFloat(chapterInfo.getActualChapter()) < Float.parseFloat(chapterInfo.getLastChapter())) {
           String nextChapterUrl = nearChapters.last().select("a").attr("href").replace(providerAnimeLifeUrl, "");
           Matcher matcherNumber = patternNumber.matcher(nextChapterUrl);
 
@@ -240,54 +289,105 @@ public class LfChapterService {
             // Si el capitulo es name-anime-12-2, se obtiene 12-2
             if (matcherNumber.group(2) != null) {
               String chapterGroup = matcherNumber.group(1) + "-" + matcherNumber.group(2);
-              // Si el capitulo es 12-2, se obtiene 13, si es 12-5, se queda así.
-              if (chapterGroup.contains("-2")) {
-                chapterNumber = String.valueOf(Integer.parseInt(matcherNumber.group(1)) + 1);
+
+              // Si termina con "part" o "season", se ignora el caso
+              if (ignoreCases.contains(this.getLastPartOfUrl(nextChapterUrl, chapterGroup))) {
+                chapterNumber = String.valueOf(Integer.parseInt(matcherNumber.group(2)));
               } else {
-                chapterNumber = chapterGroup;
+                // Si el capitulo es 12-2, se obtiene 13, si es 12-5, se queda así.
+                if (chapterGroup.contains("-2")) {
+                  chapterNumber = String.valueOf(Integer.parseInt(matcherNumber.group(1)) + 1);
+                } else {
+                  chapterNumber = chapterGroup;
+                }
               }
             } else {
               chapterNumber = String.valueOf(Integer.parseInt(matcherNumber.group(1)));
             }
           }
 
+          // Convierte el número del capítulo a un formato más legible: 13-5 -> 13.5
+          chapterNumber = chapterNumber.replace("-", ".");
           chapterInfo.setNextChapter(chapterNumber);
         }
-        
-        // Obtiene el numero del primer y último capitulo
-        String firstChapter = this.getChapterFromName(itemFirstChapter, chapterNameModified);
-        String lastChapter = this.getChapterFromName(itemLastChapter, chapterNameModified);
-        // Si el capítulo está en emisión, no se establece el último capítulo
-        chapterInfo.setFirstChapter(firstChapter);
-        if (!chapterInfo.getInEmision()) chapterInfo.setLastChapter(lastChapter);
+
+        // * Modificaciones especiales del capítulo anterior y siguiente si son necesarias
+        Float actualChapter = Float.parseFloat(chapterInfo.getActualChapter());
+        Float previousChapter = null;
+        Float nextChapter = null;
+
+        // Capítulo anterior
+        if (chapterInfo.getPreviousChapter() != null) {
+          previousChapter = Float.parseFloat(chapterInfo.getPreviousChapter());
+
+          if (previousChapter < (actualChapter - 1) || previousChapter > actualChapter) {
+            previousChapter = actualChapter - 1;
+          }
+
+          chapterInfo.setPreviousChapter(Float.toString(previousChapter.floatValue()).replace(".0", ""));
+        }
+        // Capítulo siguiente
+        if (Float.parseFloat(chapterInfo.getActualChapter()) < Float.parseFloat(chapterInfo.getLastChapter())) {
+          // Si no hay capitulo siguiente guardado, usa como siguiente capítulo el actual + 1
+          if (chapterInfo.getNextChapter() == null || chapterInfo.getNextChapter().isEmpty()) {
+            nextChapter = actualChapter + 1;
+            chapterInfo.setNextChapter(Integer.toString(nextChapter.intValue()));
+          } else {
+            nextChapter = Float.parseFloat(chapterInfo.getNextChapter());
+          }
+          chapterInfo.setHaveNextChapter(true);
+
+          if (nextChapter > (actualChapter + 1)) {
+            nextChapter = actualChapter + 1;
+            chapterInfo.setNextChapter(Integer.toString(nextChapter.intValue()));
+          } else if (nextChapter < actualChapter) {
+            chapterInfo.setHaveNextChapter(false);
+            chapterInfo.setNextChapter(null);
+          }
+        } else {
+          chapterInfo.setHaveNextChapter(false);
+          chapterInfo.setNextChapter(null);
+        }
 
         // Fecha del último capítulo
         String lastChapterDate = itemLastChapter.select(".playinfo span").text();
         String[] chapterDateArray = lastChapterDate.split(" - ");
         lastChapterDate = chapterDateArray[chapterDateArray.length - 1];
-
+        
         // Asigna la información
-        chapterInfo.setChapterImg(chapterImg);
-        chapterInfo.setActualChapter(actualChapter);
         chapterInfo.setLastChapterDate(lastChapterDate);
       }
 
       return chapterInfo;
     } catch (Exception e) {
-      log.severe("Error en setPrevAndNextChapters: " + e.getMessage());
-      throw new ChapterNotFound("Error estableciendo los capítulos");
+      throw new DataNotFoundException("(setPrevAndNextChapters): " + e.getMessage() + " ");
     }
   }
 
-  public String getChapterFromName(Element item, String chapterNameModified) {
-    String number = item.select(".playinfo h4").text().replace(chapterNameModified, "").trim();
-
-    // Elimina los 0s a la izquierda si es que hay
-    if (!number.contains(".")) {
-      number = String.valueOf(Integer.parseInt(number));
+  private String getChapterItem(Element item) {
+    // Eps 03 - febrero 19, 2024 -> 03
+    String number = item.select(".playinfo span").text().split(" ")[1].trim().replace("-", ".");
+    
+    try {
+      number = String.valueOf(Float.parseFloat(number)).replace(".0", "");
+    } catch (NumberFormatException e) {
+      number = "1";
     }
 
     return number;
+  }
+
+  // Devuelve la última parte de la URL (part-2-05 -> [part])
+  private String getLastPartOfUrl(String url, String chapterPart) {
+    url = url.replace("/", "").replace(chapterPart, "");
+    String[] urlParts = url.split("-");
+    return urlParts[urlParts.length - 1];
+  }
+
+  // * Obtiene el nombre del anime de la URL (https://animelife.net/one-piece-1090 -> [one-piece])
+  private String getNameFromUrl(String url) {
+    String newUrl = url.replace(providerAnimeLifeUrl, "");
+    return newUrl.replaceAll("-\\d+/?$", "");
   }
 
   public String calcNextChapterDate(String lastChapterDate) {

@@ -8,6 +8,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.classes.AssignmentExportData;
+import xyz.kiridepapel.fraxianimebackend.dto.SpecialCaseDTO;
 import xyz.kiridepapel.fraxianimebackend.entity.AnimeEntity;
 import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFoundException;
@@ -247,5 +250,25 @@ public class DataService<T> {
     } catch (IOException e) {
       throw new DataNotFoundException("Ocurrió un error al importar los datos");
     }
+  }
+
+  public void newSpecialCase(SpecialCaseDTO data) {
+    // Validaciones
+    List<SpecialCaseEntity> listNewSpecialCases = new ArrayList<>();
+    
+    // Crear caso especial 1
+
+
+    // Guardar caso especial
+    // specialCaseRepository.saveAll(listNewSpecialCases);
+  }
+
+  private String generateRandomString(int minLength, int maxLength) {
+    Random random = new Random();
+    int length = random.nextInt(maxLength - minLength + 1) + minLength;
+    return random.ints('a', 'z' + 1)
+      .limit(length)
+      .mapToObj(c -> String.valueOf((char) c))
+      .collect(Collectors.joining());
   }
 }

@@ -14,8 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
-import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeHistoryDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
@@ -24,8 +22,6 @@ import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
-@Log
-@SuppressWarnings("unused")
 public class JkAnimeService {
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
@@ -35,7 +31,20 @@ public class JkAnimeService {
   @Autowired
   private AnimeUtils animeUtils;
   // Variables
-  private Map<String, String> specialCases = new HashMap<>();
+  private Map<String, String> tradMap = Map.ofEntries(
+    Map.entry("Ene", "enero"),
+    Map.entry("Feb", "febrero"),
+    Map.entry("Mar", "marzo"),
+    Map.entry("Abr", "abril"),
+    Map.entry("May", "mayo"),
+    Map.entry("Jun", "junio"),
+    Map.entry("Jul", "julio"),
+    Map.entry("Ago", "agosto"),
+    Map.entry("Sep", "septiembre"),
+    Map.entry("Oct", "octubre"),
+    Map.entry("Nov", "noviembre"),
+    Map.entry("Dic", "diciembre")
+  );
   private Map<String, String> specialAltTitles = Map.ofEntries(
     Map.entry("Sinónimos", "synonyms"),
     Map.entry("Sinonimos", "synonyms"),
@@ -62,16 +71,7 @@ public class JkAnimeService {
     Map.entry("Derivado", "derived")
   );
 
-  @PostConstruct
-  public void init() {
-    for (SpecialCaseEntity sce : this.scheduleService.getSpecialCases('y')) {
-      this.specialCases.put(sce.getOriginal(), sce.getMapped());
-    }
-  }
-
-  public AnimeInfoDTO getAnimeInfo(AnimeInfoDTO animeInfo, Document docJkanime, String search, Map<String, String> tradMap, boolean isMinDateInAnimeLf) {
-    
-    
+  public AnimeInfoDTO getAnimeInfo(AnimeInfoDTO animeInfo, Document docJkanime, String search, boolean isMinDateInAnimeLf) {
     Element mainJkanime = docJkanime.body().select(".contenido").first();
     Elements keys = docJkanime.select(".anime__details__text .anime__details__widget .aninfo ul li");
 
@@ -85,7 +85,7 @@ public class JkAnimeService {
     String duration = String.valueOf(this.getSpecificKey(keys, "Duracion", false)).replace("por episodio", "").trim();
     String quality = String.valueOf(this.getSpecificKey(keys, "Calidad", false));
     Map<String, Object> alternativeTitles = this.getAlternativeTitlesJk(docJkanime);
-    Map<String, Object> history = this.getHistory(docJkanime);
+    Map<String, Object> history = this.getHistoryJK(docJkanime);
     String trailer = mainJkanime.select(".animeTrailer").attr("data-yt");
 
     // Asignar la nueva información si es válida
@@ -115,7 +115,7 @@ public class JkAnimeService {
       }
     }
     if (this.isValidData(emited)) {
-      String newEmited = this.defaultDateName(tradMap, emited);
+      String newEmited = this.defaultDateName(emited);
       animeInfo.getData().put("Publicado el", DataUtils.firstUpper(newEmited));
       
       if (isMinDateInAnimeLf == true) {
@@ -124,9 +124,9 @@ public class JkAnimeService {
 
       // Si hay un rango de fechas
       if (emited.contains(" a ")) {
-        String lastEmited = this.defaultDateName(tradMap, emited.split(" a ")[1].trim());
+        String lastEmited = this.defaultDateName(emited.split(" a ")[1].trim());
         // Fecha de publicación [1]
-        animeInfo.getData().put("Publicado el", DataUtils.firstUpper(lastEmited.split(" a ")[0].trim()));
+        animeInfo.getData().put("Publicado el", DataUtils.firstUpper(this.defaultDateName(emited.split(" a ")[0].trim())));
         // Fecha del último capítulo [2]
         animeInfo.setLastChapterDate(lastEmited);
       }
@@ -150,13 +150,13 @@ public class JkAnimeService {
     return animeInfo;
   }
 
-  public String defaultDateName(Map<String, String> map, String date) {
+  public String defaultDateName(String date) {
     date = date.replace(" de ", ", ");
     String partMonth = date.split(" ")[0];
-    if (!map.containsKey(partMonth)) {
+    if (!this.tradMap.containsKey(partMonth)) {
       return date;
     } else {
-      return date.replace(partMonth, map.get(partMonth));
+      return date.replace(partMonth, this.tradMap.get(partMonth));
     }
   }
   
@@ -192,8 +192,7 @@ public class JkAnimeService {
     return alternativeTitles;
   }
 
-  // private Map<String, Object> getHistory(Document docJkanime, Map<String, String> specialCases) {
-  private Map<String, Object> getHistory(Document docJkanime) {
+  private Map<String, Object> getHistoryJK(Document docJkanime) {
     Elements allChilds = docJkanime.body().select(".aninfo").last().children();
     Map<String, Object> history = new LinkedHashMap<>();
     String currentKey = null;
@@ -201,18 +200,19 @@ public class JkAnimeService {
 
     // Si hay elementos en el contenedor
     if (allChilds != null && !allChilds.isEmpty()) {
-      // 1. En el primer ciclo:
-      //   - se guarda el titulo de la sublista
-      //   - se ignora porque no hay nada que guardar
-      // 2. En el segundo ciclo:
-      //   - se guarda la lista anterior en el mapa junto con su titulo (guardado en el anterior ciclo)
-      // 3. En todos los ciclos:
-      //   - se inicializa la lista desde 0
+      // Lista de casos especiales
+      Map<String, String> specialCases = new HashMap<>();
+      for (SpecialCaseEntity sce : this.scheduleService.getSpecialCases('k')) {
+        specialCases.put(sce.getOriginal(), sce.getMapped());
+      }
+      // 1. En el primer ciclo: se guarda el titulo de la sublista y se ignora porque no hay nada que guardar
+      // 2. En el segundo ciclo: se guarda la lista anterior en el mapa junto con su titulo (guardado en el anterior ciclo)
+      // 3. En todos los ciclos: se inicializa la lista desde 0
       for (Element item : allChilds) {
         // Si es un titulo de una sublista (Precuela, Secuela, etc.)
         if (item.tagName().equals("h5")) {
           if (currentKey != null) {
-            String name = this.animeUtils.specialNameOrUrlCases(null, currentKey, 'y');
+            String name = this.animeUtils.specialNameOrUrlCases(null, currentKey, 'k', "getHistoryJK()");
             history.put(name, currentLinks);
           }
           currentKey = item.text();
@@ -223,8 +223,8 @@ public class JkAnimeService {
           
           String name = parts[0].trim();
           String url = item.attr("href").replace(this.providerJkanimeUrl, "").replace("/", "");
-          name = this.animeUtils.specialNameOrUrlCases(this.specialCases, name, 'y');
-          url = this.animeUtils.specialNameOrUrlCases(this.specialCases, url, 'y');
+          name = this.animeUtils.specialNameOrUrlCases(specialCases, name, 'k', "getHistoryJK()");
+          url = this.animeUtils.specialNameOrUrlCases(specialCases, url, 'k', "getHistoryJK()");
 
           AnimeHistoryDTO link = AnimeHistoryDTO.builder()
             .name(name)

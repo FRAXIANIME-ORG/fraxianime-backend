@@ -19,9 +19,11 @@ import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
+import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFoundException;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.AnimeInfoDTO;
+import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 
@@ -37,6 +39,8 @@ public class LfAnimeService {
   private JkAnimeService jkAnimeService;
   @Autowired
   private TranslateService translateService;
+  @Autowired
+  private ScheduleService scheduleService;
   @Autowired
   private AnimeUtils animeUtils;
   // Variables
@@ -55,23 +59,33 @@ public class LfAnimeService {
   @Cacheable("anime")
   public AnimeInfoDTO animeInfo(String search) {
     try {
-      Document docJkanime = AnimeUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + this.animeUtils.specialNameOrUrlCases(null, search, 'j')), 1);
-      Document docAnimeLife = AnimeUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + this.animeUtils.specialNameOrUrlCases(null, search, 'a')), 2);
+      // Verifica si el anime está en los casos especiales pero invertidos (lo está buscando como está en AnimeLife y no en JkAnime)
+      for (SpecialCaseEntity specialCase : this.scheduleService.getSpecialCases('s')) {
+        if (specialCase.getOriginal().equals(search)) {
+          search = specialCase.getMapped();
+          break;
+        }
+      }
 
+      // Buscar en AnimeLife y JkAnime
+      String animeUrlJk = this.animeUtils.specialNameOrUrlCases(null, search, 'j', "animeInfo()");
+      String animeUrlLf = this.animeUtils.specialNameOrUrlCases(null, search, 'a', "animeInfo()");
+      Document docJkanime = AnimeUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + animeUrlJk), 1);
+      Document docAnimeLife = AnimeUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + animeUrlLf), 2);
+
+      // Si no se encuentra el anime en AnimeLife, devolver un error
       Element mainAnimeLife = docAnimeLife.body().select(".wrapper").first();
-
-      if (mainAnimeLife == null) {
+      if (mainAnimeLife == null)
         throw new AnimeNotFound("Anime no disponible");
-      }
-
+      
+      // Si no encuentra el trailer en AnimeLife, devolver null
       String trailer = mainAnimeLife.select(".trailerbutton").attr("href").replace("watch?v=", "embed/");
-      if (trailer.isEmpty()) {
+      if (trailer.isEmpty())
         trailer = null;
-      }
       
       String name = mainAnimeLife.select(".entry-title").text().trim();
       AnimeInfoDTO animeInfo = AnimeInfoDTO.builder()
-        .name(this.animeUtils.specialNameOrUrlCases(null, name, 'n'))
+        .name(this.animeUtils.specialNameOrUrlCases(null, name, 'n', "animeInfo()"))
         .alternativeName(mainAnimeLife.select(".entry-title").text().trim())
         .imgUrl(mainAnimeLife.select(".thumbook img").attr("src").trim())
         .synopsis(mainAnimeLife.select(".synp p").text().trim())
@@ -84,42 +98,32 @@ public class LfAnimeService {
 
       // Si el capitulo existe en JkAnime, modificar la infomación con la de este
       boolean isMinDateInAnimeLf = false;
-      Map<String, String> tradMap = Map.ofEntries(
-        Map.entry("Ene", "enero"),
-        Map.entry("Feb", "febrero"),
-        Map.entry("Mar", "marzo"),
-        Map.entry("Abr", "abril"),
-        Map.entry("May", "mayo"),
-        Map.entry("Jun", "junio"),
-        Map.entry("Jul", "julio"),
-        Map.entry("Ago", "agosto"),
-        Map.entry("Sep", "septiembre"),
-        Map.entry("Oct", "octubre"),
-        Map.entry("Nov", "noviembre"),
-        Map.entry("Dic", "diciembre")
-      );
+      boolean availableInJk = false;
 
-      if (animeInfo.getLastChapterDate().equals("mayo 29, 2023")) {
+      // AnimeLife salió en mayo 29, 2023, por lo que si es esa fecha, significa que no se conoce la fecha del último capítulo
+      if (animeInfo.getLastChapterDate().equals("mayo 29, 2023") || animeInfo.getLastChapterDate().equals("mayo 28, 2023")) {
         isMinDateInAnimeLf = true;
       }
 
+      // Si encuentra el ánime en JkAnime, modificar la información con la de JkAnime
       if (docJkanime != null) {
-        animeInfo = this.jkAnimeService.getAnimeInfo(animeInfo, docJkanime, search, tradMap, isMinDateInAnimeLf);
+        animeInfo = this.jkAnimeService.getAnimeInfo(animeInfo, docJkanime, search, isMinDateInAnimeLf);
+        availableInJk = true;
       }
-
+      
       // Establecer todo lo relacionado a los capítulos (info, numeros, fechas, etc.)
-      animeInfo = this.setChaptersInfoAndList(animeInfo, docAnimeLife, tradMap, isMinDateInAnimeLf);
+      animeInfo = this.setChaptersInfoAndList(animeInfo, docAnimeLife, isMinDateInAnimeLf, availableInJk);
 
       // Busca y establece la sinopsis traducida
       animeInfo.setSynopsisEnglish(this.translateService.translate(animeInfo.getName(), animeInfo.getSynopsis()));
 
-      // Modificar las keys obtenidas en data (español) -> (inglés)
+      // Modificar las keys obtenidas en data (español -> inglés)
       animeInfo.setData(AnimeUtils.specialDataKeys(animeInfo.getData(), this.specialKeys));
 
       return animeInfo;
     } catch (Exception e) {
-      log.warning("1: " + e.getMessage());
-      throw new AnimeNotFound("Anime no encontrado.");
+      log.severe("LfAnimeService ERROR " + e.getMessage());
+      throw new AnimeNotFound("Anime no disponible");
     }
   }
 
@@ -148,19 +152,19 @@ public class LfAnimeService {
       for (Element item : docAnimeLife.select(".info-content .spe span")) {
         Elements links = item.select("a");
         String key = item.text().split(":")[0].trim().replace(" en", " el");
-        
-        if (key.equals("Publicado")) continue;
 
         if (links.size() == 0 || links == null || links.isEmpty()) {
           if (item.select("time").size() > 0) {
-            // Si hay un time, usar el text() como value
-            String value = item.select("time").text();
-            data.put(key, value);
+            String valueTime = item.select("time").text(); // Si hay un time, usar el text() como value
+            valueTime = DataUtils.firstUpper(valueTime); // Primera letra en mayúscula de la fecha
+            
+            data.put(key, valueTime);
           } else {
-            // Si no hay un time, usar el texto luego de los ":" como value
-            String[] values = item.text().split(":");
+            String[] values = item.text().split(":"); // Separar el texto por ":" y obtener el valor
+
             if (values.length > 1) {
               String value = values[1].replace(" pero ep.", "").trim();
+              
               // Valores modificables de los values
               if (value.equals("TV")) {
                 value = "Anime";
@@ -168,17 +172,20 @@ public class LfAnimeService {
               if (value.equals("Completada")) {
                 value = "Finalizado";
               }
+
               data.put(key, value);
             }
           }
         } else {
           List<LinkDTO> subData = new ArrayList<>();
+
           for (Element link : links) {
             subData.add(LinkDTO.builder()
               .name(link.text().trim())
               .url(link.attr("href").replace(this.providerAnimeLifeUrl, ""))
               .build());
           }
+
           data.put(key, subData);
         }
       }
@@ -203,13 +210,13 @@ public class LfAnimeService {
 
       return data;
     } catch (Exception e) {
-      log.info("Error 2: " + e.getMessage());
-      throw new AnimeNotFound("Anime no encontrado.");
+      throw new DataNotFoundException("(getAnimeData): " + e.getMessage() + " ");
     }
   }
 
-  private AnimeInfoDTO setChaptersInfoAndList(AnimeInfoDTO animeInfo, Document docAnimeLife, Map<String, String> tradMap, boolean isMinDateInAnimeLf) {
+  private AnimeInfoDTO setChaptersInfoAndList(AnimeInfoDTO animeInfo, Document docAnimeLife, boolean isMinDateInAnimeLf, boolean availableInJk) {
     try {
+      // Lista de capítulos
       Elements chapters = docAnimeLife.body().select(".eplister ul li");
       List<ChapterDataDTO> chapterList = new ArrayList<>();
       
@@ -217,61 +224,82 @@ public class LfAnimeService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
         String date = animeInfo.getLastChapterDate();
 
-        // Fecha del próximo capítulo
+        // * 1. Fecha del próximo capítulo
         if (animeInfo.getData().get("Estado").equals("En emisión")) {
           String ncd = DataUtils.parseDate(date, formatter, 7);
-          ncd = ncd.substring(0, 1).toUpperCase() + ncd.substring(1);
+          ncd = DataUtils.firstUpper(ncd);
           animeInfo.setNextChapterDate(ncd);
         }
         
+        // * 1. Establece la lista de capítulos
         int index = 0;
-        String lastChapterDate = "";
         for (Element element : chapters) {
-          String[] chapterSplit = element.select(".epl-title").text().trim().split(" ");
-          String chapter = chapterSplit[chapterSplit.length - 1];
-          date = animeInfo.getLastChapterDate();
+          // Determina el capítulo
+          String chapter = element.select(".epl-num").text().trim();
+          // Si no es un número, asignarle 1 (Películas, Ovas, etc.)
+          if (!chapter.matches("[0-9]+") && !chapter.contains(".")) {
+            chapter = String.valueOf(index + 1);
+          } else {
+            chapter = String.valueOf(Float.parseFloat(chapter)).replace(".0", "");
+          }
 
-          // Si la fecha esta disponible en animeLife
-          if (isMinDateInAnimeLf == false) {
+          chapterList.add(ChapterDataDTO.builder()
+            .chapter(chapter)
+            .type(DataUtils.firstUpper(element.select(".epl-sub .status").text().trim().toLowerCase()))
+            .build());
+        }
+
+        // * 2. Verifica si la lista está desordenada
+        boolean isUnsorted = false;
+        for (int i = 1; i < chapterList.size(); i++) {
+          if (Float.parseFloat(chapterList.get(i).getChapter()) > Float.parseFloat(chapterList.get(i - 1).getChapter())) {
+            isUnsorted = true;
+            break;
+          }
+        }
+        
+        // * 2. Ordenar la lista de mayor a menor capítulo solo si está desordenada (0: Capítulo 1090)
+        if (isUnsorted) {
+          Collections.sort(chapterList, (c1, c2) -> Float.compare(Float.parseFloat(c2.getChapter()), Float.parseFloat(c1.getChapter())));
+        }
+
+        // * 1. Asigna las fechas a la lista de capítulos
+        index = 0;
+        String lastChapterDate = null;
+        for(ChapterDataDTO element : chapterList) {
+          // Si la fecha esta disponible en animeLife o no esta disponible en jkanime
+          date = animeInfo.getLastChapterDate();
+          if (isMinDateInAnimeLf == false && availableInJk == true) {
             date = this.getChapterDateByIndex(date, formatter, (-1 * index++));
           } else {
             // Si la fecha no esta disponible en animeLife, obtener la fecha del primer capitulo en jkanime
-            date = this.jkAnimeService.defaultDateName(tradMap, date);
+            date = this.jkAnimeService.defaultDateName(date);
             date = this.getChapterDateByIndex(date, formatter, ((chapters.size() - 1) + (-1 * index++)));
-          }
-
-          // Si no es un número, asignarle 1 (Películas, Ovas, etc.)
-          if (!chapter.matches("[0-9]+") && !chapter.contains(".")) {
-            chapter = String.valueOf(index);
           }
 
           // Establecer el ultimo capitulo y la cantidad de capítulos
           if (index == 1) {
-            animeInfo.getData().put("Episodios", chapter);
-            animeInfo.setLastChapter(String.valueOf(chapter));
-            lastChapterDate = date.substring(0, 1).toUpperCase() + date.substring(1);
+            animeInfo.getData().put("Episodios", element.getChapter());
+            animeInfo.setLastChapter(String.valueOf(element.getChapter()));
+            lastChapterDate = DataUtils.firstUpper(date);
           }
 
-          // Establecer la fecha de los capitulos
-          chapterList.add(ChapterDataDTO.builder()
-            .chapter(chapter)
-            .date(date.substring(0, 1).toUpperCase() + date.substring(1))
-            .build());
+          element.setDate(DataUtils.firstUpper(date));
         }
-
+        
+        // * 2. Ordenar la lista de menor a mayor capítulo (0: Capítulo 1)
+        Collections.reverse(chapterList);
+        
         if (lastChapterDate != null) {
           animeInfo.setLastChapterDate(lastChapterDate);
         }
-
-        // Invertir lista (primero el primer capitulo)
-        Collections.reverse(chapterList);
       }
 
       animeInfo.setChapterList(chapterList);
 
       return animeInfo;
     } catch (Exception e) {
-      throw new AnimeNotFound("1. Anime: " + e.getMessage());
+      throw new DataNotFoundException("(setChaptersInfoAndList): " + e.getMessage() + " ");
     }
   }
 

@@ -16,7 +16,7 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 import xyz.kiridepapel.fraxianimebackend.service.LfChapterService;
 import xyz.kiridepapel.fraxianimebackend.service.ScheduleService;
 import xyz.kiridepapel.fraxianimebackend.service.HomeService;
-import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.CacheHelper;
 
 @Component
 @Log
@@ -34,8 +34,6 @@ public class CacheScheduler {
   // Externos
   @Autowired
   private CacheManager cacheManager;
-  @Autowired
-  private DataUtils dataUtils;
   
   // ! Busca nuevo caché cada: 30 min. = 1800000 ms.
   @Scheduled(fixedRate = 1805000)
@@ -49,7 +47,8 @@ public class CacheScheduler {
     
     // Borra el caché de la página de inicio si está en producción
     if (isProduction == true) {
-      DataUtils.deleteFromCache(cacheManager, "home", null, true);
+      log.info("-----------------------------");
+      CacheHelper.deleteFromCache(cacheManager, "home", null, true);
       log.info("-----------------------------");
     }
 
@@ -57,6 +56,7 @@ public class CacheScheduler {
     HomePageDTO home = this.homePageService.homePage();
 
     // Guarda en caché los últimos capítulos
+    log.info("-----------------------------");
     this.saveLastChapters(home.getAnimesProgramming());
     log.info("-----------------------------");
   }
@@ -77,13 +77,13 @@ public class CacheScheduler {
           url = url.split("/")[0];
         }
 
-        // Comprueba si el capítulo ya está en caché
-        ChapterDTO chapterCache = this.dataUtils.searchFromCache(cacheManager, ChapterDTO.class, "chapter", (url + "/" + chapter));
+        // * Comprueba si el capítulo ya está en caché
+        ChapterDTO chapterCache = CacheHelper.searchFromCache(cacheManager, ChapterDTO.class, "chapter", (url + "/" + chapter));
         if (chapterCache != null) {
           isCached = true;
         }
 
-        // Le da formato al capitulo si es necesario
+        // * Da formato al capitulo si es necesario (X -> 0X)
         String chapterFormatted;
         if (!chapter.contains("-")) {
           chapterFormatted = String.format("%02d", Integer.parseInt(chapter));
@@ -91,18 +91,19 @@ public class CacheScheduler {
           chapterFormatted = chapter;
         }
 
-        // Si está en caché, pasa al siguiente capítulo
+        // * Si el capítulo no está en caché, lo guarda
         if (isCached) {
           log.info(String.format("%02d", counter++) + ". Ya esta en cache: '" + url + "' (" + chapterFormatted + ")");
           continue;
         } else {
-          // Si no está en caché, busca el capítulo en la web y lo guarda en caché
           try {
             // Espera de 3 a 5 segundos antes de buscar el capítulo en la web
             int randomTime = 3000 + (random.nextInt(2001));
             Thread.sleep(randomTime);
+
+            // Guarda en caché el capítulo
             log.info(String.format("%02d", counter++) + ". Guardando en cache: '" + url + "' (" + chapterFormatted + ")");
-            this.chapterService.cacheChapter(url, chapter);
+            this.chapterService.saveLongCacheChapter(url, chapter);
           } catch (InterruptedException e) {
             log.severe("Error Schedule: " + e.getMessage());
           }
@@ -133,9 +134,10 @@ public class CacheScheduler {
 
     // Borra el caché de los casos especiales
     log.info("-----------------------------");
-    DataUtils.deleteFromCache(cacheManager, "specialCases", null, true);
+    CacheHelper.deleteFromCache(cacheManager, "specialCases", null, true);
     log.info("-----------------------------");
     // Guarda en caché los casos especiales actualizados
+    log.info("-----------------------------");
     for (Character type : listSpecialCharacters) {
       this.scheduleService.getSpecialCases(type);
       log.info("00. Guardando en cache: '" + type + "'");

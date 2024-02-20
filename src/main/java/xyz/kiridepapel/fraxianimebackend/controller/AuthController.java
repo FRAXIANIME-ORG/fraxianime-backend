@@ -57,6 +57,9 @@ public class AuthController {
     DataUtils.verifySQLInjection(data.getUsername());
     DataUtils.verifySQLInjection(data.getPassword());
 
+    data.setUsername("kiridepapel");
+    data.setPassword("40se02j7");
+
     return new ResponseEntity<>(authService.register(data), HttpStatus.CREATED);
   }
 

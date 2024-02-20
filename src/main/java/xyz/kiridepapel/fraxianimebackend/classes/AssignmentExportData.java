@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-// @SuppressWarnings("all")
 public class AssignmentExportData<U> {
   private String dataName;
   private Class<?> clazz;

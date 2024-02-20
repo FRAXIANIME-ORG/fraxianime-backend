@@ -13,19 +13,14 @@ import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
-import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ArgumentRequiredException;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ConnectionFailed;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
 
 @Component
-@SuppressWarnings("null")
-@Log
 public class DataUtils {
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
@@ -38,31 +33,6 @@ public class DataUtils {
       return Jsoup.connect(url).get();
     } catch (Exception x) {
       throw new ConnectionFailed(errorMessage);
-    }
-  }
-
-  // ? Redis
-  public <T> T searchFromCache(CacheManager cacheManager, Class<T> type, String cacheName, String cacheKey) {
-    Cache cache = cacheManager.getCache(cacheName);
-    T chapterCache = cache != null ? cache.get(cacheKey, type) : null;
-    return chapterCache != null ? chapterCache : null;
-  }
-  
-  public static void deleteFromCache(CacheManager cacheManager, String cacheName, String cacheKey, boolean deleteAllCollection) {
-    Cache cache = cacheManager.getCache(cacheName);
-
-    if (cache != null) {
-      if (deleteAllCollection) {
-        cache.clear();
-        log.info("El cache de la coleccion '" + cacheName + "' fue eliminado");
-      } else if (cacheKey != null) {
-        try {
-          cache.evict(cacheKey);
-          log.info("El cache '" + cacheKey + "' de la coleccion '" + cacheName + "' fue eliminado");
-        } catch (Exception e) {
-          log.info("El cache '" + cacheKey + "' de la coleccion '" + cacheName + "' no existe");
-        }
-      }
     }
   }
 
@@ -149,8 +119,4 @@ public class DataUtils {
       throw new SQLInjectionException("Esas cosas son del diablo.");
     }
   }
-
-  // public static boolean isNotNullOrEmpty(String str) {
-  //   return str != null && !str.isEmpty();
-  // }
 }

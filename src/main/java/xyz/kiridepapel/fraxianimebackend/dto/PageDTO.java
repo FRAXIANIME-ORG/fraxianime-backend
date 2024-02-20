@@ -3,6 +3,10 @@ package xyz.kiridepapel.fraxianimebackend.dto;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.TimeToLive;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -68,6 +72,7 @@ public class PageDTO implements Serializable {
   @NoArgsConstructor
   @AllArgsConstructor
   @JsonInclude(JsonInclude.Include.NON_NULL)
+  @RedisHash
   public static class ChapterDTO implements Serializable {
     private String name;
     private List<LinkDTO> srcOptions;
@@ -86,6 +91,9 @@ public class PageDTO implements Serializable {
 
     private String chapterImg;
     private String lastChapterDate;
+
+    @TimeToLive(unit = TimeUnit.MINUTES)
+    private Long expiration;
   }
 
   @Builder

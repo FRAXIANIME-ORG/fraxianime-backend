@@ -45,8 +45,8 @@ public class SecurityWebConfig {
         }))
         .exceptionHandling(exception -> exception.authenticationEntryPoint(protectedEntryPoint))
         .authorizeHttpRequests(authRequest -> {
-          authRequest.requestMatchers("/api/v1/anime/**").permitAll();
           authRequest.requestMatchers("/api/v1/auth/**").permitAll();
+          authRequest.requestMatchers("/api/v1/anime/**").permitAll();
           authRequest.anyRequest().authenticated();
         })
         .sessionManagement(sessionManager -> { sessionManager

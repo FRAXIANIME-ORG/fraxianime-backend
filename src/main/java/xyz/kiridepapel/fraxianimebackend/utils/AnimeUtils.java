@@ -38,7 +38,8 @@ public class AnimeUtils {
     "bakemonogatari",
     "maou-gakuin-no-futekigousha",
     "maou-gakuin-no-futekigousha-2nd-season",
-    "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita"
+    "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita",
+    "karakai-jouzu-no-takagi-san"
   );
   private List<String> chapterScriptCases = List.of(
     // Chapter url: one-piece-04 -> one-piece-03-2
@@ -159,48 +160,53 @@ public class AnimeUtils {
   //   return urlWithPoint;
   // }
   
-  // Mapea los casos especiales de nombres o urls (si no se manda el map, busca en cache en base al type)
-  public String specialNameOrUrlCases(Map<String, String> mapListType, String original, Character type) {
+  // Mapea los casos especiales de nombres o urls (busca en cache en base al type)
+  // Si se manda un mapListType, usa ese mapa en lugar de buscar en caché (type es opcional)
+  public String specialNameOrUrlCases(Map<String, String> map, String original, char type, String fromMethod) {
     try {
       String mapped = "";
       Map<String, String> useMapListType = new HashMap<>();
 
-      if (mapListType != null) {
-        useMapListType = Map.copyOf(mapListType);
+      if (map != null) {
+        useMapListType = Map.copyOf(map);
       } else {
         // Busca en cache en base al type
-        for (SpecialCaseEntity specialCase : this.scheduleService.getSpecialCases(type)) {
+        List<SpecialCaseEntity> specialCases = this.scheduleService.getSpecialCases(type);
+        for (SpecialCaseEntity specialCase : specialCases) {
           useMapListType.put(specialCase.getOriginal(), specialCase.getMapped());
         }
       }
 
       if (original.contains("/")) {
+        // Si es una url
         String url = original.split("/")[0].trim();
-        mapped = useMapListType.getOrDefault(url, null); // Si es una url
+        mapped = useMapListType.getOrDefault(url, null);
       } else {
-        mapped = useMapListType.getOrDefault(original, null); // Si es un nombre
+        // Si es un nombre
+        mapped = useMapListType.getOrDefault(original, null);
       }
 
-      return this.returnWithMsg(original, mapped, type);
+      return this.returnWithMsg(original, mapped, type, fromMethod);
     } catch (Exception e) {
       log.severe("Ocurrió un error al intentar mapear '" + original + "': " + e.getMessage());
       return "Valor vacio";
     }
   }
 
-  private String returnWithMsg(String original, String mapped, char type) {
+  private String returnWithMsg(String original, String mapped, char type, String fromMethod) {
     if (mapped != null){
       if (original.contains("/")) {
         String url = original.split("/")[0].trim();
+        // | h | animesProgramming() |  'Solo Leveling' -> 'Ore dake Level Up na Ken'
         log.info("--------------------");
-        log.info("| " + type + " | Original: " + original);
-        log.info("| " + type + " | Final: " + original.replace(url, mapped));
+        log.info("[ " + type + " | " + fromMethod + " ] Founded: '" + original + "'");
+        log.info("[ " + type + " | " + fromMethod + " ] Changed: '" + original.replace(url, mapped) + "'");
         log.info("--------------------");
         return original.replace(url, mapped);
       } else {
         log.info("--------------------");
-        log.info("| " + type + " | Original: " + original);
-        log.info("| " + type + " | Final: " + original.replace(original, mapped));
+        log.info("[ " + type + " | " + fromMethod + " ] Founded:  '" + original + "'");
+        log.info("[ " + type + " | " + fromMethod + " ] Changed: '" + original.replace(original, mapped) + "'");
         log.info("--------------------");
         return original.replace(original, mapped);
       }
@@ -219,13 +225,15 @@ public class AnimeUtils {
     }
 
     urlChapter = urlChapter + "-" + chapterFormatted; // chapter-05
+
     if (this.animesWithoutZeroCases.contains(inputName)) {
       urlChapter = urlChapterWithoutZero(urlChapter);
     }
-    if (this.chapterScriptCases.contains(urlChapter.replace(this.providerAnimeLifeUrl, "")) &&
-        urlChapter.contains("-2")) {
+
+    if (this.chapterScriptCases.contains(urlChapter.replace(this.providerAnimeLifeUrl, "")) && urlChapter.contains("-2")) {
       urlChapter = urlChapterWithScript(urlChapter);
     }
+
     return urlChapter;
   }
 

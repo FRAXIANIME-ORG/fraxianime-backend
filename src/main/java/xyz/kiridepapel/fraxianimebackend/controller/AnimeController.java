@@ -1,8 +1,6 @@
 package xyz.kiridepapel.fraxianimebackend.controller;
 
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -15,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.HomePageDTO;
@@ -34,6 +33,7 @@ import xyz.kiridepapel.fraxianimebackend.service.LfChapterService;
     "https://fraxianime.vercel.app",
     "http://localhost:4200",
   }, allowedHeaders = "**")
+@Log
 public class AnimeController {
   // Variables estaticas
   @Value("${PROVIDER_JKANIME_URL}")
@@ -61,29 +61,15 @@ public class AnimeController {
   public void init() {
     this.allowedOrigins = Arrays.asList(frontendUrl);
   }
-
-  @GetMapping("/test")
-  public ResponseEntity<?> test1() {
-    // Fecha exacta con tiempo UTC y 5 horas menos (Hora de Perú)
-    String date = "Ayer"; // Ayer, dd/MM
-    Date today = new Date();
-    // today.setTime(today.getTime() - 18000000); // 5 horas
-    // today.setTime(today.getTime() - 14400000); // 4 horas
-    today.setTime(today.getTime() + 10800000); // 3 horas
-    // today.setTime(today.getTime() - 7200000); // 2 horas
-    // today.setTime(today.getTime() - 3600000); // 1 hora
-    Calendar nowCal = Calendar.getInstance();
-    // restarle 3 horas a nowCal
-    nowCal.setTime(today);
-
-    // Si la hora es >= 19 < 0, entonces es "Hoy"
-    // Si es la 1 am, entonces es "Ayer"
-    if (date.equals("Hoy") || (date.equals("Ayer") &&
-      nowCal.get(Calendar.HOUR_OF_DAY) >= 19 || nowCal.get(Calendar.HOUR_OF_DAY) < 0)) {
-      date = "Hoy";
-    }
-
-    return new ResponseEntity<>("today: " + today + " - nowCal: " + nowCal.get(Calendar.HOUR_OF_DAY) + " - newDate: " + date, HttpStatus.OK);
+  
+  @GetMapping("/test/{anime}/{chapter}/{minutes}")
+  public ResponseEntity<?> test(
+      @PathVariable(value = "anime") String anime,
+      @PathVariable(value = "chapter") String chapter,
+      @PathVariable("minutes") Long minutes) {
+    log.info("minutes: " + minutes);
+    ChapterDTO chapterItem = this.chapterService.test(anime, chapter, minutes);
+    return new ResponseEntity<>(chapterItem, HttpStatus.OK);
   }
 
   @GetMapping("/locale")

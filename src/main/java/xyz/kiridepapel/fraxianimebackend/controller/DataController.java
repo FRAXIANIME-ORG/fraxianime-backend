@@ -1,6 +1,7 @@
 package xyz.kiridepapel.fraxianimebackend.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -8,6 +9,8 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.SpecialCaseDTO;
+import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFoundException;
 import xyz.kiridepapel.fraxianimebackend.service.DataService;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
@@ -16,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +32,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/v1/data")
@@ -57,6 +62,11 @@ public class DataController {
   public void init() {
     this.allowedOrigins = List.of(frontendUrl);
     this.allowedDataNames = List.of("translations", "specialCases");
+  }
+  
+  @GetMapping("/test")
+  public ResponseEntity<?> test() {
+    return new ResponseEntity<>("Ok", HttpStatus.OK);
   }
 
   // @PreAuthorize("hasAnyRole('USER')")
@@ -116,7 +126,20 @@ public class DataController {
     }
   }
 
-  @GetMapping("/")
+  @PostMapping("/new-special-case")
+  public ResponseEntity<?> newSpecialCase(HttpServletRequest request,
+      @RequestBody(required = true) SpecialCaseDTO data) {
+    // Validaciones
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    // this.validateSpecialCasesData(data);
+
+    // Crear caso especial
+    this.dataService.newSpecialCase(data);
+    
+    // Variables
+    String msg = "El caso especial ha sido creado correctamente";
+    return new ResponseEntity<>(new ResponseDTO(msg, 200), HttpStatus.OK);
+  }
 
   private String createFileName(String dataName) {
     LocalDateTime now = DataUtils.getLocalDateTimeNow(isProduction);
@@ -127,4 +150,28 @@ public class DataController {
     return DataUtils.formatToNormalName(dataName) + " " + dateTime + ".xlsx";
   }
 
+  private void validateSpecialCasesData(SpecialCaseDTO data) {
+    // Verificación de SQL Injection
+    DataUtils.verifySQLInjection(data.getJkName());
+    DataUtils.verifySQLInjection(data.getLfName());
+    DataUtils.verifySQLInjection(data.getJkUrl());
+    DataUtils.verifySQLInjection(data.getLfUrl());
+
+    // Validacion de escenarios
+    if (data.getType() == null || data.getType() < 1 && data.getType() > 2) {
+      throw new DataNotFoundException("El tipo de caso especial es obligatorio");
+    }
+    if (data.getChangeName() == true) {
+      DataUtils.isValidStr(data.getJkName(), "El nombre del ánime en JkAnime es obligatorio");
+    }
+    if (data.getChangeName() == true) {
+      DataUtils.isValidStr(data.getLfName(), "El nombre del ánime en AnimeLife es obligatorio");
+    }
+    if (data.getChangeUrlAnime() == true || data.getChangeUrlChapter()) {
+      DataUtils.isValidStr(data.getJkUrl(), "La URL del ánime en JkAnime es obligatoria");
+    }
+    if (data.getChangeUrlAnime() == true || data.getChangeUrlChapter()) {
+      DataUtils.isValidStr(data.getLfUrl(), "La URL del ánime en AnimeLife es obligatoria");
+    }
+  }
 }

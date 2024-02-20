@@ -17,10 +17,12 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.utils.JwtUtils;
 
 @Component
-@SuppressWarnings("null")
+@SuppressWarnings("all")
+@Log
 public class JwtAuthenticationFilter extends OncePerRequestFilter{
   @Autowired
   private UserDetailsService userDetailsService;
@@ -30,6 +32,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
+
+    // log.info("si");
     
     try {
       final String username;
@@ -46,6 +50,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
         sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "El token es invalido");
         return;
       }
+
+      // Validar si el token esta en la lista negra
       if (jwtUtils.isTokenBlacklisted(token)) {
         sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "El token es invalido");
         return;
