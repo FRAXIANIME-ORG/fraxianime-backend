@@ -6,13 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.Customizer;
+// import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
+// import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+// import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
 @Configuration(proxyBeanMethods = false)
@@ -27,10 +28,10 @@ public class SecurityWebConfig {
   // Inyección de dependencias
   @Autowired
   private ProtectedEntryPoint protectedEntryPoint;
-  @Autowired
-  private JwtAuthenticationFilter jwtAuthenticationFilter;
-  @Autowired
-  private AuthenticationProvider authProvider;
+  // @Autowired
+  // private JwtAuthenticationFilter jwtAuthenticationFilter;
+  // @Autowired
+  // private AuthenticationProvider authProvider;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -49,11 +50,12 @@ public class SecurityWebConfig {
           authRequest.requestMatchers("/api/v1/anime/**").permitAll();
           authRequest.anyRequest().authenticated();
         })
-        .sessionManagement(sessionManager -> { sessionManager
-            .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        })
-        .authenticationProvider(authProvider)
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+        // .sessionManagement(sessionManager -> { sessionManager
+        //     .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        // })
+        // .authenticationProvider(authProvider)
+        // .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .build();
   }
 }

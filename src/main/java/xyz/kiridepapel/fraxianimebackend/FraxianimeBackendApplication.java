@@ -44,9 +44,10 @@ public class FraxianimeBackendApplication {
         // ? 1. URL (Anime): Busco -> Encuentro en JkAnime
         specialCases.add(new SpecialCaseEntity(null, 'j', "maou-gakuin-no-futekigousha", "maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e"));
         specialCases.add(new SpecialCaseEntity(null, 'j', "the-daily-life-of-the-immortal-king-4ta-seanson", "the-daily-life-of-the-inmortal-king-4nd-season"));
+        specialCases.add(new SpecialCaseEntity(null, 'j', "watamote", "watashi-ga-motenai-no-wa-dou-kangaetemo-omaera-ga-warui"));
         // specialCases.add(new SpecialCaseEntity(null, 'j', "", ""));
 
-        // ? 1. Name && URL (Schedule JK && Historial JK): Encuentra en JkAnime > AnimeLife
+        // ? 1. Name && URL (Schedule JK && Historial JK): Encuentra en JkAnime > AnimeLife (Los que salen en Home, Historial y Schedule)
         specialCases.add(new SpecialCaseEntity(null, 'k', "The Daily Life of the Immortal King 4", "The Daily Life of the Immortal King 4ta Seanson"));
         specialCases.add(new SpecialCaseEntity(null, 'k', "the-daily-life-of-the-inmortal-king-4nd-season", "the-daily-life-of-the-immortal-king-4ta-seanson"));
         specialCases.add(new SpecialCaseEntity(null, 'k', "maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e", "maou-gakuin-no-futekigousha"));

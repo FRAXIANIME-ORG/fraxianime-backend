@@ -17,7 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.service.AuthService;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
-import xyz.kiridepapel.fraxianimebackend.utils.JwtUtils;
+// import xyz.kiridepapel.fraxianimebackend.utils.JwtUtils;
 
 @RestController
 @RequestMapping("/api/v1/user")
@@ -37,22 +37,22 @@ public class UserController {
   // Inyección de dependencias
   @Autowired
   private AuthService authService;
-  @Autowired
-  private JwtUtils jwtUtils;
+  // @Autowired
+  // private JwtUtils jwtUtils;
   
   @PostConstruct
   public void init() {
     this.allowedOrigins = List.of(frontendUrl);
   }
 
-  @PostMapping("/logout")
-  public ResponseEntity<ResponseDTO> logout(HttpServletRequest request) {
-    // Validaciones
-    // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+  // @PostMapping("/logout")
+  // public ResponseEntity<ResponseDTO> logout(HttpServletRequest request) {
+  //   // Validaciones
+  //   // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
 
-    // Procesar la solicitud y construir la respuesta
-    String realToken = jwtUtils.getTokenFromRequest(request);
-    ResponseDTO response = authService.logout(realToken);
-    return new ResponseEntity<ResponseDTO>(response, HttpStatus.valueOf(response.getStatus()));
-  }
+  //   // Procesar la solicitud y construir la respuesta
+  //   String realToken = jwtUtils.getTokenFromRequest(request);
+  //   ResponseDTO response = authService.logout(realToken);
+  //   return new ResponseEntity<ResponseDTO>(response, HttpStatus.valueOf(response.getStatus()));
+  // }
 }
