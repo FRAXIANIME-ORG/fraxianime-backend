@@ -55,6 +55,19 @@ public class DataUtils {
   }
 
   // ? Text
+  // Obtiene el nombre del anime de la URL (one-piece-1090 -> [one-piece])
+  public static String getNameFromUrl(String baseUrl, String url) {
+    String newUrl = url.replace(baseUrl, "");
+    return newUrl.replaceAll("-\\d+/?$", "");
+  }
+
+  // Devuelve la última parte de la URL (part-2-05 -> [part])
+  public static String getLastPartOfUrl(String url, String chapterPart) {
+    url = url.replace("/", "").replace(chapterPart, "");
+    String[] urlParts = url.split("-");
+    return urlParts[urlParts.length - 1];
+  }
+
   // Elimina las tildes
   public static String removeDiacritics(String input) {
     String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);

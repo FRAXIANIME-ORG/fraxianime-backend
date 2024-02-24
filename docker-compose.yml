@@ -40,6 +40,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       # Other
       RAPIDAPI_KEY: ${RAPIDAPI_KEY}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
     ports:
       - "8080:8080"
     depends_on:

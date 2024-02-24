@@ -32,8 +32,6 @@ import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 @Log
 public class AuthController {
   // Variables estaticas
-  @Value("${APP_SECRET}")
-  private String appSecret;
   @Value("${FRONTEND_URL}")
   private String frontendUrl;
   // Variables
@@ -48,29 +46,24 @@ public class AuthController {
   }
 
   @PostMapping("/register")
-  public ResponseEntity<ResponseDTO> register(
-      HttpServletRequest request, @RequestBody(required = true) AuthRequestDTO data) {
+  public ResponseEntity<?> register(HttpServletRequest request, @RequestBody(required = true) AuthRequestDTO data) {
     // Validaciones
     // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
-    DataUtils.isValidStr(data.getUsername(), "El nombre de usuario es obligatorio");
+    DataUtils.isValidStr(data.getEmail(), "El email es obligatorio");
     DataUtils.isValidStr(data.getPassword(), "La contraseña es obligatoria");
-    DataUtils.verifySQLInjection(data.getUsername());
+    DataUtils.verifySQLInjection(data.getEmail());
     DataUtils.verifySQLInjection(data.getPassword());
-
-    data.setUsername("kiridepapel");
-    data.setPassword("40se02j7");
 
     return new ResponseEntity<>(authService.register(data), HttpStatus.CREATED);
   }
 
   @PostMapping("/login")
-  public ResponseEntity<ResponseDTO> login(
-      HttpServletRequest request, @RequestBody(required = true) AuthRequestDTO data) {
+  public ResponseEntity<?> login(HttpServletRequest request, @RequestBody(required = true) AuthRequestDTO data) {
     // Validaciones
     // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
-    DataUtils.isValidStr(data.getUsername(), "El nombre de usuario es obligatorio");
+    DataUtils.isValidStr(data.getEmail(), "El email es obligatorio");
     DataUtils.isValidStr(data.getPassword(), "La contraseña es obligatoria");
-    DataUtils.verifySQLInjection(data.getUsername());
+    DataUtils.verifySQLInjection(data.getEmail());
     DataUtils.verifySQLInjection(data.getPassword());
 
     return new ResponseEntity<>(authService.login(data), HttpStatus.OK);

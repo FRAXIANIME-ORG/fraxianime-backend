@@ -142,7 +142,7 @@ public class HomeService {
 
       if (url.contains("/")) {
         String chapter = item.select(".epx").text().replace("Ep 0", "").replace("Ep ", "").trim();
-        
+
         if (chapter != null && !chapter.isEmpty()) {
           // * Crea el objeto del anime con los datos obtenidos
           ChapterDataDTO anime = ChapterDataDTO.builder()
@@ -197,23 +197,9 @@ public class HomeService {
     // Elimina "Movie" del nombre
     anime.setName(anime.getName().replace("Movie", "").trim());
     // URLs de casos especiales
-    anime.setUrl(this.animeUtils.specialNameOrUrlCases(mapListH, anime.getUrl(), type, "animesProgrammingLife()")); // Urls especiales
-
-    // Si el número de capítulo tiene un "."
-    if (anime.getChapter().contains(".")) {
-      int chapter = Integer.parseInt(anime.getChapter().split("\\.")[0]) + 1;
-
-      // Reconstruye la url sin el capítulo
-      String[] urlSplit = anime.getUrl().split("-");
-      String url = "";
-      for (int i = 0; i < urlSplit.length - 1; i++) {
-        url += (i != 0) ? "-" + urlSplit[i] : urlSplit[i];
-      }
-
-      // Asigna el nuevo capítulo y la nueva url
-      anime.setChapter(String.valueOf(chapter));
-      anime.setUrl(url + "/" + chapter);
-    }
+    anime.setUrl(this.animeUtils.specialNameOrUrlCases(mapListH, anime.getUrl(), type, "animesProgrammingLife()"));
+    
+    // log.info("X. " + anime.getName() + " - " + anime.getChapter() + " (" + anime.getUrl() + ")");
 
     return anime;
   }
@@ -576,9 +562,34 @@ public class HomeService {
   }
 
   // ? Text
-  // * Obtiene el nombre junto al capítulo del anime a partir de la URL (https://animelife.net/one-piece-1090 -> [one-piece/1090])
+  // * Obtiene el nombre junto al capítulo del anime a partir de la URL (one-piece-1090 -> [one-piece/1090])
   private String getNameAndChapterFromUrl(String url) {
     String newUrl = url.replace(this.providerAnimeLifeUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
+
+    // Verifica si la URL termina con el patrón -xx-2
+    if (url.matches(".*-\\d{2}-2/?$")) {
+      // Extrae el número y lo incrementa
+      String numberPart = url.replaceAll("^.*-(\\d{2})-2/?$", "$1");
+      try {
+        int number = Integer.parseInt(numberPart) + 1;
+        newUrl = url.replaceFirst("-\\d{2}-2/?$", "/" + number).replace(this.providerAnimeLifeUrl, "");
+        // log.info("1: " + url + " -> " + newUrl);
+        return newUrl;
+      } catch (NumberFormatException e) {
+        log.warning("Error parsing number from URL: " + url);
+      }
+    } else if (url.matches(".*-\\d{1,2}-5/?$")) {
+      String numberPart = url.replaceAll("^.*-(0*)(\\d{1,2})-5/?$", "$2");
+      newUrl = url.replaceFirst("-\\d{1,2}-5/?$", "/" + numberPart + "-5").replace(this.providerAnimeLifeUrl, "");
+      // log.info("2: " + url + " -> " + newUrl);
+      return newUrl;
+    } else {
+      // Si no termina con -xx-2, solo elimina los ceros a la izquierda
+      newUrl = url.replace(this.providerAnimeLifeUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
+      // log.info("3: " + url + " -> " + newUrl);
+      return newUrl;
+    }
+
     // Verifica si la URL termina con el patrón -xx-2
     if (url.matches(".*-\\d{2}-2/?$")) {
       // Extrae el número y lo incrementa
@@ -595,6 +606,8 @@ public class HomeService {
       newUrl = url.replace(this.providerAnimeLifeUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
       return newUrl;
     }
+
+
 
     return newUrl;
   }

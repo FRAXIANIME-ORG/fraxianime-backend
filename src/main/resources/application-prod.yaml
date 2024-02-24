@@ -1,5 +1,4 @@
 APP_PRODUCTION: true
-APP_SECRET: ${APP_SECRET}
 FRONTEND_URL: https://fraxianime.vercel.app
 
 # Colocar 30 segundos más en CacheScheduler.java (línea 24)
@@ -22,13 +21,18 @@ spring:
     properties:
       hibernate:
         format-sql: true
-
-JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://securetoken.google.com/${FIREBASE_PROJECT_ID}
+          jwk-set-uri: https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com
 
 REDIS_HOST: ${REDIS_HOST}
 REDIS_PORT: ${REDIS_PORT}
 REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+FIREBASE_WEP_API_KEY: ${FIREBASE_WEP_API_KEY}
 
 RAPIDAPI_KEY: ${RAPIDAPI_KEY}
 

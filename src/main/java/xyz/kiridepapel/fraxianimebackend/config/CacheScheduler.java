@@ -77,6 +77,8 @@ public class CacheScheduler {
           url = url.split("/")[0];
         }
 
+        // log.info("0. " + chapterInfo.getName() + " - " + chapterInfo.getChapter() + " (" + chapterInfo.getUrl() + ")");
+
         // * Comprueba si el capítulo ya está en caché
         ChapterDTO chapterCache = CacheHelper.searchFromCache(cacheManager, ChapterDTO.class, "chapter", (url + "/" + chapter));
         if (chapterCache != null) {

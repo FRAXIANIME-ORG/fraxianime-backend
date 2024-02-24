@@ -45,6 +45,9 @@ public class LfChapterService {
   private List<String> ignoreSearchChapterCases = List.of(
     "one-piece", "naruto"
   );
+  private List<String> ignoreCases = List.of(
+    "part", "season"
+  );
 
   // Este método lo usa el sistema para guardar la información de los últimos 9 capítulos salidos automáticamente
   @Cacheable(value = "chapter", key = "#url.concat('/').concat(#chapter)")
@@ -222,8 +225,9 @@ public class LfChapterService {
       Elements episodeList = docAnimeLife.body().select(".episodelist ul li");
       Element itemFirstChapter = null;
       Element itemLastChapter = null;
+
       // Si no está en la lista de casos especiales: busca el primer y último elemento de forma dinámica
-      if (!this.ignoreSearchChapterCases.contains(this.getNameFromUrl(modifiedUrlChapter))) {
+      if (!this.ignoreSearchChapterCases.contains(DataUtils.getNameFromUrl(this.providerAnimeLifeUrl, modifiedUrlChapter))) {
         itemFirstChapter = episodeList.stream()
             .min((e1, e2) -> Float.compare(Float.parseFloat(getChapterItem(e1)), Float.parseFloat(getChapterItem(e2))))
             .orElse(null);
@@ -245,7 +249,6 @@ public class LfChapterService {
       if (itemFirstChapter != null && itemLastChapter != null) {
         // * Obtiene y guarda el capítulo anterior y siguiente si es que existen
         Pattern patternNumber = Pattern.compile("-(\\d{1,4})(?:-(\\d+))?/?$");
-        List<String> ignoreCases = List.of("part", "season");
         // Capítulo anterior
         if (chapterInfo.getHavePreviousChapter()) {
           String previousChapterUrl = nearChapters.first().select("a").attr("href").replace(providerAnimeLifeUrl, "");
@@ -258,7 +261,7 @@ public class LfChapterService {
               String chapterGroup = matcherNumber.group(1) + "-" + matcherNumber.group(2);
 
               // Si termina con "part" o "season", se ignora el caso
-              if (ignoreCases.contains(this.getLastPartOfUrl(previousChapterUrl, chapterGroup))) {
+              if (this.ignoreCases.contains(DataUtils.getLastPartOfUrl(previousChapterUrl, chapterGroup))) {
                 chapterNumber = String.valueOf(Integer.parseInt(matcherNumber.group(2)));
               } else {
                 // Si el capitulo es 12-2, se obtiene 11, si es 12-5, se queda así.
@@ -291,7 +294,7 @@ public class LfChapterService {
               String chapterGroup = matcherNumber.group(1) + "-" + matcherNumber.group(2);
 
               // Si termina con "part" o "season", se ignora el caso
-              if (ignoreCases.contains(this.getLastPartOfUrl(nextChapterUrl, chapterGroup))) {
+              if (this.ignoreCases.contains(DataUtils.getLastPartOfUrl(nextChapterUrl, chapterGroup))) {
                 chapterNumber = String.valueOf(Integer.parseInt(matcherNumber.group(2)));
               } else {
                 // Si el capitulo es 12-2, se obtiene 13, si es 12-5, se queda así.
@@ -375,19 +378,6 @@ public class LfChapterService {
     }
 
     return number;
-  }
-
-  // Devuelve la última parte de la URL (part-2-05 -> [part])
-  private String getLastPartOfUrl(String url, String chapterPart) {
-    url = url.replace("/", "").replace(chapterPart, "");
-    String[] urlParts = url.split("-");
-    return urlParts[urlParts.length - 1];
-  }
-
-  // * Obtiene el nombre del anime de la URL (https://animelife.net/one-piece-1090 -> [one-piece])
-  private String getNameFromUrl(String url) {
-    String newUrl = url.replace(providerAnimeLifeUrl, "");
-    return newUrl.replaceAll("-\\d+/?$", "");
   }
 
   public String calcNextChapterDate(String lastChapterDate) {

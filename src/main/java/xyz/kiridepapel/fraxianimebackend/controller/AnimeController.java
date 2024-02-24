@@ -91,7 +91,7 @@ public class AnimeController {
 
   @GetMapping("/home")
   public ResponseEntity<?> homePage(HttpServletRequest request) {
-    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
 
     HomePageDTO animes = this.homePageService.homePage();
 
