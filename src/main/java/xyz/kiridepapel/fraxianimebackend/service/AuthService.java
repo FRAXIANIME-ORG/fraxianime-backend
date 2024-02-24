@@ -13,8 +13,6 @@ import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 public class AuthService {
   @Value("${FIREBASE_WEP_API_KEY}")
   private String firebaseWebApiKey;
-  // @Autowired
-  // private UserRepository userRepository;
 
   public Map<String, String> register(AuthRequestDTO data) {
     Map<String, String> response = Map.of("token", "nuevo token obtenido");
