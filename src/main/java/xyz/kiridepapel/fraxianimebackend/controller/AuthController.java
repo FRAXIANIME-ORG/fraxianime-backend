@@ -1,6 +1,8 @@
 package xyz.kiridepapel.fraxianimebackend.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +13,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,26 +52,53 @@ public class AuthController {
 
   @PostMapping("/register")
   public ResponseEntity<?> register(HttpServletRequest request, @RequestBody(required = true) AuthRequestDTO data) {
-    // Validaciones
+    // Validaciones    
     // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
-    DataUtils.isValidStr(data.getEmail(), "El email es obligatorio");
-    DataUtils.isValidStr(data.getPassword(), "La contraseña es obligatoria");
+    this.isValidEmail(data.getEmail());
+    this.isValidPassword(data.getPassword());
     DataUtils.verifySQLInjection(data.getEmail());
     DataUtils.verifySQLInjection(data.getPassword());
 
-    return new ResponseEntity<>(authService.register(data), HttpStatus.CREATED);
+    // Map<String, Object> response = authService.register(data);
+    Map<String, Object> response = new HashMap<>() {{
+      put("code", 400);
+      put("message", "Registro deshabilitado");
+    }};
+    Integer status = (Integer) response.get("code");
+
+    return new ResponseEntity<>(response, HttpStatus.valueOf(status));
   }
 
   @PostMapping("/login")
   public ResponseEntity<?> login(HttpServletRequest request, @RequestBody(required = true) AuthRequestDTO data) {
     // Validaciones
     // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
-    DataUtils.isValidStr(data.getEmail(), "El email es obligatorio");
-    DataUtils.isValidStr(data.getPassword(), "La contraseña es obligatoria");
+    this.isValidEmail(data.getEmail());
+    this.isValidPassword(data.getPassword());
     DataUtils.verifySQLInjection(data.getEmail());
     DataUtils.verifySQLInjection(data.getPassword());
 
-    return new ResponseEntity<>(authService.login(data), HttpStatus.OK);
+    Map<String, Object> response = authService.login(data);
+    Integer code = (Integer) response.get("code");
+    
+    return new ResponseEntity<>(response, HttpStatus.valueOf(code));
   }
 
+  public void isValidEmail(String str) {
+    if (str == null || str.isEmpty()) {
+      throw new ArgumentRequiredException("El correo electrónico es obligatorio");
+    }
+    if (!str.contains("@") || !str.contains(".")) {
+      throw new ArgumentRequiredException("El correo electrónico no es válido");
+    }
+  }
+
+  public void isValidPassword(String str) {
+    if (str == null || str.isEmpty()) {
+      throw new ArgumentRequiredException("La contraseña es obligatoria");
+    }
+    if (str.length() < 6) {
+      throw new ArgumentRequiredException("La contraseña es muy corta");
+    }
+  }
 }

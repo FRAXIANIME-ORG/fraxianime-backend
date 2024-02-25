@@ -26,9 +26,6 @@ public class AnimeUtils {
   @Autowired
   private ScheduleService scheduleService;
   // Variables
-  private List<String> ignoreCases = List.of(
-    "part", "season"
-  );
   private List<String> animesWithoutZeroCases = List.of(
     // Anime url: one-piece-0X -> one-piece-X
     "shigatsu-wa-kimi-no-uso",
@@ -75,18 +72,11 @@ public class AnimeUtils {
 
   public Document chapterSearchConnect(String urlChapter, String chapter, String errorMessage) {
     Integer chapterPart = null;
-
-    log.info("urlChapter: " + urlChapter);
-    log.info("chapter: " + chapter);
     if (chapter.contains("-")) {
-      log.info("1");
       chapterPart = Integer.parseInt(chapter.split("-")[0]);
     } else {
-      log.info("2");
       chapterPart = Integer.parseInt(chapter);
     }
-    log.info("chapterPart: " + chapterPart);
-
     try {
       log.info("[] Last request url: " + urlChapter);
       Document doc = tryConnectOrReturnNull(urlChapter, 2);

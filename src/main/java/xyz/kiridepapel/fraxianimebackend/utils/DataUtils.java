@@ -14,7 +14,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ArgumentRequiredException;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ConnectionFailed;
 import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
@@ -52,6 +55,26 @@ public class DataUtils {
         return decodedString;
       }
     }
+  }
+
+  public static String getClientIp() {
+    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+    String ipAddress = request.getHeader("X-Forwarded-For");
+    
+    if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+      ipAddress = request.getHeader("Proxy-Client-IP");
+    }
+    if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+      ipAddress = request.getHeader("WL-Proxy-Client-IP");
+    }
+    if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+      ipAddress = request.getRemoteAddr();
+    }
+    if (ipAddress != null && ipAddress.contains(",")) {
+      ipAddress = ipAddress.split(",")[0].trim();
+    }
+
+    return ipAddress;
   }
 
   // ? Text
