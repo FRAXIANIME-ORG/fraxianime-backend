@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -16,9 +15,6 @@ import org.springframework.web.client.RestTemplate;
 
 import jakarta.annotation.PostConstruct;
 import xyz.kiridepapel.fraxianimebackend.dto.AuthRequestDTO;
-import xyz.kiridepapel.fraxianimebackend.entity.RequestEntity;
-import xyz.kiridepapel.fraxianimebackend.repository.RequestRepository;
-import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -30,9 +26,6 @@ public class AuthService {
   private Boolean appProduction;
   private String firebaseSignInUrl = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=";
   private String firebaseSignUpUrl = "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=";
-  // Inyección de dependencias
-  @Autowired
-  private RequestRepository requestRepository;
   // Inicialización de variables
   @PostConstruct
   public void init() {
@@ -59,15 +52,6 @@ public class AuthService {
   
   // Inicia sesión con una cuenta existente
   public Map<String, Object> login(AuthRequestDTO data) {
-    // Valida que el usuario no tenga más de 5 intentos fallidos de inicio de sesión
-    boolean returnError = this.returnErrorByAttemps(data);
-    if (returnError) {
-      return new HashMap<String, Object>() {{
-        put("code", 429);
-        put("message", "Demasiados intentos, intente más tarde");
-      }};
-    }
-
     // Armar el cuerpo de la solicitud
     Map<String, Object> requestBody = Map.of(
       "email", data.getEmail(),
@@ -125,40 +109,6 @@ public class AuthService {
       }};
     }
 
-  }
-
-  // Valida que el usuario no tenga más de 5 intentos fallidos de inicio de sesión
-  private boolean returnErrorByAttemps(AuthRequestDTO data) {
-    String ip = DataUtils.getClientIp();
-    RequestEntity requestEntity = requestRepository.findByEmailAndIp(data.getEmail(), ip);
-
-    // Valida que el usuario no tenga más de 5 intentos fallidos de registro
-    if (requestEntity == null) {
-      requestEntity = RequestEntity.builder()
-        .email(data.getEmail())
-        .ip(ip)
-        .attempts(1)
-        .build();
-    } else {
-      if (requestEntity.getAttempts() < 5) {
-        requestEntity.setAttempts(requestEntity.getAttempts() + 1);
-      } else if (requestEntity.getAttempts() == 5) {
-        if (requestEntity.getDateBlocked() == null) {
-          requestEntity.setDateBlocked(DataUtils.getLocalDateTimeNow(this.appProduction));
-        } else {
-          // Si fue bloqueado hace menos de 1 dia, retornar demasiados intentos
-          if (requestEntity.getDateBlocked().isAfter(DataUtils.getLocalDateTimeNow(this.appProduction).minusDays(1))) {
-            return true;
-          } else {
-            requestEntity.setAttempts(1);
-            requestEntity.setDateBlocked(null);
-          }
-        }
-      }
-    }
-
-    requestRepository.save(requestEntity);
-    return false;
   }
 
   // Valida los mensajes de error al registrarse
