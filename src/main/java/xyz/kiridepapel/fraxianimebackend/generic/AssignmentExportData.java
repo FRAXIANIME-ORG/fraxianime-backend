@@ -1,4 +1,4 @@
-package xyz.kiridepapel.fraxianimebackend.classes;
+package xyz.kiridepapel.fraxianimebackend.generic;
 
 import java.util.List;
 

@@ -19,11 +19,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.classes.AssignmentExportData;
 import xyz.kiridepapel.fraxianimebackend.dto.SpecialCaseDTO;
 import xyz.kiridepapel.fraxianimebackend.entity.AnimeEntity;
 import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFoundException;
+import xyz.kiridepapel.fraxianimebackend.generic.AssignmentExportData;
 import xyz.kiridepapel.fraxianimebackend.repository.AnimeRepository;
 import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
@@ -49,12 +49,12 @@ public class DataService<T> {
     List<? extends T> listRetrieved = null;
 
     // ! Agregar más casos según sea necesario
-    switch (dataName.toLowerCase()) {
+    switch (dataName) {
       case "translations":
         clazz = AnimeEntity.class;
         if (searchList) listRetrieved = (List<? extends T>) animeRepository.findAll();
         break;
-      case "specialcases":
+      case "specialCases":
         clazz = SpecialCaseEntity.class;
         if (searchList) listRetrieved = (List<? extends T>) specialCaseRepository.findAll();
         break;
@@ -64,15 +64,15 @@ public class DataService<T> {
 
     return new AssignmentExportData(clazz, listRetrieved);
   }
-
+  
   private void saveData(List<T> listRetrieved, String dataName) {
     // ! Agregar más casos según sea necesario
-    switch (dataName.toLowerCase()) {
+    switch (dataName) {
       case "translations":
         databaseManageService.resetTable("anime");
         animeRepository.saveAll((List<AnimeEntity>) listRetrieved);
         break;
-      case "specialcases":
+      case "specialCases":
         databaseManageService.resetTable("special_case");
         specialCaseRepository.saveAll((List<SpecialCaseEntity>) listRetrieved);
         break;
@@ -261,14 +261,5 @@ public class DataService<T> {
 
     // Guardar caso especial
     // specialCaseRepository.saveAll(listNewSpecialCases);
-  }
-
-  private String generateRandomString(int minLength, int maxLength) {
-    Random random = new Random();
-    int length = random.nextInt(maxLength - minLength + 1) + minLength;
-    return random.ints('a', 'z' + 1)
-      .limit(length)
-      .mapToObj(c -> String.valueOf((char) c))
-      .collect(Collectors.joining());
   }
 }

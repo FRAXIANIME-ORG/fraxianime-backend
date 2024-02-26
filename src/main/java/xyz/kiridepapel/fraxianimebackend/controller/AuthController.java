@@ -59,14 +59,15 @@ public class AuthController {
     DataUtils.verifySQLInjection(data.getEmail());
     DataUtils.verifySQLInjection(data.getPassword());
 
-    // Map<String, Object> response = authService.register(data);
+    // ResponseDTO response = authService.register(data);
+    // Integer code = response.getCode();
     Map<String, Object> response = new HashMap<>() {{
       put("code", 400);
       put("message", "Registro deshabilitado");
     }};
-    Integer status = (Integer) response.get("code");
+    Integer code = (Integer) response.get("code");
 
-    return new ResponseEntity<>(response, HttpStatus.valueOf(status));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(code));
   }
 
   @PostMapping("/login")
@@ -78,8 +79,8 @@ public class AuthController {
     DataUtils.verifySQLInjection(data.getEmail());
     DataUtils.verifySQLInjection(data.getPassword());
 
-    Map<String, Object> response = authService.login(data);
-    Integer code = (Integer) response.get("code");
+    ResponseDTO response = authService.login(data);
+    Integer code = response.getCode();
     
     return new ResponseEntity<>(response, HttpStatus.valueOf(code));
   }

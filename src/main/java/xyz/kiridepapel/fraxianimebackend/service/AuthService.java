@@ -1,6 +1,5 @@
 package xyz.kiridepapel.fraxianimebackend.service;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -15,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 
 import jakarta.annotation.PostConstruct;
 import xyz.kiridepapel.fraxianimebackend.dto.AuthRequestDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 
 @Service
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -34,7 +34,7 @@ public class AuthService {
   }
 
   // Registra un nuevo usuario
-  public Map<String, Object> register(AuthRequestDTO data) {
+  public ResponseDTO register(AuthRequestDTO data) {
     // Armar el cuerpo de la solicitud
     Map<String, Object> requestBody = Map.of(
       "email", data.getEmail(),
@@ -43,7 +43,7 @@ public class AuthService {
     );
 
     // Enviar la solicitud y obtener la respuesta
-    Map<String, Object> response = sendRequestAndGetResponse(firebaseSignUpUrl, requestBody);
+    ResponseDTO response = sendRequestAndGetResponse(firebaseSignUpUrl, requestBody);
     response = validateErrorRegisterMsgs(response);
 
     // Retornar la respuesta
@@ -51,7 +51,7 @@ public class AuthService {
   }
   
   // Inicia sesión con una cuenta existente
-  public Map<String, Object> login(AuthRequestDTO data) {
+  public ResponseDTO login(AuthRequestDTO data) {
     // Armar el cuerpo de la solicitud
     Map<String, Object> requestBody = Map.of(
       "email", data.getEmail(),
@@ -60,7 +60,7 @@ public class AuthService {
     );
 
     // Enviar la solicitud y obtener la respuesta
-    Map<String, Object> response = sendRequestAndGetResponse(firebaseSignInUrl, requestBody);
+    ResponseDTO response = sendRequestAndGetResponse(firebaseSignInUrl, requestBody);
     response = validateErrorLoginMsgs(response);
     
     // Retornar la respuesta
@@ -68,7 +68,7 @@ public class AuthService {
   }
 
   // Realiza la solicitud y obtiene la respuesta
-  private Map<String, Object> sendRequestAndGetResponse(String firebaseUrl, Map<String, Object> requestBody) {
+  private ResponseDTO sendRequestAndGetResponse(String firebaseUrl, Map<String, Object> requestBody) {
     try {
       // Arma la solicitud
       HttpHeaders headers = new HttpHeaders();
@@ -83,10 +83,10 @@ public class AuthService {
       Integer code = response.getStatusCode().value();
       String token = responseBody.get("idToken");
 
-      return new HashMap<String, Object>() {{
-        put("code", code);
-        put("token", token);
-      }};
+      return ResponseDTO.builder()
+        .code(code)
+        .token(token)
+        .build();
     } catch (HttpClientErrorException e) {
       String jsonResponse = convertEOLtoJsonStr(e.getMessage());
       JSONObject jsonObject = new JSONObject(jsonResponse);
@@ -95,27 +95,27 @@ public class AuthService {
       Integer code = errorObject.getInt("code");
       String message = errorObject.getString("message");
 
-      return new HashMap<String, Object>() {{
-        put("code", code);
-        put("message", message);
-      }};
+      return ResponseDTO.builder()
+        .code(code)
+        .message(message)
+        .build();
     } catch (Exception e) {
       Integer code = 500;
       String message = e.getMessage();
       
-      return new HashMap<String, Object>() {{
-        put("code", code);
-        put("message", message);
-      }};
+      return ResponseDTO.builder()
+        .code(code)
+        .message(message)
+        .build();
     }
 
   }
 
   // Valida los mensajes de error al registrarse
-  private Map<String, Object> validateErrorRegisterMsgs(Map<String, Object> response) {
+  private ResponseDTO validateErrorRegisterMsgs(ResponseDTO response) {
     // Si el código no empieza con 2, es un error
-    if (!response.get("code").toString().startsWith("2")) {
-      String personalizedMsg = (String) response.get("message");
+    if (!response.getCode().toString().startsWith("2")) {
+      String personalizedMsg = (String) response.getMessage();
 
       // Modica el mensaje de error
       if (personalizedMsg.contains("WEAK_PASSWORD")) {
@@ -126,17 +126,17 @@ public class AuthService {
         personalizedMsg = "El correo electrónico no es válido";
       }
       
-      response.put("message", personalizedMsg);
+      response.setMessage(personalizedMsg);
     }
 
     return response;
   }
 
   // Valida los mensajes de error al iniciar sesión
-  private Map<String, Object> validateErrorLoginMsgs(Map<String, Object> response) {
+  private ResponseDTO validateErrorLoginMsgs(ResponseDTO response) {
     // Si el código no empieza con 2, es un error
-    if (!response.get("code").toString().startsWith("2")) {
-      String personalizedMsg = (String) response.get("message");
+    if (!response.getCode().toString().startsWith("2")) {
+      String personalizedMsg = (String) response.getMessage();
 
       // Modica el mensaje de error
       if (personalizedMsg.equals("INVALID_LOGIN_CREDENTIALS")) {
@@ -147,7 +147,7 @@ public class AuthService {
         personalizedMsg = "Demasiados intentos";
       }
       
-      response.put("message", personalizedMsg);
+      response.setMessage(personalizedMsg);
     }
 
     return response;

@@ -14,11 +14,11 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResponseDTO {
   private String message;
-  private Integer status;
+  private Integer code;
   private String token;
 
-  public ResponseDTO(String message, Integer status) {
+  public ResponseDTO(String message, Integer code) {
     this.message = message;
-    this.status = status;
+    this.code = code;
   }
 }

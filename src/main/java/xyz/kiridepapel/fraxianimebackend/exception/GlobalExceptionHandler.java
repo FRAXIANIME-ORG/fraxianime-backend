@@ -13,77 +13,71 @@ import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.*;
 @ControllerAdvice
 public class GlobalExceptionHandler {
   // Security Exceptions
-  @ExceptionHandler(InvalidUserOrPassword.class)
-  public ResponseEntity<?> handleInvalidUserOrPassword(InvalidUserOrPassword ex) {
-    ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
-  }
-  
   @ExceptionHandler(ProtectedResource.class)
   public ResponseEntity<?> handleProtectedResource(ProtectedResource ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 401);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
   }
 
   @ExceptionHandler(SQLInjectionException.class)
   public ResponseEntity<?> handleSQLInjectionException(SQLInjectionException ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 401);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
   }
 
   // Data Exceptions
   @ExceptionHandler(ConnectionFailed.class)
   public ResponseEntity<?> handleConnectionFailed(ConnectionFailed ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 500);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
   }
   
   @ExceptionHandler(NextTrySearch.class)
   public ResponseEntity<?> handleNextTrySearch(NextTrySearch ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
   }
 
   @ExceptionHandler(DataNotFoundException.class)
   public ResponseEntity<?> handleDataNotFoundException(DataNotFoundException ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
   }
   
   @ExceptionHandler(ArgumentRequiredException.class)
   public ResponseEntity<?> handleIllegalArgumentException(ArgumentRequiredException ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
   }
 
   // Anime Exceptions
   @ExceptionHandler(ChapterNotFound.class)
   public ResponseEntity<?> handleChapterNotFound(ChapterNotFound ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
   }
 
   @ExceptionHandler(AnimeNotFound.class)
   public ResponseEntity<?> handleAnimeNotFound(AnimeNotFound ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
   }
 
   @ExceptionHandler(SearchException.class)
   public ResponseEntity<?> handleSearchException(SearchException ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
   }
 
   @ExceptionHandler(InvalidSearch.class)
   public ResponseEntity<?> handleInvalidSearch(InvalidSearch ex) {
     ResponseDTO response = new ResponseDTO(ex.getMessage(), 404);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
   }
 
   @ExceptionHandler(NumberFormatException.class)
   public ResponseEntity<?> handleNumberFormatException(NumberFormatException ex) {
     ResponseDTO response = new ResponseDTO("El capitulo solicitado no existe", 404);
-    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
   }
 }

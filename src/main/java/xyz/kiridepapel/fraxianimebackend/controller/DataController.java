@@ -14,7 +14,6 @@ import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -53,29 +52,25 @@ public class DataController {
   @PostConstruct
   public void init() {
     this.allowedOrigins = List.of(frontendUrl);
-    this.allowedDataNames = List.of("translations", "specialCases");
+    this.allowedDataNames = List.of(
+      "translations",
+      "specialCases"
+    );
   }
-
-  @GetMapping("/test")
-    public ResponseEntity<?> test(Principal principal) {
-      String uid = principal.getName();
-      return new ResponseEntity<>(uid, HttpStatus.OK);
-    }
-
+  
   @GetMapping("/{dataName}/export")
   public ResponseEntity<byte[]> export(
       HttpServletRequest request,  @PathVariable("dataName") String dataName)  {
     // Validaciones
-    // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     if (!this.allowedDataNames.contains(dataName)) {
       throw new DataNotFoundException("No existen acciones para el recurso solicitado");
     }
-
-    byte[] excelBytes = new byte[0];
-    excelBytes = this.dataService.exportExcel(dataName);
-
+    
+    byte[] excelBytes = this.dataService.exportExcel(dataName);
     String fileName = this.createFileName(dataName);
 
+    // Crear respuesta con el archivo creado
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
     headers.setContentDispositionFormData("filename", fileName);
@@ -88,26 +83,33 @@ public class DataController {
   public ResponseEntity<?> importFromExcel(HttpServletRequest request,
       MultipartFile file, @PathVariable("dataName") String dataName) {
     // Validaciones
-    // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     if (!this.allowedDataNames.contains(dataName)) {
       throw new DataNotFoundException("No existen acciones para el recurso solicitado");
     }
     
     try {
+      // Importar datos
       byte[] bytes = file.getBytes();
       ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
-
-      // Disponibles: translations, specialCases
       this.dataService.importExcel(dataName, inputStream);
 
+      // Normalizar el nombre del tipo de datos
       dataName = DataUtils.formatToNormalName(dataName);
+      // Crear mensaje de respuesta
+      ResponseDTO response = ResponseDTO.builder()
+        .message("Los datos de '" + dataName + "' han sido importados correctamente")
+        .code(200)
+        .build();
       
-      String msg = "Los datos de '" + dataName + "' han sido importados correctamente";
-      return new ResponseEntity<>(new ResponseDTO(msg, 200), HttpStatus.OK);
+      return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
     } catch (IOException e) {
-        ResponseDTO rps = ResponseDTO.builder()
-          .message("Error al procesar el archivo Excel").status(500).build();
-        return new ResponseEntity<>(rps.getMessage(), HttpStatus.valueOf(rps.getStatus()));
+      ResponseDTO response = ResponseDTO.builder()
+        .message("Error al procesar el archivo Excel")
+        .code(500)
+        .build();
+      
+      return new ResponseEntity<>(response, HttpStatus.valueOf(response.getCode()));
     }
   }
 
