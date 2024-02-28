@@ -1,8 +1,12 @@
 package xyz.kiridepapel.fraxianimebackend.utils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,6 +29,7 @@ public class AnimeUtils {
   @Autowired
   private CacheUtils cacheUtils;
   // Variables
+  private List<String> specialCases = Arrays.asList("season", "part");
   private List<String> animesWithoutZeroCases = List.of(
     // Anime url: one-piece-0X -> one-piece-X
     "shigatsu-wa-kimi-no-uso",
@@ -94,8 +99,8 @@ public class AnimeUtils {
           // No lo intenta si el capitulo es mayor a 9
           if (chapterPart >= 0 && chapterPart <= 9) {
             // Intenta: one-piece-04 -> one-piece-4
-            String url1 = this.urlChapterWithoutZero(urlChapter);
-            log.info("[] Trying without zero (-0X): " + url1);
+            String url1 = this.urlChapterZeroCases(urlChapter);
+            log.info("[] Trying with or without zero (-0X): " + url1);
             Document doc = tryConnectOrReturnNull(url1, 2);
             if (doc != null) {
               log.info("[] Founded!");
@@ -137,26 +142,44 @@ public class AnimeUtils {
   }
 
   // Convierte: one-piece-04 -> one-piece-4
-  public String urlChapterWithoutZero(String urlChapter) {
-    String test1 = "https://animelife.net/one-piece-06";
-    test1 = test1.replaceAll("(?<=\\D)0+(\\d+)", "$1");
-    test1 = test1.replaceAll("(?<=\\D)(\\d)(?=-\\d)", "0$1");
-    // log.info("test1: " + test1);
-    String test2 = "https://animelife.net/one-piece-6-5";
-    test2 = test2.replaceAll("(?<=\\D)0+(\\d+)", "$1");
-    test2 = test2.replaceAll("(?<=\\D)(\\d)(?=-\\d)", "0$1");
-    // log.info("test2: " + test2);
-    String test3 = "https://animelife.net/one-piece-season-2-6-5";
-    test3 = test3.replaceAll("(?<=\\D)0+(\\d+)", "$1");
-    test3 = test3.replaceAll("(?<=\\D)(\\d)(?=-\\d)", "0$1");
-    // log.info("test3: " + test3);
-    String test4 = "https://animelife.net/one-piece-season-2-06";
-    test4 = test4.replaceAll("(?<=\\D)0+(\\d+)", "$1");
-    test4 = test4.replaceAll("(?<=\\D)(\\d)(?=-\\d)", "0$1");
-    // log.info("test4: " + test4);
-    String urlWithoutZero = urlChapter.replaceAll("(?<=\\D)0+(\\d+)", "$1");
-    urlWithoutZero = urlWithoutZero.replaceAll("(?<=\\D)(\\d)(?=-\\d)", "0$1");
-    return urlWithoutZero;
+  public String urlChapterZeroCases(String url) {
+    // Encuentra todos los números al final de la url
+    Pattern pattern = Pattern.compile("\\d+");
+    Matcher matcher = pattern.matcher(url);
+    
+    // Agrega a un Array todos los números encontrados
+    ArrayList<String> numbers = new ArrayList<>();
+    while (matcher.find()) {
+        numbers.add(matcher.group());
+    }
+
+    // Modifica los números en base a la cantidad de números al final de la url
+    String[] urlArray = url.split("-");
+    String[] originalArrayNumbers = numbers.toArray(new String[0]);
+    String[] modifiedArrayNumbers = originalArrayNumbers.clone();
+    // Condiciones para modificar los números
+    if (originalArrayNumbers.length == 1) {
+        modifiedArrayNumbers[0] = String.valueOf(Integer.parseInt(originalArrayNumbers[0]));
+    } else if (originalArrayNumbers.length == 2) {
+        if (!this.specialCases.contains(urlArray[urlArray.length - (1 + 2)])) { // name-1-2 -> name-01-2
+            modifiedArrayNumbers[0] = String.format("%02d", Integer.parseInt(originalArrayNumbers[0]));
+        } else { // name-season-1-2 -> name-season-1-02
+            modifiedArrayNumbers[1] = String.valueOf(Integer.parseInt(originalArrayNumbers[1]));
+        }
+    } else if (originalArrayNumbers.length == 3) { // name-season-1-2-3 -> name-season-1-02-3
+        modifiedArrayNumbers[1] = String.format("%02d", Integer.parseInt(originalArrayNumbers[1]));
+    }
+    
+    // Reconstruye la parte numérica de la url con los números modificados
+    String originalNumbersPartsOfUrl = ""; // -1-2-3
+    String modifiedNumbersPartsOfUrl = ""; // -01-2-3
+    for (int i = 0; i < originalArrayNumbers.length; i++) {
+        originalNumbersPartsOfUrl += "-" + originalArrayNumbers[i];
+        modifiedNumbersPartsOfUrl += "-" + modifiedArrayNumbers[i];
+    }
+    // Cambia los números originales de la url por los modificados
+    String urlZeroCases = url.replace(originalNumbersPartsOfUrl, modifiedNumbersPartsOfUrl);
+    return urlZeroCases;
   }
 
   // Convierte: anime-13 -> anime-12-2
@@ -240,7 +263,7 @@ public class AnimeUtils {
     urlChapter = urlChapter + "-" + chapterFormatted; // chapter-05
 
     if (this.animesWithoutZeroCases.contains(inputName)) {
-      urlChapter = urlChapterWithoutZero(urlChapter);
+      urlChapter = urlChapterZeroCases(urlChapter);
     }
 
     if (this.chapterScriptCases.contains(urlChapter.replace(this.providerAnimeLifeUrl, "")) && urlChapter.contains("-2")) {

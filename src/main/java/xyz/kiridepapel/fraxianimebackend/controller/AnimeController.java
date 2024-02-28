@@ -80,7 +80,7 @@ public class AnimeController {
     String greeting = msg.getMessage("greeting", null, locale);
     return new ResponseEntity<>(greeting, HttpStatus.OK);
   }
-
+  
   @GetMapping("/home")
   public ResponseEntity<?> homePage(HttpServletRequest request) {
     DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
