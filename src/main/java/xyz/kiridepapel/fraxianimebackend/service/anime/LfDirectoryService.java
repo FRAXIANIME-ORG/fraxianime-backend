@@ -64,6 +64,9 @@ public class LfDirectoryService {
     Map<String, String> modifiedNames = Map.ofEntries(
       // Estudio
       Map.entry("Children's Playground Entertainment", "Children's Playground Ent."),
+      // Estado
+      Map.entry("Completada", "Finalizados"),
+      Map.entry("En Emisión", "En emisión"),
       // Tipo
       Map.entry("TV Series", "Animes"),
       Map.entry("OVA", "OVAs"),
