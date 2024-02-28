@@ -1,10 +1,10 @@
-package xyz.kiridepapel.fraxianimebackend.service;
+package xyz.kiridepapel.fraxianimebackend.service.anime;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -15,10 +15,9 @@ import org.springframework.stereotype.Service;
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.SearchDTO;
-import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.SearchException;
-import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.CacheUtils;
 
 @Service
 @Log
@@ -27,7 +26,9 @@ public class LfSearchService {
   private String providerAnimeLifeUrl;
   // Inyección de dependencias
   @Autowired
-  private SpecialCaseRepository specialCaseRepository;
+  private CacheUtils cacheUtils;
+  @Autowired
+  private AnimeUtils animeUtils;
 
   public SearchDTO searchAnimes(String anime, Integer page, Integer maxItems) {
     try {
@@ -48,33 +49,38 @@ public class LfSearchService {
           itemsToShow = maxItems;
         }
 
-        // Special cases
-        Map<String, String> specialCases = this.specialCaseRepository.findByTypes('n', 's').stream()
-            .collect(Collectors.toMap(SpecialCaseEntity::getOriginal, SpecialCaseEntity::getMapped));
+        // Casos especiales
+        Map<String, String> specialCasesNames = new HashMap<>();
+        Map<String, String> specialCasesUrls = new HashMap<>();
+        this.cacheUtils.getSpecialCases('n').forEach(hsce -> specialCasesNames.put(hsce.getOriginal(), hsce.getMapped()));
+        this.cacheUtils.getSpecialCases('s').forEach(hsce -> specialCasesUrls.put(hsce.getOriginal(), hsce.getMapped()));
 
         // Search list
         for (int i = 0; i < itemsToShow; i++) {
           String name = animes.get(i).select(".tt h2").text();
-          String url = animes.get(i).select("a").attr("href")
-              .replace((providerAnimeLifeUrl + "anime/"), "")
-              .replaceAll("/$", "");
+          String imgUrl = animes.get(i).select("img").attr("src");
+          String url = animes.get(i).select("a").attr("href");
+          String state = animes.get(i).select(".epx").text();
+          String type = animes.get(i).select(".typez").text();
+          
+          // Casos especiales manipulados
+          name = AnimeUtils.removeRareCharactersFromName(name);
+          imgUrl = imgUrl.replace("?resize=247,350", "");
+          url = url.replace((providerAnimeLifeUrl + "anime/"), "").replaceAll("/$", "");
+          state = state.replace("Completada", "Finalizado");
+          type = type.replace("TV", "Anime");
 
-          if (specialCases.containsKey(name)) {
-            name = name.replace(name, specialCases.get(name));
-          }
-          if (specialCases.containsKey(url)) {
-            url = url.replace(url, specialCases.get(url));
-          }
+          // Casos especiales de la base de datos
+          name = this.animeUtils.specialNameOrUrlCases(specialCasesNames, name, 'H', "searchAnimes()");
+          url = this.animeUtils.specialNameOrUrlCases(specialCasesUrls, url, 'H', "searchAnimes()");
 
-          AnimeDataDTO data = AnimeDataDTO.builder()
-              .name(name.replace("&radic;", "√").replace("&quot;", "\""))
-              .imgUrl(animes.get(i).select("img").attr("src").replace("?resize=247,350", ""))
-              .url(url)
-              .state(animes.get(i).select(".epx").text().replace("Completada", "Finalizado"))
-              .type(animes.get(i).select(".typez").text().replace("TV", "Anime"))
-              .build();
-
-          searchList.add(data);
+          searchList.add(AnimeDataDTO.builder()
+            .name(name)
+            .imgUrl(imgUrl)
+            .url(url)
+            .state(state)
+            .type(type)
+            .build());
         }
 
         // Determinar la ultima pagina

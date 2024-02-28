@@ -1,4 +1,4 @@
-package xyz.kiridepapel.fraxianimebackend.service;
+package xyz.kiridepapel.fraxianimebackend.service.anime;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +19,7 @@ import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeHistoryDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
 import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.CacheUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Service
@@ -27,7 +28,7 @@ public class JkAnimeService {
   private String providerJkanimeUrl;
   // Inyeccion de dependencias
   @Autowired
-  private ScheduleService scheduleService;
+  private CacheUtils cacheUtils;
   @Autowired
   private AnimeUtils animeUtils;
   // Variables
@@ -202,7 +203,7 @@ public class JkAnimeService {
     if (allChilds != null && !allChilds.isEmpty()) {
       // Lista de casos especiales
       Map<String, String> specialCases = new HashMap<>();
-      for (SpecialCaseEntity sce : this.scheduleService.getSpecialCases('k')) {
+      for (SpecialCaseEntity sce : this.cacheUtils.getSpecialCases('k')) {
         specialCases.put(sce.getOriginal(), sce.getMapped());
       }
       // 1. En el primer ciclo: se guarda el titulo de la sublista y se ignora porque no hay nada que guardar

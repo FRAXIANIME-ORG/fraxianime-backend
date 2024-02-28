@@ -37,10 +37,10 @@ public class FraxianimeBackendApplication {
     SpecialCaseRepository specialCaseRepository
   ) {
     return args -> {
+      // Gurda en la base de datos los Casos especiales
       List<SpecialCaseEntity> specialCases = new ArrayList<>();
 
       if (specialCaseRepository.count() == 0) {
-
         // ? 1. URL (Anime): Busco -> Encuentro en JkAnime
         specialCases.add(new SpecialCaseEntity(null, 'j', "maou-gakuin-no-futekigousha", "maou-gakuin-no-futekigousha-shijou-saikyou-no-maou-no-shiso-tensei-shite-shison-tachi-no-gakkou-e"));
         specialCases.add(new SpecialCaseEntity(null, 'j', "the-daily-life-of-the-immortal-king-4ta-seanson", "the-daily-life-of-the-inmortal-king-4nd-season"));

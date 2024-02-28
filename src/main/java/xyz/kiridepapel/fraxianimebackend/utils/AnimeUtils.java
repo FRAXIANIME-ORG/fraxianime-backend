@@ -15,7 +15,6 @@ import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.NextTrySearch;
-import xyz.kiridepapel.fraxianimebackend.service.ScheduleService;
 
 @Service
 @Log
@@ -24,7 +23,7 @@ public class AnimeUtils {
   private String providerAnimeLifeUrl;
   // Inyección de dependencias
   @Autowired
-  private ScheduleService scheduleService;
+  private CacheUtils cacheUtils;
   // Variables
   private List<String> animesWithoutZeroCases = List.of(
     // Anime url: one-piece-0X -> one-piece-X
@@ -185,7 +184,7 @@ public class AnimeUtils {
         useMapListType = Map.copyOf(map);
       } else {
         // Busca en cache en base al type
-        List<SpecialCaseEntity> specialCases = this.scheduleService.getSpecialCases(type);
+        List<SpecialCaseEntity> specialCases = this.cacheUtils.getSpecialCases(type);
         for (SpecialCaseEntity specialCase : specialCases) {
           useMapListType.put(specialCase.getOriginal(), specialCase.getMapped());
         }
@@ -263,4 +262,9 @@ public class AnimeUtils {
     return newMap;
   }
   
+  public static String removeRareCharactersFromName(String name) {
+    name = name.trim().replace("“", String.valueOf('"')).replace("”", String.valueOf('"'));
+    name = name.replace("&radic;", "√").replace("&quot;", "\"");
+    return name;
+  }
 }

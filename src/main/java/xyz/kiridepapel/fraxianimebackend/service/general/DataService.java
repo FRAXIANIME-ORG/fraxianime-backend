@@ -1,4 +1,4 @@
-package xyz.kiridepapel.fraxianimebackend.service;
+package xyz.kiridepapel.fraxianimebackend.service.general;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,6 +27,7 @@ import xyz.kiridepapel.fraxianimebackend.generic.AssignmentExportData;
 import xyz.kiridepapel.fraxianimebackend.repository.AnimeRepository;
 import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.DatabaseUtils;
 
 import org.apache.poi.ss.formula.functions.T;
 import org.apache.poi.ss.usermodel.*;
@@ -37,7 +38,7 @@ import org.apache.poi.ss.usermodel.*;
 public class DataService<T> {
   // Inyección de dependencias
   @Autowired
-  private DatabaseManageService databaseManageService;
+  private DatabaseUtils databaseUtils;
   // ! Repositorios (Agregar más según sea necesario)
   @Autowired
   private AnimeRepository animeRepository;
@@ -69,11 +70,11 @@ public class DataService<T> {
     // ! Agregar más casos según sea necesario
     switch (dataName) {
       case "translations":
-        databaseManageService.resetTable("anime");
+        databaseUtils.resetTable("anime");
         animeRepository.saveAll((List<AnimeEntity>) listRetrieved);
         break;
       case "specialCases":
-        databaseManageService.resetTable("special_case");
+        databaseUtils.resetTable("special_case");
         specialCaseRepository.saveAll((List<SpecialCaseEntity>) listRetrieved);
         break;
       default:

@@ -1,20 +1,30 @@
 package xyz.kiridepapel.fraxianimebackend.utils;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.java.Log;
+import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
+import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
 
 @Component
-@SuppressWarnings("null")
 @Log
-public class CacheHelper {
+public class CacheUtils {
+  // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
+  // Inyeccion de dependencias
+  @Autowired
+  private SpecialCaseRepository specialCaseRepository;
   
   public static <T> T searchFromCache(CacheManager cacheManager, Class<T> type, String cacheName, String cacheKey) {
     Cache cache = cacheManager.getCache(cacheName);
@@ -38,5 +48,16 @@ public class CacheHelper {
         }
       }
     }
+  }
+  
+  @Cacheable(value = "specialCases", key = "#type")
+  public List<SpecialCaseEntity> getSpecialCases(Character type) {
+    List<SpecialCaseEntity> specialCases = specialCaseRepository.findAll();
+    List<SpecialCaseEntity> specialCasesSolicited = new ArrayList<SpecialCaseEntity>();
+    
+    specialCases.stream().filter(specialCase -> specialCase.getType().equals(type))
+        .forEach(specialCasesSolicited::add);
+
+    return specialCasesSolicited;
   }
 }

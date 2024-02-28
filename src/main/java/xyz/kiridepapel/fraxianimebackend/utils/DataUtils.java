@@ -118,15 +118,15 @@ public class DataUtils {
     return isProduction ? new Date(System.currentTimeMillis() - 18000000) : new Date();
   }
 
-  public static String parseDate(String date, DateTimeFormatter formatter, int daysToModify) {
+  public static String parseDate(String date, DateTimeFormatter formatterIn, DateTimeFormatter formatterOut, int daysToModify) {
     if (date == null || date.isEmpty()) {
       return null;
     }
 
-    LocalDate currentDate = LocalDate.parse(date, formatter);
+    LocalDate currentDate = LocalDate.parse(date, formatterIn);
     LocalDate nextChapterDate = currentDate.plusDays(daysToModify);
 
-    return nextChapterDate.format(formatter);
+    return nextChapterDate.format(formatterOut);
   }
 
   // ? Validations

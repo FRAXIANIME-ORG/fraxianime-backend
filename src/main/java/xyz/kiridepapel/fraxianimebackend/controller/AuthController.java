@@ -23,7 +23,7 @@ import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.AuthRequestDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ArgumentRequiredException;
-import xyz.kiridepapel.fraxianimebackend.service.AuthService;
+import xyz.kiridepapel.fraxianimebackend.service.general.AuthService;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @RestController

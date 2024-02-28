@@ -1,4 +1,4 @@
-package xyz.kiridepapel.fraxianimebackend.service;
+package xyz.kiridepapel.fraxianimebackend.service.anime;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -28,7 +28,7 @@ import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFou
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFoundException;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
-import xyz.kiridepapel.fraxianimebackend.utils.CacheHelper;
+import xyz.kiridepapel.fraxianimebackend.utils.CacheUtils;
 
 @Service
 @Log
@@ -66,7 +66,7 @@ public class LfChapterService {
       if (url.contains("_")) url = url.split("_")[0];
 
       // Obtiene el ChapterDTO si está en caché
-      ChapterDTO chapterCache = CacheHelper.searchFromCache(cacheManager, ChapterDTO.class, "chapter", (url + "/" + chapter));
+      ChapterDTO chapterCache = CacheUtils.searchFromCache(cacheManager, ChapterDTO.class, "chapter", (url + "/" + chapter));
       if (chapterCache != null) {
         return chapterCache;
       }
@@ -81,16 +81,7 @@ public class LfChapterService {
       throw new ChapterNotFound("Capítulo no disponible");
     }
   }
-
   
-  @Cacheable(value = "test", key = "#url.concat('/').concat(#chapter)")
-  public ChapterDTO test(String url, String chapter, Long time) {
-    return ChapterDTO.builder()
-      .name(url + " - " + chapter)
-      .expiration(time)
-      .build();
-  }
-
   //
   public ChapterDTO findChapter(String modifiedUrlChapter, String chapter) {
     try {
@@ -112,7 +103,7 @@ public class LfChapterService {
       if (!chapterInfo.getHaveNextChapter()) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
         String date = docAnimeLife.body().select(".year .updated").text().trim();
-        date = DataUtils.parseDate(date, formatter, 0);
+        date = DataUtils.parseDate(date, formatter, formatter, 0);
         chapterInfo.setNextChapterDate(this.calcNextChapterDate(date));
       }
 

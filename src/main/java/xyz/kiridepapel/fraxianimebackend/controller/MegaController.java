@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.LinkDTO;
-import xyz.kiridepapel.fraxianimebackend.service.MegaService;
+import xyz.kiridepapel.fraxianimebackend.service.general.MegaService;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @RestController

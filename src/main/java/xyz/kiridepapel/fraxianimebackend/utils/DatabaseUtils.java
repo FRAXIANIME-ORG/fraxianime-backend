@@ -1,4 +1,4 @@
-package xyz.kiridepapel.fraxianimebackend.service;
+package xyz.kiridepapel.fraxianimebackend.utils;
 
 import org.springframework.stereotype.Service;
 
@@ -7,7 +7,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
 @Service
-public class DatabaseManageService {
+public class DatabaseUtils {
   @PersistenceContext
   private EntityManager entityManager;
   

@@ -1,4 +1,4 @@
-package xyz.kiridepapel.fraxianimebackend.service;
+package xyz.kiridepapel.fraxianimebackend.service.anime;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,7 +20,9 @@ import org.springframework.stereotype.Service;
 import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.AnimeNotFound;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFoundException;
+import xyz.kiridepapel.fraxianimebackend.service.general.TranslateService;
 import xyz.kiridepapel.fraxianimebackend.utils.AnimeUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.CacheUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
@@ -40,7 +42,7 @@ public class LfAnimeService {
   @Autowired
   private TranslateService translateService;
   @Autowired
-  private ScheduleService scheduleService;
+  private CacheUtils cacheUtils;
   @Autowired
   private AnimeUtils animeUtils;
   // Variables
@@ -56,11 +58,11 @@ public class LfAnimeService {
     Map.entry("Duracion", "duration")
   );
   
-  @Cacheable("anime")
+  @Cacheable(value = "anime")
   public AnimeInfoDTO animeInfo(String search) {
     try {
       // Verifica si el anime está en los casos especiales pero invertidos (lo está buscando como está en AnimeLife y no en JkAnime)
-      for (SpecialCaseEntity specialCase : this.scheduleService.getSpecialCases('s')) {
+      for (SpecialCaseEntity specialCase : this.cacheUtils.getSpecialCases('s')) {
         if (specialCase.getOriginal().equals(search)) {
           search = specialCase.getMapped();
           break;
@@ -226,7 +228,7 @@ public class LfAnimeService {
 
         // * 1. Fecha del próximo capítulo
         if (animeInfo.getData().get("Estado").equals("En emisión")) {
-          String ncd = DataUtils.parseDate(date, formatter, 7);
+          String ncd = DataUtils.parseDate(date, formatter, formatter, 7);
           ncd = DataUtils.firstUpper(ncd);
           animeInfo.setNextChapterDate(ncd);
         }

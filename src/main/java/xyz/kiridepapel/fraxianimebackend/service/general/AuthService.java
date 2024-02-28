@@ -1,4 +1,4 @@
-package xyz.kiridepapel.fraxianimebackend.service;
+package xyz.kiridepapel.fraxianimebackend.service.general;
 
 import java.util.Map;
 
@@ -32,7 +32,7 @@ public class AuthService {
     this.firebaseSignInUrl = firebaseSignInUrl + firebaseWebApiKey;
     this.firebaseSignUpUrl = firebaseSignUpUrl + firebaseWebApiKey;
   }
-
+  
   // Registra un nuevo usuario
   public ResponseDTO register(AuthRequestDTO data) {
     // Armar el cuerpo de la solicitud

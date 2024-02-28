@@ -1,4 +1,4 @@
-package xyz.kiridepapel.fraxianimebackend.service;
+package xyz.kiridepapel.fraxianimebackend.service.general;
 
 import org.springframework.beans.factory.annotation.Value;
 

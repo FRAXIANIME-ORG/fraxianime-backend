@@ -24,10 +24,12 @@ public class CacheConfig {
   @Value("${REDIS_PORT}")
   private int redisPort;
 
-  @Value("${DEFAULT_CACHE_TIME}")
-  private Integer defaultCacheTime;
+  @Value("${HOME_CACHE_TIME}")
+  private Integer homeCacheTime;
   @Value("${LAST_CHAPTERS_CACHE_TIME}")
   private Integer lastChaptersCacheTime;
+  @Value("${DIRECTORY_OPTIONS_CACHE_TIME}")
+  private Integer directoryOptionsCacheTime;
 
   @Bean
   public RedisConnectionFactory redisConnectionFactory() {
@@ -40,17 +42,20 @@ public class CacheConfig {
 
   @Bean
   public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
-    // Configuración por defecto para todas las cachés
-    RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-      .entryTtl(Duration.ofMinutes(defaultCacheTime));
+    // Configuración por defecto para todos las cachés
+    RedisCacheConfiguration homeCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+      .entryTtl(Duration.ofMinutes(homeCacheTime));
 
-    // Configuración especial para la caché para los últimos capítulos
     RedisCacheConfiguration lastChaptersCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
       .entryTtl(Duration.ofHours(lastChaptersCacheTime));
-      
+
+    RedisCacheConfiguration directoryOptionsCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+      .entryTtl(Duration.ofDays(directoryOptionsCacheTime));
+    
     return RedisCacheManager.builder(redisConnectionFactory)
-      .cacheDefaults(defaultCacheConfig)
+      .cacheDefaults(homeCacheConfig)
       .withCacheConfiguration("chapter", lastChaptersCacheConfig)
+      .withCacheConfiguration("directory", directoryOptionsCacheConfig)
       .build();
   }
 

@@ -102,6 +102,38 @@ public class PageDTO implements Serializable {
   @NoArgsConstructor
   @AllArgsConstructor
   @JsonInclude(JsonInclude.Include.NON_NULL)
+  public static class DirectoryOptionsDTO implements Serializable {
+    List<LinkDTO> genres;
+    List<LinkDTO> seasons;
+    List<LinkDTO> studios;
+    List<LinkDTO> status;
+    List<LinkDTO> types;
+    List<LinkDTO> subs;
+    List<LinkDTO> orders;
+  }
+
+  @Builder
+  @Getter
+  @Setter
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  public static class ScheduleDTO implements Serializable {
+    List<ChapterDataDTO> monday;
+    List<ChapterDataDTO> tuesday;
+    List<ChapterDataDTO> wednesday;
+    List<ChapterDataDTO> thursday;
+    List<ChapterDataDTO> friday;
+    List<ChapterDataDTO> saturday;
+    List<ChapterDataDTO> sunday;
+  }
+
+  @Builder
+  @Getter
+  @Setter
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   public static class SearchDTO {
     Integer lastPage;
     List<AnimeDataDTO> searchList;

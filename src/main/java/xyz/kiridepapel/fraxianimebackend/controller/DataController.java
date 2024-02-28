@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.SpecialCaseDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFoundException;
-import xyz.kiridepapel.fraxianimebackend.service.DataService;
+import xyz.kiridepapel.fraxianimebackend.service.general.DataService;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 import java.io.ByteArrayInputStream;
