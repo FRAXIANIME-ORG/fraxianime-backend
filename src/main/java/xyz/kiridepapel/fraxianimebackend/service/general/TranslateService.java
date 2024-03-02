@@ -28,32 +28,46 @@ public class TranslateService {
   @Autowired
   private AnimeRepository animeRepository;
 
-  public String translate(String name, String synopsis) {
+  public String getTranslatedAndSave(String name, String text, String to) {
     AnimeEntity anime = animeRepository.findByName(name);
 
     if (anime != null) {
-      log.info("Se encontro el anime en la base de datos");
       return anime.getSynopsisEnglish();
     } else {
       if (this.isProduction) {
         try {
-          synopsis = synopsis.replaceAll("\"", "+");
-          String synopsisTranslated = this.translateWithMicrosoft(synopsis);
+          text = text.replaceAll("\"", "+");
+          String synopsisTranslated = this.translateWithMicrosoft(text, to);
           synopsisTranslated = synopsisTranslated.replaceAll("\\+", "\"");
           animeRepository.save(new AnimeEntity(null, name, synopsisTranslated));
           return synopsisTranslated;
         } catch (Exception e) {
           log.info("Error al traducir: " + e.getMessage());
-          return synopsis;
+          return text;
         }
       } else {
-        return synopsis;
+        return text;
       }
     }
   }
+  
+  public String getTranslated(String name, String from) {
+    AnimeEntity anime = animeRepository.findByName(name);
 
-  private String translateWithMicrosoft(String text) {
-    String to = "en";
+    if (anime != null) {
+      if (from.equals("en")) {
+        return anime.getSynopsisEnglish();
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  private String translateWithMicrosoft(String text, String to) {
+    // to = "en" -> inglés
+    // to = "es" -> español
     String jsonBody = "[{\"Text\": \"" + text + "\"}]";
 
     HttpRequest request = HttpRequest.newBuilder()

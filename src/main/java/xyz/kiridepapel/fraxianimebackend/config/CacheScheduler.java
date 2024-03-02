@@ -13,6 +13,8 @@ import lombok.extern.java.Log;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.HomePageDTO;
 import xyz.kiridepapel.fraxianimebackend.service.anime.JkLfHomeService;
+import xyz.kiridepapel.fraxianimebackend.service.anime.JkScheduleService;
+import xyz.kiridepapel.fraxianimebackend.service.anime.JkTopService;
 import xyz.kiridepapel.fraxianimebackend.service.anime.LfChapterService;
 import xyz.kiridepapel.fraxianimebackend.service.anime.LfDirectoryService;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
@@ -32,52 +34,84 @@ public class CacheScheduler {
   @Autowired
   private LfDirectoryService directoryService;
   @Autowired
+  private JkScheduleService scheduleService;
+  @Autowired
+  private JkTopService topService;
+  @Autowired
   private CacheUtils cacheUtils;
   @Autowired
   private CacheManager cacheManager;
   
-  // 1. 30 min. + 5 sec. = 1805000 ms
+  // * PROGRAMACIÓN DE TAREAS
+  // 1. 30 minutos: 'Home'
   @Scheduled(fixedRate = 1805000)
-  public void updateHome() {
-    this.updateCacheProgramming();
+  public void autoUpdateHome() {
+    this.updateHome();
   }
-
-  // 2. 7 days + 5 sec. = 604805000 ms
-  // 2. Borra y actualiza el caché de las 'Opciones de directorio'
+  // 2. 7 días: 'Directorio'
   @Scheduled(fixedRate = 604805000)
-  public void updateDirectoryOptions() {
-    log.info("-----------------------------");
-    CacheUtils.deleteFromCache(cacheManager, "directory", null, true);
-    log.info("00. Guardando en cache: 'directory/options'");
-    this.directoryService.directoryOptions("options");
-    log.info("01. Guardando en cache: 'directory/?page=1'");
-    this.directoryService.saveLongDirectoryAnimes("?page=1");
-    log.info("-----------------------------");
+  public void autoUpdateDirectory() {
+    this.updateDirectory();
+  }
+  // 3. 1 hora: 'Horario'
+  @Scheduled(fixedRate = 3605000)
+  public void autoUpdateSchedule() {
+    this.updateSchedule();
+  }
+  // 4. 7 días: 'Top'
+  @Scheduled(fixedRate = 604805000)
+  public void autoUpdateTop() {
+    this.updateTop();
   }
   
-  // 1. Borra y actualiza el caché de la 'Página de inicio'
-  public void updateCacheProgramming() {
-    // Actualiza el caché de los casos especiales
+  // * MÉTODOS INTERMEDIOS
+  // 1. Fuerza la actualizació de: 'Home' (30 min.), 'Casos Especiales' (30 min.) y 'Últimos capítulos emitidos' (7 días)
+  private void updateHome() {
+    // Casos especiales
+    log.info("-----------------------------------------------------");
     this.updateSpecialCases();
-    
-    // Borra el caché de la página de inicio si está en producción
-    if (isProduction == true) {
-      log.info("-----------------------------");
-      CacheUtils.deleteFromCache(cacheManager, "home", null, true);
-      log.info("-----------------------------");
-    }
-
-    // Guarda en caché la página de inicio actualizada
-    HomePageDTO home = this.homeService.homePage();
-
-    // Guarda en caché los últimos capítulos
-    log.info("-----------------------------");
-    this.saveLastChapters(home.getAnimesProgramming());
-    log.info("-----------------------------");
+    log.info("-----------------------------------------------------");
+    // Home
+    log.info("-----------------------------------------------------");
+    CacheUtils.deleteFromCache(cacheManager, "home", null, true);
+    log.info("Guardando en cache: 'home'");
+    HomePageDTO home = this.homeService.home();
+    log.info("-----------------------------------------------------");
+    // Últimos capítulos emitidos
+    log.info("-----------------------------------------------------");
+    this.getOrSaveLastChapters(home.getAnimesProgramming());
+    log.info("-----------------------------------------------------");
+  }
+  // 2. Fuerza la actualización de 'Directorio'
+  private void updateDirectory() {
+    log.info("-----------------------------------------------------");
+    CacheUtils.deleteFromCache(cacheManager, "directory", null, true);
+    log.info("Guardando en cache: 'directory/options'");
+    this.directoryService.directoryOptions("options");
+    log.info("Guardando en cache: 'directory/?page=1'");
+    this.directoryService.saveLongDirectoryAnimes("?page=1");
+    log.info("-----------------------------------------------------");
+  }
+  // 3. Fuerza la actualización de 'Horario'
+  private void updateSchedule() {
+    log.info("-----------------------------------------------------");
+    CacheUtils.deleteFromCache(cacheManager, "schedule", null, true);
+    log.info("Guardando en cache: 'schedule'");
+    this.scheduleService.getSchedule("list");
+    log.info("-----------------------------------------------------");
+  }
+  // 4. Fuerza la actualización de 'Top'
+  private void updateTop() {
+    log.info("-----------------------------------------------------");
+    CacheUtils.deleteFromCache(cacheManager, "top", null, true);
+    log.info("Guardando en cache: 'top'");
+    this.topService.getTop("list");
+    log.info("-----------------------------------------------------");
   }
 
-  // 1. Obtiene o guarda en caché los 'Últimos capítulos emitidos'
-  private void saveLastChapters(List<ChapterDataDTO> animesProgramming) {
+  // * MÉTODOS DE TAREAS
+  // Obtiene o guarda en caché los 'Últimos capítulos emitidos'
+  private void getOrSaveLastChapters(List<ChapterDataDTO> animesProgramming) {
     // Variables
     Random random = new Random();
     int counter = 1;
@@ -124,17 +158,16 @@ public class CacheScheduler {
           }
         }
       } catch (Exception e) {
-        log.severe("-----------------------------");
+        log.info("-----------------------------------------------------");
         log.severe(String.format("%02d", counter) + ". " + e.getMessage());
         log.severe(String.format("%02d", counter) + ". Name: " + chapterInfo.getName() + " (" + chapterInfo.getChapter() + ") no se pudo guardar en cache.");
         log.severe(String.format("%02d", counter) + ". Url: " + chapterInfo.getUrl());
-        log.severe("-----------------------------");
+        log.info("-----------------------------------------------------");
         counter++;
       }
     }
   }
-
-  // 1. Obtiene o guarda en caché de los casos especiales
+  // Fuerza la actualización de los casos especiales
   private void updateSpecialCases() {
     List<Character> listSpecialCharacters = List.of(
       'h', // Home
@@ -148,7 +181,6 @@ public class CacheScheduler {
     );
 
     // Borra el caché de los casos especiales
-    log.info("-----------------------------");
     CacheUtils.deleteFromCache(cacheManager, "specialCases", null, true);
     // Guarda en caché los casos especiales actualizados
     int counter = 0;
@@ -157,6 +189,5 @@ public class CacheScheduler {
       log.info(String.format("%02d", counter) + ". Guardando en cache: '" + type + "'");
       counter++;
     }
-    log.info("-----------------------------");
   }
 }

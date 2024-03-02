@@ -52,11 +52,11 @@ public class JkLfHomeService {
 
   // ! MÉTODOS PRINCIPALES
   @Cacheable(value = "home", key = "'animes'")
-  public HomePageDTO homePage() {
+  public HomePageDTO home() {
     Document docAnimesJk = this.dataUtils.simpleConnect(this.providerJkanimeUrl, "Proveedor 1 inactivo");
     Document docScheduleJk = this.dataUtils.simpleConnect(this.providerJkanimeUrl + "horario", "Proveedor 1 inactivo");
     Document docAnimesLf = this.dataUtils.simpleConnect(this.providerAnimeLifeUrl, "Proveedor 2 inactivo");
-
+    
     // Mapa de casos especiales donde JkAnime se acopla a AnimeLife (normalmente es al revés)
     Map<String, String> mapListTypeJk = new HashMap<>();
     this.cacheUtils.getSpecialCases('k').forEach(sce -> mapListTypeJk.put(sce.getOriginal(), sce.getMapped()));
@@ -135,10 +135,10 @@ public class JkLfHomeService {
     List<ChapterDataDTO> listLife = new ArrayList<>();
 
     // Mapa en base a la combinacion de los casos especiales 's' y 'n' (h) para AnimeLife
-    Map<String, String> specialCases = new HashMap<>();
+    Map<String, String> mapListTypeLf = new HashMap<>();
     List<SpecialCaseEntity> homeList = this.cacheUtils.getSpecialCases('s');
     homeList.addAll(this.cacheUtils.getSpecialCases('n'));
-    homeList.forEach(hsce -> specialCases.put(hsce.getOriginal(), hsce.getMapped()));
+    homeList.forEach(hsce -> mapListTypeLf.put(hsce.getOriginal(), hsce.getMapped()));
 
     // Recorre, guarda y compara los animes de AnimeLife con los de JkAnime
     int index = 0;
@@ -162,7 +162,7 @@ public class JkLfHomeService {
               .build();
           
           // * Define los casos especiales de nombres y URLs
-          anime = this.defineSpecialCases(specialCases, anime, 'H');
+          anime = this.defineSpecialCases(mapListTypeLf, anime, 'H');
           
           // * Toma la imagen y la fecha de JkAnime si es que el anime está en JkAnime, si no,
           // * asigna una fecha a partir de la posición en la lista de animes de AnimeLife
@@ -216,7 +216,9 @@ public class JkLfHomeService {
     Map<String, ChapterDataDTO> listJkAnime = new HashMap<>();
 
     // Fecha exacta con tiempo UTC y 5 horas menos si esta en produccion (Hora de Perú)
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("es", "ES"));
+    String format = "dd/MM/yyyy";
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format, new Locale("es", "ES"));
+    // Dia actual
     Date todayD = DataUtils.getDateNow(isProduction);
     LocalDate todayLD = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
     String year = String.valueOf(DataUtils.getLocalDateTimeNow(isProduction).getYear());
@@ -238,7 +240,7 @@ public class JkLfHomeService {
         else date = todayLD.minusDays(1).format(formatter);
       }
       // Si no es Hoy ni Ayer, entonces es una fecha en formato dd/MM/yyyy
-      else date = DataUtils.parseDate(date + "/" + year, formatter, formatter, 0);
+      else date = DataUtils.parseDate(date + "/" + year, format, format, 0);
 
       ChapterDataDTO data = ChapterDataDTO.builder()
           .name(this.animeUtils.specialNameOrUrlCases(mapListTypeJk, name, 'k', "jkAnimesProgramming()"))
@@ -260,14 +262,12 @@ public class JkLfHomeService {
     List<ChapterDataDTO> jkNextAnimesProgramming = new ArrayList<>();
 
     // Obtener el indice del dia actual
-    DateTimeFormatter formatterInput = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "ES"));
-    DateTimeFormatter formatterOutput = DateTimeFormatter.ofPattern("dd/MM", new Locale("es", "ES"));
     Integer startIndex = -1;
     outerloop: for (Element item : elements) {
       Elements animesDay = item.select(".cajas .box");
       for (Element subItem : animesDay) {
         String time = subItem.select(".last time").text().split(" ")[0];
-        String date = DataUtils.parseDate(time, formatterInput, formatterOutput, 7);
+        String date = DataUtils.parseDate(time, "yyyy-MM-dd", "dd/MM", 7);
 
         // Verificar si la fecha es hoy
         LocalDate todayLD = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
@@ -411,7 +411,6 @@ public class JkLfHomeService {
     List<ChapterDataDTO> lastChapters = new ArrayList<>();
 
     String year = String.valueOf(LocalDate.now().getYear());
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("es", "ES"));
     for (Element item : elementsJkAnime) {
       String name = item.select(".anime__sidebar__comment__item__text h5").text();
       String url = item.select("a").attr("href").replace(providerJkanimeUrl, "");
@@ -419,7 +418,7 @@ public class JkLfHomeService {
 
       date = date.equals("Hoy") || date.equals("Ayer")
         ? DataUtils.getLocalDateTimeNow(isProduction).toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        : DataUtils.parseDate(date + "/" + year, formatter, formatter, 0);
+        : DataUtils.parseDate(date + "/" + year, "dd/MM/yyyy", "dd/MM/yyyy", 0);
 
       ChapterDataDTO anime = ChapterDataDTO.builder()
           .name(this.animeUtils.specialNameOrUrlCases(mapListTypeJk, name, 'k', "donghuasProgramming()"))

@@ -25,7 +25,7 @@ public class IndividualDTO implements Serializable {
     private String url;
     private Boolean state;
   }
-
+  
   @Data
   @NoArgsConstructor
   @AllArgsConstructor
@@ -37,6 +37,11 @@ public class IndividualDTO implements Serializable {
     private Integer likes;
     private Integer position;
     private String url;
+    // Extras for section TOP
+    private String type;
+    private Integer chapters;
+    private String synopsis;
+    private String synopsisEnglish;
   }
 
   @Data

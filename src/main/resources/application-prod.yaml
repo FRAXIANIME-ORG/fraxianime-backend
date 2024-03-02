@@ -1,10 +1,12 @@
 APP_PRODUCTION: true
 FRONTEND_URL: https://fraxianime.vercel.app
 
-# Colocar 30 segundos más en CacheScheduler.java (línea 24)
-HOME_CACHE_TIME: 30 # Minutos - que durará en caché cualquier @Cacheable por defecto
-LAST_CHAPTERS_CACHE_TIME: 48 # Horas - que durará en caché los últimos capítulos emitidos
-DIRECTORY_OPTIONS_CACHE_TIME: 7 # Días - que durará en caché las opciones de directorio
+# Tiempo en caché de los datos
+DEFAULT_CACHE_TIME: 30 # Minutos: 'Home'
+LAST_CHAPTERS_CACHE_TIME: 7 # Días: 'Home'
+DIRECTORY_CACHE_TIME: 7 # Días: 'Directory'
+SCHEDULE_CACHE_TIME: 1 # Horas: 'Schedule'
+TOP_CACHE_TIME: 7 # Días: 'Top'
 
 spring:
   datasource:

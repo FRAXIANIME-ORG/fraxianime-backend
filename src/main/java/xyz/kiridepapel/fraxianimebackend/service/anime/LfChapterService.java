@@ -101,10 +101,9 @@ public class LfChapterService {
       
       // Si no tiene siguiente capítulo, se obtiene la fecha de emisión del último capítulo y se le suma 7 días
       if (!chapterInfo.getHaveNextChapter()) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
         String date = docAnimeLife.body().select(".year .updated").text().trim();
-        date = DataUtils.parseDate(date, formatter, formatter, 0);
-        chapterInfo.setNextChapterDate(this.calcNextChapterDate(date));
+        date = DataUtils.parseDate(date, "MMMM d, yyyy", "MMMM d, yyyy", 0);
+        chapterInfo.setNextChapterDate(calcNextChapterDate(date, "MMMM d, yyyy", "MMMM d, yyyy", this.isProduction));
       }
 
       // Establece el estado del ánime (en emisión o completado)
@@ -371,15 +370,15 @@ public class LfChapterService {
     return number;
   }
 
-  public String calcNextChapterDate(String lastChapterDate) {
+  public static String calcNextChapterDate(String lastChapterDate, String formatIn, String formatOut, boolean isProduction) {
     if (lastChapterDate == null || lastChapterDate.isEmpty()) {
       return null;
     }
     
-    DateTimeFormatter formatterIn = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
-    DateTimeFormatter formatterOut = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
+    DateTimeFormatter formatterIn = DateTimeFormatter.ofPattern(formatIn, new Locale("es", "ES"));
+    DateTimeFormatter formatterOut = DateTimeFormatter.ofPattern(formatOut, new Locale("es", "ES"));
     
-    LocalDate todayLDT = DataUtils.getLocalDateTimeNow(this.isProduction).toLocalDate();
+    LocalDate todayLDT = DataUtils.getLocalDateTimeNow(isProduction).toLocalDate();
     
     LocalDate date = LocalDate.parse(lastChapterDate, formatterIn);
     DayOfWeek weekDay = date.getDayOfWeek();

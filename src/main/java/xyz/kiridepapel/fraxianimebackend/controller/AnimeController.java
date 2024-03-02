@@ -13,18 +13,17 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
-import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.AnimeDataDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.AnimeInfoDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.HomePageDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.SearchDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.InvalidSearch;
 import xyz.kiridepapel.fraxianimebackend.service.anime.JkLfHomeService;
 import xyz.kiridepapel.fraxianimebackend.service.anime.LfDirectoryService;
+import xyz.kiridepapel.fraxianimebackend.service.anime.JkScheduleService;
 import xyz.kiridepapel.fraxianimebackend.service.anime.LfAnimeService;
 import xyz.kiridepapel.fraxianimebackend.service.anime.LfChapterService;
 import xyz.kiridepapel.fraxianimebackend.service.anime.LfSearchService;
+import xyz.kiridepapel.fraxianimebackend.service.anime.JkTopService;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @RestController
@@ -49,6 +48,10 @@ public class AnimeController {
   private JkLfHomeService jkLfHomeService;
   @Autowired
   private LfDirectoryService lfDirectoryService;
+  @Autowired
+  private JkScheduleService jkScheduleService;
+  @Autowired
+  private JkTopService jkTopService;
   @Autowired
   private LfAnimeService lfAnimeService;
   @Autowired
@@ -82,140 +85,138 @@ public class AnimeController {
   }
   
   @GetMapping("/home")
-  public ResponseEntity<?> homePage(HttpServletRequest request) {
+  public ResponseEntity<?> home(HttpServletRequest request) {
+    // Validaciones
     DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
-
-    HomePageDTO animes = this.jkLfHomeService.homePage();
-
-    if (DataUtils.isNotNullOrEmpty(animes.getSliderAnimes()) &&
-        DataUtils.isNotNullOrEmpty(animes.getOvasOnasSpecials()) &&
-        DataUtils.isNotNullOrEmpty(animes.getAnimesProgramming()) &&
-        DataUtils.isNotNullOrEmpty(animes.getNextAnimesProgramming()) &&
-        DataUtils.isNotNullOrEmpty(animes.getDonghuasProgramming()) &&
-        DataUtils.isNotNullOrEmpty(animes.getTopAnimes()) &&
-        DataUtils.isNotNullOrEmpty(animes.getLatestAddedAnimes()) &&
-        DataUtils.isNotNullOrEmpty(animes.getLatestAddedList())) {
-      return new ResponseEntity<>(animes, HttpStatus.OK);
-    } else {
-      return new ResponseEntity<>(new ResponseDTO("No se pudo recuperar todos los datos", 404), HttpStatus.NOT_FOUND);
-    }
+    // Obtener datos y respuesta
+    return new ResponseEntity<>(this.jkLfHomeService.home(), HttpStatus.OK);
   }
   
   @GetMapping("/directory/options")
   public ResponseEntity<?> directoryOptions(HttpServletRequest request) {
-    // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    // Validaciones
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    // Obtener datos y respuesta
     return new ResponseEntity<>(this.lfDirectoryService.directoryOptions("options"), HttpStatus.OK);
   }
 
   @GetMapping("/directory/{page}")
-  public ResponseEntity<?> directoryAnimes(
-    HttpServletRequest request, @PathVariable("page") Integer page,
-    @RequestParam(required = false, value = "genre", defaultValue = "") List<String> genre,
-    @RequestParam(required = false, value = "season", defaultValue = "") List<String> season,
-    @RequestParam(required = false, value = "studio", defaultValue = "") List<String> studio,
-    @RequestParam(required = false, value = "status", defaultValue = "") String status,
-    @RequestParam(required = false, value = "type", defaultValue = "") String type,
-    @RequestParam(required = false, value = "sub", defaultValue = "") String sub,
-    @RequestParam(required = false, value = "order", defaultValue = "") String order
-  ) {
+  public ResponseEntity<?> directoryAnimes(HttpServletRequest request,
+      @PathVariable("page") Integer page,
+      @RequestParam(required = false, value = "genre", defaultValue = "") List<String> genre,
+      @RequestParam(required = false, value = "season", defaultValue = "") List<String> season,
+      @RequestParam(required = false, value = "studio", defaultValue = "") List<String> studio,
+      @RequestParam(required = false, value = "status", defaultValue = "") String status,
+      @RequestParam(required = false, value = "type", defaultValue = "") String type,
+      @RequestParam(required = false, value = "sub", defaultValue = "") String sub,
+      @RequestParam(required = false, value = "order", defaultValue = "") String order) {
+    // Validaciones
     DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
-
+    // Construir URI
     String uri = "?page=" + page;
-    
-    for (String element : genre) {
-      uri += "&genre=" + element;
-    }
-    for (String element : season) {
-      uri += "&season=" + element;
-    }
-    for (String element : studio) {
-      uri += "&studio=" + element;
-    }
-    if (status != null && !status.isEmpty()) {
-      uri += "&status=" + status;
-    }
-    if (type != null && !type.isEmpty()) {
-      uri += "&type=" + type;
-    }
-    if (sub != null && !sub.isEmpty()) {
-      uri += "&sub=" + sub;
-    }
-    if (order != null && !order.isEmpty()) {
-      uri += "&order=" + order;
-    }
+    for (String element : genre) uri += "&genre=" + element;
+    for (String element : season) uri += "&season=" + element;
+    for (String element : studio) uri += "&studio=" + element;
+    if (status != null && !status.isEmpty()) uri += "&status=" + status;
+    if (type != null && !type.isEmpty()) uri += "&type=" + type;
+    if (sub != null && !sub.isEmpty()) uri += "&sub=" + sub;
+    if (order != null && !order.isEmpty()) uri += "&order=" + order;
+    // Obtener datos y respuesta
+    return new ResponseEntity<>(this.lfDirectoryService.constructDirectoryAnimes(uri), HttpStatus.OK);
+  }
 
-    List<AnimeDataDTO> scheduleDTO = this.lfDirectoryService.constructDirectoryAnimes(uri);
+  @GetMapping("/schedule")
+  public ResponseEntity<?> schedule(HttpServletRequest request) {
+    // Validaciones
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    // Obtener datos y respuesta
+    return new ResponseEntity<>(this.jkScheduleService.getSchedule("list"), HttpStatus.OK);
+  }
 
-    return new ResponseEntity<>(scheduleDTO, HttpStatus.OK);
+  @GetMapping("/top")
+  public ResponseEntity<?> top(HttpServletRequest request) {
+    // Validaciones
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    // Obtener datos y respuesta
+    return new ResponseEntity<>(this.jkTopService.getTop("list"), HttpStatus.OK);
   }
 
   @GetMapping("/{anime}")
-  public ResponseEntity<?> animeInfo(HttpServletRequest request, @PathVariable("anime") String anime) {
+  public ResponseEntity<?> anime(HttpServletRequest request,
+      @PathVariable("anime") String anime) {
+    // Validaciones
     DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     DataUtils.verifySQLInjection(anime);
-
-    AnimeInfoDTO animeInfo = this.lfAnimeService.animeInfo(anime);
-
+    // Obtener datos
+    AnimeInfoDTO animeInfo = this.lfAnimeService.anime(anime);
+    // Respuesta
     if (DataUtils.isNotNullOrEmpty(animeInfo)) {
       return new ResponseEntity<>(animeInfo, HttpStatus.OK);
     } else {
-      return new ResponseEntity<>("Ocurrió un error al recuperar los datos del ánime solicitado.", HttpStatus.OK);
+      return new ResponseEntity<>("Ocurrió un error al recuperar los datos del ánime solicitado", HttpStatus.OK);
     }
   }
 
   @GetMapping("/{anime}/{chapter}")
   public ResponseEntity<?> chapter(HttpServletRequest request,
-      @PathVariable("anime") String anime, @PathVariable("chapter") String chapter) {
+      @PathVariable("anime") String anime,
+      @PathVariable("chapter") String chapter) {
+    // Validaciones
     DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     DataUtils.verifySQLInjection(anime);
     DataUtils.verifySQLInjection(chapter);
-    
+    // Restricciones cuando el capítulo es XX-X
     if (chapter.contains("-")) {
       Integer chapterNumberPart = Integer.parseInt(chapter.split("-")[0]);
       Integer chapterSecondPart = Integer.parseInt(chapter.split("-")[1]);
-
-      if (chapterNumberPart < 0 || chapterSecondPart != 2 && chapterSecondPart != 5) {
-        return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.BAD_REQUEST);
+      // Retorna error si el capítulo es negativo o != XX-2 o XX-5
+      if (chapterNumberPart < 0 || (chapterSecondPart != 2 && chapterSecondPart != 5)) {
+        return new ResponseEntity<>("El capítulo solicitado no es válido", HttpStatus.BAD_REQUEST);
       }
     };
-
+    // Restricciones cuando el capítulo es XX
     if (!chapter.contains("-") && Integer.parseInt(chapter) < 0) {
-      return new ResponseEntity<>("El capítulo solicitado no es válido.", HttpStatus.BAD_REQUEST);
+      return new ResponseEntity<>("El capítulo solicitado no es válido", HttpStatus.BAD_REQUEST);
     }
-
+    // Obtener datos
     ChapterDTO chapterInfo = this.lfChapterService.constructChapter(anime, chapter);
-
+    // Respuesta
     if (DataUtils.isNotNullOrEmpty(chapterInfo)) {
       return new ResponseEntity<>(chapterInfo, HttpStatus.OK);
     } else {
-      return new ResponseEntity<>("Ocurrió un error al recuperar los datos del capítulo solicitado.", HttpStatus.BAD_REQUEST);
+      return new ResponseEntity<>("Ocurrió un error al recuperar los datos del capítulo solicitado", HttpStatus.BAD_REQUEST);
     }
   }
 
   @GetMapping("/search/{anime}/{page}")
   public ResponseEntity<?> searchAnimesWithoutMax(HttpServletRequest request,
-      @PathVariable("anime") String anime, @PathVariable("page") Integer page) {
+      @PathVariable(value = "anime", required = true) String anime,
+      @PathVariable(value = "page", required = true) Integer page) {
+    // Obtener datos y respuesta
     return new ResponseEntity<>(this.searchAnimes(request, anime, page, null), HttpStatus.OK);
   }
 
   @GetMapping("/search/{anime}/{page}/{maxItems}")
   public ResponseEntity<?> searchAnimesWithMax(HttpServletRequest request,
-      @PathVariable("anime") String anime, @PathVariable("page") Integer page,
-      @PathVariable("maxItems") Integer maxItems) {
+      @PathVariable(value = "anime", required = true) String anime,
+      @PathVariable(value = "page", required = true) Integer page,
+      @PathVariable(value = "maxItems", required = true) Integer maxItems) {
+    // Obtener datos y respuesta
     return new ResponseEntity<>(this.searchAnimes(request, anime, page, maxItems), HttpStatus.OK);
   }
 
   private SearchDTO searchAnimes(HttpServletRequest request, String anime, Integer page, Integer maxItems) {
+    // Restricciones
     if (page == null || page < 1 || page > 300) {
       throw new InvalidSearch("La página solicitada no es válida.");
     }
     if (maxItems != null && (maxItems < 1 || maxItems > 20)) {
       throw new InvalidSearch("El número de elementos solicitados no es válido.");
     }
-
+    // Validaciones
     DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     DataUtils.verifySQLInjection(anime);
-
+    // Obtener datos
     return this.lfSearchService.searchAnimes(anime, page, maxItems);
   }
 

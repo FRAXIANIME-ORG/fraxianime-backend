@@ -119,6 +119,10 @@ public class PageDTO implements Serializable {
   @AllArgsConstructor
   @JsonInclude(JsonInclude.Include.NON_NULL)
   public static class ScheduleDTO implements Serializable {
+    int todayValue;
+    String seasonName;
+    List<String> seasonMonths;
+    // Days
     List<ChapterDataDTO> monday;
     List<ChapterDataDTO> tuesday;
     List<ChapterDataDTO> wednesday;
@@ -126,6 +130,16 @@ public class PageDTO implements Serializable {
     List<ChapterDataDTO> friday;
     List<ChapterDataDTO> saturday;
     List<ChapterDataDTO> sunday;
+  }
+  
+  @Builder
+  @Getter
+  @Setter
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  public static class TopDTO implements Serializable {
+    List<TopDataDTO> top;
   }
 
   @Builder

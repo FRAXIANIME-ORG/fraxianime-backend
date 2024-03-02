@@ -24,12 +24,16 @@ public class CacheConfig {
   @Value("${REDIS_PORT}")
   private int redisPort;
 
-  @Value("${HOME_CACHE_TIME}")
-  private Integer homeCacheTime;
+  @Value("${DEFAULT_CACHE_TIME}")
+  private Integer defaultCacheTime;
   @Value("${LAST_CHAPTERS_CACHE_TIME}")
   private Integer lastChaptersCacheTime;
-  @Value("${DIRECTORY_OPTIONS_CACHE_TIME}")
-  private Integer directoryOptionsCacheTime;
+  @Value("${DIRECTORY_CACHE_TIME}")
+  private Integer directoryCacheTime;
+  @Value("${SCHEDULE_CACHE_TIME}")
+  private Integer scheduleCacheTime;
+  @Value("${TOP_CACHE_TIME}")
+  private Integer topCacheTime;
 
   @Bean
   public RedisConnectionFactory redisConnectionFactory() {
@@ -42,20 +46,28 @@ public class CacheConfig {
 
   @Bean
   public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
-    // Configuración por defecto para todos las cachés
-    RedisCacheConfiguration homeCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-      .entryTtl(Duration.ofMinutes(homeCacheTime));
-
+    // Default (Home)
+    RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+      .entryTtl(Duration.ofMinutes(defaultCacheTime));
+    // Last chapters (Home)
     RedisCacheConfiguration lastChaptersCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-      .entryTtl(Duration.ofHours(lastChaptersCacheTime));
-
-    RedisCacheConfiguration directoryOptionsCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-      .entryTtl(Duration.ofDays(directoryOptionsCacheTime));
+      .entryTtl(Duration.ofDays(lastChaptersCacheTime));
+    // Directory
+    RedisCacheConfiguration directoryCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+      .entryTtl(Duration.ofDays(directoryCacheTime));
+    // Schedule
+    RedisCacheConfiguration scheduleCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+      .entryTtl(Duration.ofHours(scheduleCacheTime));
+    // Top
+    RedisCacheConfiguration topCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+      .entryTtl(Duration.ofDays(topCacheTime));
     
     return RedisCacheManager.builder(redisConnectionFactory)
-      .cacheDefaults(homeCacheConfig)
+      .cacheDefaults(defaultCacheConfig)
       .withCacheConfiguration("chapter", lastChaptersCacheConfig)
-      .withCacheConfiguration("directory", directoryOptionsCacheConfig)
+      .withCacheConfiguration("directory", directoryCacheConfig)
+      .withCacheConfiguration("schedule", scheduleCacheConfig)
+      .withCacheConfiguration("top", topCacheConfig)
       .build();
   }
 

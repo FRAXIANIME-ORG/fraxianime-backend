@@ -1,12 +1,9 @@
 package xyz.kiridepapel.fraxianimebackend.service.anime;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.jsoup.nodes.Document;
@@ -59,7 +56,7 @@ public class LfAnimeService {
   );
   
   @Cacheable(value = "anime")
-  public AnimeInfoDTO animeInfo(String search) {
+  public AnimeInfoDTO anime(String search) {
     try {
       // Verifica si el anime está en los casos especiales pero invertidos (lo está buscando como está en AnimeLife y no en JkAnime)
       for (SpecialCaseEntity specialCase : this.cacheUtils.getSpecialCases('s')) {
@@ -117,7 +114,7 @@ public class LfAnimeService {
       animeInfo = this.setChaptersInfoAndList(animeInfo, docAnimeLife, isMinDateInAnimeLf, availableInJk);
 
       // Busca y establece la sinopsis traducida
-      animeInfo.setSynopsisEnglish(this.translateService.translate(animeInfo.getName(), animeInfo.getSynopsis()));
+      animeInfo.setSynopsisEnglish(this.translateService.getTranslatedAndSave(animeInfo.getName(), animeInfo.getSynopsis(), "en"));
 
       // Modificar las keys obtenidas en data (español -> inglés)
       animeInfo.setData(AnimeUtils.specialDataKeys(animeInfo.getData(), this.specialKeys));
@@ -221,9 +218,9 @@ public class LfAnimeService {
       // Lista de capítulos
       Elements chapters = docAnimeLife.body().select(".eplister ul li");
       List<ChapterDataDTO> chapterList = new ArrayList<>();
-      
+
       if (chapters != null && !chapters.isEmpty()) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", new Locale("es", "ES"));
+        String formatter = "MMMM d, yyyy";
         String date = animeInfo.getLastChapterDate();
 
         // * 1. Fecha del próximo capítulo
@@ -272,11 +269,11 @@ public class LfAnimeService {
           // Si la fecha esta disponible en animeLife o no esta disponible en jkanime
           date = animeInfo.getLastChapterDate();
           if (isMinDateInAnimeLf == false && availableInJk == true) {
-            date = this.getChapterDateByIndex(date, formatter, (-1 * index++));
+            date = DataUtils.parseDate(date, formatter, formatter, (7 * (-1 * index++)));
           } else {
             // Si la fecha no esta disponible en animeLife, obtener la fecha del primer capitulo en jkanime
             date = this.jkAnimeService.defaultDateName(date);
-            date = this.getChapterDateByIndex(date, formatter, ((chapters.size() - 1) + (-1 * index++)));
+            date = DataUtils.parseDate(date, formatter, formatter, (7 * ((chapters.size() - 1) + (-1 * index++))));
           }
 
           // Establecer el ultimo capitulo y la cantidad de capítulos
@@ -303,11 +300,5 @@ public class LfAnimeService {
     } catch (Exception e) {
       throw new DataNotFoundException("(setChaptersInfoAndList): " + e.getMessage() + " ");
     }
-  }
-
-  private String getChapterDateByIndex(String baseDate, DateTimeFormatter formatter, Integer index) {
-    LocalDate date = LocalDate.parse(baseDate, formatter);
-    String finalDate = date.plusDays(7 * index).format(formatter);
-    return finalDate;
   }
 }
