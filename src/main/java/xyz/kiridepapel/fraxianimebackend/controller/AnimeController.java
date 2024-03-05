@@ -83,7 +83,7 @@ public class AnimeController {
     String greeting = msg.getMessage("greeting", null, locale);
     return new ResponseEntity<>(greeting, HttpStatus.OK);
   }
-  
+
   @GetMapping("/home")
   public ResponseEntity<?> home(HttpServletRequest request) {
     // Validaciones

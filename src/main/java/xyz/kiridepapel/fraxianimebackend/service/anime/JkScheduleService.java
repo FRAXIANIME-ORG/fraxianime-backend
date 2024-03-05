@@ -50,7 +50,6 @@ public class JkScheduleService {
   @Cacheable(value = "schedule", key = "#keyName")
   public ScheduleDTO getSchedule(String keyName) {
     Document docJkAnime = AnimeUtils.tryConnectOrReturnNull((this.providerJkAnimeUrl + "horario"), 1);
-    
     if (docJkAnime == null) {
       throw new DataNotFoundException("No se pudo conectar con los proveedores");
     }
@@ -64,11 +63,14 @@ public class JkScheduleService {
     // Día actual
     LocalDate todayLD = DataUtils.getLocalDateTimeNow(this.isProduction).toLocalDate();
     int todayValue = todayLD.getDayOfWeek().getValue();
+    todayValue = todayValue - 1; // Base 0
     // String todayName = this.daysOfWeek.get(todayLD.getDayOfWeek().toString());
+
     // Nombre de la temporada
     String title = docJkAnime.select(".horarioh2").text().replace("Horario Temporada ", "");
     String seasonName = title.split("\\(")[0].trim();
     List<String> seasonMonths = Arrays.asList(title.replace(")", "").split("\\(")[1].trim().split(" - "));
+    
     // Objeto a devolver
     ScheduleDTO schedule = ScheduleDTO.builder()
       .todayValue(todayValue)
@@ -123,12 +125,11 @@ public class JkScheduleService {
         if (subItem.select(".box .finished_anime").text().isEmpty()) {
           ChapterDataDTO anime = ChapterDataDTO.builder()
             .name(name)
+            .url(url)
             .imgUrl(imgUrl)
-            .type("Anime")
             .chapter(chapter)
             .date(dateModified)
             .time(timeStr)
-            .url(url)
             .build();
         
           listChapters.add(anime);
