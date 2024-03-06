@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import lombok.AllArgsConstructor;
@@ -26,6 +28,8 @@ import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.DataNotFoundEx
 import xyz.kiridepapel.fraxianimebackend.generic.AssignmentExportData;
 import xyz.kiridepapel.fraxianimebackend.repository.AnimeRepository;
 import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
+import xyz.kiridepapel.fraxianimebackend.service.anime.JkTopService;
+import xyz.kiridepapel.fraxianimebackend.utils.CacheUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DatabaseUtils;
 
@@ -36,15 +40,23 @@ import org.apache.poi.ss.usermodel.*;
 @Log
 @SuppressWarnings("all")
 public class DataService<T> {
+  // Variables estaticas
+  @Value("${APP_PRODUCTION}")
+  private Boolean isProduction;
   // Inyección de dependencias
   @Autowired
   private DatabaseUtils databaseUtils;
-  // ! Repositorios (Agregar más según sea necesario)
+  @Autowired
+  private CacheManager cacheManager;
+  @Autowired
+  private JkTopService jkTopService;
+  // ? Repositorios (Agregar más según sea necesario)
   @Autowired
   private AnimeRepository animeRepository;
   @Autowired
   private SpecialCaseRepository specialCaseRepository;
 
+  // * Export and Import data
   private AssignmentExportData assignData(String dataName, boolean searchList) {
     Class<?> clazz = null;
     List<? extends T> listRetrieved = null;
@@ -253,6 +265,7 @@ public class DataService<T> {
     }
   }
 
+  // * Special cases
   public void newSpecialCase(SpecialCaseDTO data) {
     // Validaciones
     List<SpecialCaseEntity> listNewSpecialCases = new ArrayList<>();
@@ -262,5 +275,31 @@ public class DataService<T> {
 
     // Guardar caso especial
     // specialCaseRepository.saveAll(listNewSpecialCases);
+  }
+  
+  // * Update cache
+  public void updateTop() {
+    log.info("-----------------------------------------------------");
+    int actualYear = DataUtils.getLocalDateTimeNow(this.isProduction).getYear();
+    CacheUtils.deleteFromCache(cacheManager, "pastYearsTop", null, true);
+    
+    // Lista de años disponibles
+    List<String> yearList = new ArrayList<>();
+    for (int i = 2020; i < actualYear; i++) {
+      yearList.add(String.valueOf(i));
+    }
+
+    // Busca y guarda en caché el top de años pasados (para cada temporada de cada año)
+    int counter = 0;
+    for (String year : yearList) {
+      for (String season : JkTopService.seasonNames) {
+        if (!season.equals("actual")) {
+          String key = year + "-" + season;
+          log.info(String.format("%02d", counter++) + ". Guardando en cache: '" + key + "'");
+          this.jkTopService.pastYearsCacheTop(year, season);
+        }
+      }
+    }
+    log.info("-----------------------------------------------------");
   }
 }

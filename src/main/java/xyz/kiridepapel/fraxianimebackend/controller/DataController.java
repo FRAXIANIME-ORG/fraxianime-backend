@@ -58,6 +58,7 @@ public class DataController {
     );
   }
   
+  // * Export and Import data
   @GetMapping("/{dataName}/export")
   public ResponseEntity<byte[]> export(
       HttpServletRequest request,  @PathVariable("dataName") String dataName)  {
@@ -113,6 +114,7 @@ public class DataController {
     }
   }
 
+  // * Special cases
   @PostMapping("/new-special-case")
   public ResponseEntity<?> newSpecialCase(HttpServletRequest request,
       @RequestBody(required = true) SpecialCaseDTO data) {
@@ -128,6 +130,18 @@ public class DataController {
     return new ResponseEntity<>(new ResponseDTO(msg, 200), HttpStatus.OK);
   }
 
+  // * Update cache
+  @GetMapping("/update-top-cache")
+  public ResponseEntity<?> scheduleUpdateCache(HttpServletRequest request) {
+    // Validaciones
+    // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    // Actualizar cache
+    this.dataService.updateTop();
+    // Respuesta
+    return new ResponseEntity<>("Cache de top actualizado correctamente", HttpStatus.OK);
+  }
+
+  // * Methods
   private String createFileName(String dataName) {
     LocalDateTime now = DataUtils.getLocalDateTimeNow(isProduction);
     String dateTime =

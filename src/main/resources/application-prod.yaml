@@ -2,11 +2,11 @@ APP_PRODUCTION: true
 FRONTEND_URL: https://fraxianime.vercel.app
 
 # Tiempo en caché de los datos
-DEFAULT_CACHE_TIME: 30 # Minutos: 'Home'
+HOME_CACHE_TIME: 30 # Minutos: 'Home'
 LAST_CHAPTERS_CACHE_TIME: 7 # Días: 'Home'
 DIRECTORY_CACHE_TIME: 7 # Días: 'Directory'
 SCHEDULE_CACHE_TIME: 1 # Horas: 'Schedule'
-TOP_CACHE_TIME: 7 # Días: 'Top'
+ACTUAL_YEAR_TOP_CACHE_TIME: 7 # Días: 'Top'
 
 spring:
   datasource:

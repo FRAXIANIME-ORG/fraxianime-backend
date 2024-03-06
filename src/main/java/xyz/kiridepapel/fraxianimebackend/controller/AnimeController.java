@@ -15,6 +15,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.AnimeInfoDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.SearchDTO;
+import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.InvalidSearch;
 import xyz.kiridepapel.fraxianimebackend.service.anime.JkLfHomeService;
@@ -35,6 +36,8 @@ import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
   }, allowedHeaders = "**")
 public class AnimeController {
   // Variables estaticas
+  @Value("${APP_PRODUCTION}")
+  private Boolean isProduction;
   @Value("${PROVIDER_JKANIME_URL}")
   private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
@@ -58,6 +61,8 @@ public class AnimeController {
   private LfChapterService lfChapterService;
   @Autowired
   private LfSearchService lfSearchService;
+  // Variables
+  private List<String> allowedSeasons;
   // Language
   @Autowired
   private MessageSource msg;
@@ -65,6 +70,7 @@ public class AnimeController {
   @PostConstruct
   public void init() {
     this.allowedOrigins = Arrays.asList(frontendUrl);
+    this.allowedSeasons = Arrays.asList("actual", "spring", "summer", "fall", "winter");
   }
 
   @GetMapping("/locale")
@@ -112,6 +118,7 @@ public class AnimeController {
       @RequestParam(required = false, value = "order", defaultValue = "") String order) {
     // Validaciones
     DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+
     // Construir URI
     String uri = "?page=" + page;
     for (String element : genre) uri += "&genre=" + element;
@@ -121,6 +128,7 @@ public class AnimeController {
     if (type != null && !type.isEmpty()) uri += "&type=" + type;
     if (sub != null && !sub.isEmpty()) uri += "&sub=" + sub;
     if (order != null && !order.isEmpty()) uri += "&order=" + order;
+
     // Obtener datos y respuesta
     return new ResponseEntity<>(this.lfDirectoryService.constructDirectoryAnimes(uri), HttpStatus.OK);
   }
@@ -134,11 +142,28 @@ public class AnimeController {
   }
 
   @GetMapping("/top")
-  public ResponseEntity<?> top(HttpServletRequest request) {
+  public ResponseEntity<?> top(HttpServletRequest request,
+      @RequestParam(required = false, value = "year") String year,
+      @RequestParam(required = false, value = "season") String season) {
     // Validaciones
-    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
-    // Obtener datos y respuesta
-    return new ResponseEntity<>(this.jkTopService.getTop("list"), HttpStatus.OK);
+    // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    
+    // Valores por defecto (actual)
+    Integer actualYear = DataUtils.getLocalDateTimeNow(this.isProduction).getYear();
+    if (year == null || year.isEmpty() || year.isBlank()) year = actualYear.toString();
+    if (season == null || season.isEmpty() || season.isBlank()) season = "actual";
+
+    // Verifica que sea un número de 4 dígitos, entre 2020 y el año actual y que la temporada sea válida
+    if (year.matches("\\d{4}") && this.allowedSeasons.contains(season) && Integer.parseInt(year) >= 2020 && Integer.parseInt(year) <= actualYear) {      
+      // Obtener datos
+      if (year.equals(actualYear.toString())) {
+        return new ResponseEntity<>(this.jkTopService.actualYearCacheTop(year, season), HttpStatus.OK);
+      } else {
+        return new ResponseEntity<>(this.jkTopService.pastYearsCacheTop(year, season), HttpStatus.OK);
+      }
+    } else {
+      return new ResponseEntity<>(new ResponseDTO("Año o temporada inválidos", 400), HttpStatus.BAD_REQUEST);
+    }
   }
 
   @GetMapping("/{anime}")
@@ -147,8 +172,10 @@ public class AnimeController {
     // Validaciones
     DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     DataUtils.verifySQLInjection(anime);
+
     // Obtener datos
     AnimeInfoDTO animeInfo = this.lfAnimeService.anime(anime);
+
     // Respuesta
     if (DataUtils.isNotNullOrEmpty(animeInfo)) {
       return new ResponseEntity<>(animeInfo, HttpStatus.OK);

@@ -10,9 +10,9 @@
     "description": "A description for 'FRONTEND_URL'"
   },
   {
-    "name": "DEFAULT_CACHE_TIME",
+    "name": "HOME_CACHE_TIME",
     "type": "java.lang.String",
-    "description": "A description for 'DEFAULT_CACHE_TIME'"
+    "description": "A description for 'HOME_CACHE_TIME'"
   },
   {
     "name": "LAST_CHAPTERS_CACHE_TIME",
@@ -30,9 +30,9 @@
     "description": "A description for 'SCHEDULE_CACHE_TIME'"
   },
   {
-    "name": "TOP_CACHE_TIME",
+    "name": "ACTUAL_YEAR_TOP_CACHE_TIME",
     "type": "java.lang.String",
-    "description": "A description for 'TOP_CACHE_TIME'"
+    "description": "A description for 'ACTUAL_YEAR_TOP_CACHE_TIME'"
   },
   {
     "name": "REDIS_HOST",

@@ -19,6 +19,7 @@ import xyz.kiridepapel.fraxianimebackend.service.anime.LfChapterService;
 import xyz.kiridepapel.fraxianimebackend.service.anime.LfDirectoryService;
 import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
 import xyz.kiridepapel.fraxianimebackend.utils.CacheUtils;
+import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Component
 @Log
@@ -41,6 +42,7 @@ public class CacheScheduler {
   private CacheUtils cacheUtils;
   @Autowired
   private CacheManager cacheManager;
+  // Variables
   
   // * PROGRAMACIÓN DE TAREAS
   // 1. 30 minutos: 'Home'
@@ -61,7 +63,7 @@ public class CacheScheduler {
   // 4. 7 días: 'Top'
   @Scheduled(fixedRate = 604805000)
   public void autoUpdateTop() {
-    this.updateTop();
+    this.updateActualCacheTop();
   }
   
   // * MÉTODOS INTERMEDIOS
@@ -101,11 +103,17 @@ public class CacheScheduler {
     log.info("-----------------------------------------------------");
   }
   // 4. Fuerza la actualización de 'Top'
-  private void updateTop() {
+  private void updateActualCacheTop() {
     log.info("-----------------------------------------------------");
-    CacheUtils.deleteFromCache(cacheManager, "top", null, true);
-    log.info("Guardando en cache: 'top'");
-    this.topService.getTop("list");
+    int actualYear = DataUtils.getLocalDateTimeNow(this.isProduction).getYear();
+    CacheUtils.deleteFromCache(cacheManager, "actualYearTop", null, true);
+    
+    int counter = 0;
+    for (String season : JkTopService.seasonNames) {
+      String key = actualYear + "-" + season;
+      log.info(String.format("%02d", counter++) + ". Guardando en cache: '" + key + "'");
+      this.topService.actualYearCacheTop(String.valueOf(actualYear), season);
+    }
     log.info("-----------------------------------------------------");
   }
 

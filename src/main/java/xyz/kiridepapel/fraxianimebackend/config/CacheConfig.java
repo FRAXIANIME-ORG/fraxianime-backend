@@ -24,16 +24,16 @@ public class CacheConfig {
   @Value("${REDIS_PORT}")
   private int redisPort;
 
-  @Value("${DEFAULT_CACHE_TIME}")
-  private Integer defaultCacheTime;
+  @Value("${HOME_CACHE_TIME}")
+  private Integer homeCacheTime;
   @Value("${LAST_CHAPTERS_CACHE_TIME}")
   private Integer lastChaptersCacheTime;
   @Value("${DIRECTORY_CACHE_TIME}")
   private Integer directoryCacheTime;
   @Value("${SCHEDULE_CACHE_TIME}")
   private Integer scheduleCacheTime;
-  @Value("${TOP_CACHE_TIME}")
-  private Integer topCacheTime;
+  @Value("${ACTUAL_YEAR_TOP_CACHE_TIME}")
+  private Integer actualYearTopCacheTime;
 
   @Bean
   public RedisConnectionFactory redisConnectionFactory() {
@@ -46,9 +46,11 @@ public class CacheConfig {
 
   @Bean
   public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
-    // Default (Home)
-    RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-      .entryTtl(Duration.ofMinutes(defaultCacheTime));
+    // Defaukt: Unlimited time
+    RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig();
+    // Home
+    RedisCacheConfiguration homeCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+      .entryTtl(Duration.ofMinutes(homeCacheTime));
     // Last chapters (Home)
     RedisCacheConfiguration lastChaptersCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
       .entryTtl(Duration.ofDays(lastChaptersCacheTime));
@@ -59,15 +61,17 @@ public class CacheConfig {
     RedisCacheConfiguration scheduleCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
       .entryTtl(Duration.ofHours(scheduleCacheTime));
     // Top
-    RedisCacheConfiguration topCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-      .entryTtl(Duration.ofDays(topCacheTime));
+    RedisCacheConfiguration actualYearTopCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+      .entryTtl(Duration.ofDays(actualYearTopCacheTime));
     
     return RedisCacheManager.builder(redisConnectionFactory)
       .cacheDefaults(defaultCacheConfig)
+      .withCacheConfiguration("home", homeCacheConfig)
+      .withCacheConfiguration("specialCases", homeCacheConfig)
       .withCacheConfiguration("chapter", lastChaptersCacheConfig)
       .withCacheConfiguration("directory", directoryCacheConfig)
       .withCacheConfiguration("schedule", scheduleCacheConfig)
-      .withCacheConfiguration("top", topCacheConfig)
+      .withCacheConfiguration("actualYearTop", actualYearTopCacheConfig)
       .build();
   }
 
