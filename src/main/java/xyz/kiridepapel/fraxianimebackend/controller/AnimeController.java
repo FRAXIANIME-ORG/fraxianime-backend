@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.AnimeInfoDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.SearchDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.ResponseDTO;
 import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.ChapterDTO;
 import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.InvalidSearch;
@@ -146,7 +145,7 @@ public class AnimeController {
       @RequestParam(required = false, value = "year") String year,
       @RequestParam(required = false, value = "season") String season) {
     // Validaciones
-    // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     
     // Valores por defecto (actual)
     Integer actualYear = DataUtils.getLocalDateTimeNow(this.isProduction).getYear();
@@ -219,32 +218,17 @@ public class AnimeController {
   public ResponseEntity<?> searchAnimesWithoutMax(HttpServletRequest request,
       @PathVariable(value = "anime", required = true) String anime,
       @PathVariable(value = "page", required = true) Integer page) {
-    // Obtener datos y respuesta
-    return new ResponseEntity<>(this.searchAnimes(request, anime, page, null), HttpStatus.OK);
-  }
+    // Validaciones
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    DataUtils.verifySQLInjection(anime);
 
-  @GetMapping("/search/{anime}/{page}/{maxItems}")
-  public ResponseEntity<?> searchAnimesWithMax(HttpServletRequest request,
-      @PathVariable(value = "anime", required = true) String anime,
-      @PathVariable(value = "page", required = true) Integer page,
-      @PathVariable(value = "maxItems", required = true) Integer maxItems) {
-    // Obtener datos y respuesta
-    return new ResponseEntity<>(this.searchAnimes(request, anime, page, maxItems), HttpStatus.OK);
-  }
-
-  private SearchDTO searchAnimes(HttpServletRequest request, String anime, Integer page, Integer maxItems) {
     // Restricciones
     if (page == null || page < 1 || page > 300) {
       throw new InvalidSearch("La página solicitada no es válida.");
     }
-    if (maxItems != null && (maxItems < 1 || maxItems > 20)) {
-      throw new InvalidSearch("El número de elementos solicitados no es válido.");
-    }
-    // Validaciones
-    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
-    DataUtils.verifySQLInjection(anime);
-    // Obtener datos
-    return this.lfSearchService.searchAnimes(anime, page, maxItems);
+
+    // Obtener datos y respuesta
+    return new ResponseEntity<>(this.lfSearchService.searchAnimes(anime, page), HttpStatus.OK);
   }
 
 }

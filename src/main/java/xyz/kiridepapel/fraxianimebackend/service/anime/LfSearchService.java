@@ -30,7 +30,7 @@ public class LfSearchService {
   @Autowired
   private AnimeUtils animeUtils;
 
-  public SearchDTO searchAnimes(String anime, Integer page, Integer maxItems) {
+  public SearchDTO searchAnimes(String anime, Integer page) {
     try {
       anime = this.verySpecialAndManuallyCases(anime);
       String searchUrl = this.providerAnimeLifeUrl + "page/" + page + "/?s="
@@ -44,10 +44,6 @@ public class LfSearchService {
 
         List<AnimeDataDTO> searchList = new ArrayList<>();
         Integer itemsToShow = animes.size();
-
-        if (maxItems != null && (maxItems <= itemsToShow && maxItems > 0)) {
-          itemsToShow = maxItems;
-        }
 
         // Casos especiales
         Map<String, String> specialCasesNames = new HashMap<>();
