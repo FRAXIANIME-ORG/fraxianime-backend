@@ -11,8 +11,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
-import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
+import xyz.kiridepapel.fraxianimebackend.entities.SpecialCaseEntity;
+import xyz.kiridepapel.fraxianimebackend.repositories.SpecialCaseDaoRepository;
 
 @SpringBootApplication
 @EnableScheduling
@@ -34,7 +34,7 @@ public class FraxianimeBackendApplication {
 
   @Bean
   public CommandLineRunner initData(
-    SpecialCaseRepository specialCaseRepository
+    SpecialCaseDaoRepository specialCaseRepository
   ) {
     return args -> {
       // Gurda en la base de datos los Casos especiales

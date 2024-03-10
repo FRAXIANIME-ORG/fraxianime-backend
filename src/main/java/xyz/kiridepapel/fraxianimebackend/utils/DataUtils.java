@@ -19,19 +19,21 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import jakarta.servlet.http.HttpServletRequest;
-import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ArgumentRequiredException;
-import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.ConnectionFailed;
-import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.ProtectedResource;
-import xyz.kiridepapel.fraxianimebackend.exception.SecurityExceptions.SQLInjectionException;
+import xyz.kiridepapel.fraxianimebackend.exceptions.DataExceptions.ArgumentRequiredException;
+import xyz.kiridepapel.fraxianimebackend.exceptions.DataExceptions.ConnectionFailed;
+import xyz.kiridepapel.fraxianimebackend.exceptions.SecurityExceptions.ProtectedResource;
+import xyz.kiridepapel.fraxianimebackend.exceptions.SecurityExceptions.SQLInjectionException;
 
 @Component
 public class DataUtils {
+  // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
 
   // ? Connection
+  // Conectar a una URL con JSoup
   public Document simpleConnect(String url, String errorMessage) {
     try {
       return Jsoup.connect(url).get();
@@ -41,6 +43,7 @@ public class DataUtils {
   }
 
   // ? Data
+  // Decodificar base64
   public static String decodeBase64(String encodedString, boolean isIframe) {
     if (!isIframe) {
       return new String(Base64.getDecoder().decode(encodedString));
@@ -58,6 +61,7 @@ public class DataUtils {
     }
   }
 
+  // Obtener la IP del cliente desde el request
   public static String getClientIp() {
     HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
     String ipAddress = request.getHeader("X-Forwarded-For");
@@ -79,20 +83,20 @@ public class DataUtils {
   }
 
   // ? Text
-  // Obtiene el nombre del anime de la URL (one-piece-1090 -> [one-piece])
+  // Obtiene el nombre del anime de la URL [one-piece-1090 -> one-piece]
   public static String getNameFromUrl(String baseUrl, String url) {
     String newUrl = url.replace(baseUrl, "");
     return newUrl.replaceAll("-\\d+/?$", "");
   }
 
-  // Devuelve la última parte de la URL (part-2-05 -> [part])
+  // Devuelve la última parte de la URL (no chapter) [part-2-05 -> part]
   public static String getLastPartOfUrl(String url, String chapterPart) {
     url = url.replace("/", "").replace(chapterPart, "");
     String[] urlParts = url.split("-");
     return urlParts[urlParts.length - 1];
   }
 
-  // Elimina las tildes
+  // Eliminar tildes
   public static String removeDiacritics(String input) {
     String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
     return normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
@@ -103,7 +107,7 @@ public class DataUtils {
     return text.substring(0, 1).toUpperCase() + text.substring(1);
   }
 
-  // Convierte el nombre de una variable a un nombre normal: "specialCase" -> "Special Case"
+  // "specialCase" -> "Special Case"
   public static String formatToNormalName(String name) {
     if (name.toLowerCase().equals("id")) return "ID";
     String formattedName = name.replaceAll("(\\B[A-Z])", " $1");
@@ -111,14 +115,17 @@ public class DataUtils {
   }
 
   // ? Date
+  // yyyy-MM-dd HH:mm:ss
   public static LocalDateTime getLocalDateTimeNow(Boolean isProduction) {
     return isProduction ? LocalDateTime.now().minusHours(5) : LocalDateTime.now();
   }
 
+  // yyyy-MM-dd
   public static Date getDateNow(Boolean isProduction) {
     return isProduction ? new Date(System.currentTimeMillis() - 18000000) : new Date();
   }
 
+  // Modificar fecha y agregar días
   public static String parseDate(String date, String formatIn, String formatOut, int daysToModify) {
     if (date == null || date.isEmpty()) {
       return null;
@@ -140,6 +147,12 @@ public class DataUtils {
     }
   }
 
+  public static void verifySQLInjection(String str) {
+    if (str.matches(".*(--|[;+*^$|?{}\\[\\]()'\"\\']).*") || str.contains("SELECT")) {
+      throw new SQLInjectionException("Esas cosas son del diablo.");
+    }
+  }
+
   public static void isValidStr(String str, String errorMsg) {
     if (str == null || str.isEmpty()) {
       throw new ArgumentRequiredException(errorMsg);
@@ -152,11 +165,5 @@ public class DataUtils {
   
   public static boolean isNotNullOrEmpty(List<?> list) {
     return list != null && !list.isEmpty();
-  }
-
-  public static void verifySQLInjection(String str) {
-    if (str.matches(".*(--|[;+*^$|?{}\\[\\]()'\"\\']).*") || str.contains("SELECT")) {
-      throw new SQLInjectionException("Esas cosas son del diablo.");
-    }
   }
 }

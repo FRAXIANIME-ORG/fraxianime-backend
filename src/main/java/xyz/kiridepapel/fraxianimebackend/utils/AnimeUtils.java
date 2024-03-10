@@ -15,40 +15,49 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
-import xyz.kiridepapel.fraxianimebackend.exception.AnimeExceptions.ChapterNotFound;
-import xyz.kiridepapel.fraxianimebackend.exception.DataExceptions.NextTrySearch;
+import xyz.kiridepapel.fraxianimebackend.entities.SpecialCaseEntity;
+import xyz.kiridepapel.fraxianimebackend.exceptions.AnimeExceptions.ChapterNotFound;
+import xyz.kiridepapel.fraxianimebackend.exceptions.DataExceptions.NextTrySearch;
 
 @Service
 @Log
 public class AnimeUtils {
+  // Variables estaticas
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
+  // Variables
+  private List<String> specialCases;
+  private List<String> animesWithoutZeroCases;
+  private List<String> chapterScriptCases;
   // Inyección de dependencias
   @Autowired
   private CacheUtils cacheUtils;
-  // Variables
-  private List<String> specialCases = Arrays.asList("season", "part");
-  private List<String> animesWithoutZeroCases = List.of(
-    // Anime url: one-piece-0X -> one-piece-X
-    "shigatsu-wa-kimi-no-uso",
-    "one-piece",
-    "kimetsu-no-yaiba",
-    "one-punch-man",
-    "horimiya",
-    "chuunibyou-demo-koi-ga-shitai",
-    "chuunibyou-demo-koi-ga-shitai-ren",
-    "bakemonogatari",
-    "maou-gakuin-no-futekigousha",
-    "maou-gakuin-no-futekigousha-2nd-season",
-    "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita",
-    "karakai-jouzu-no-takagi-san"
-  );
-  private List<String> chapterScriptCases = List.of(
+
+  @PostConstruct
+  private void init() {
+    this.specialCases = Arrays.asList("season", "part");
     // Chapter url: one-piece-04 -> one-piece-03-2
-    "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin-04"
-  );
+    this.chapterScriptCases = List.of(
+      "chiyu-mahou-no-machigatta-tsukaikata-senjou-wo-kakeru-kaifuku-youin-04"
+    );
+    // Anime url: one-piece-0X -> one-piece-X
+    this.animesWithoutZeroCases = List.of(
+      "shigatsu-wa-kimi-no-uso",
+      "one-piece",
+      "kimetsu-no-yaiba",
+      "one-punch-man",
+      "horimiya",
+      "chuunibyou-demo-koi-ga-shitai",
+      "chuunibyou-demo-koi-ga-shitai-ren",
+      "bakemonogatari",
+      "maou-gakuin-no-futekigousha",
+      "maou-gakuin-no-futekigousha-2nd-season",
+      "shin-no-nakama-ja-nai-to-yuusha-no-party-wo-oidasareta-node-henkyou-de-slow-life-suru-koto-ni-shimashita",
+      "karakai-jouzu-no-takagi-san"
+    );
+  }
   
   public static Document tryConnectOrReturnNull(String urlAnimeInfo, Integer provider) {
     try {

@@ -3,66 +3,67 @@ package xyz.kiridepapel.fraxianimebackend.config;
 import java.util.List;
 import java.util.Random;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.ChapterDTO;
-import xyz.kiridepapel.fraxianimebackend.dto.PageDTO.HomePageDTO;
-import xyz.kiridepapel.fraxianimebackend.service.anime.JkLfHomeService;
-import xyz.kiridepapel.fraxianimebackend.service.anime.JkScheduleService;
-import xyz.kiridepapel.fraxianimebackend.service.anime.JkTopService;
-import xyz.kiridepapel.fraxianimebackend.service.anime.LfChapterService;
-import xyz.kiridepapel.fraxianimebackend.service.anime.LfDirectoryService;
-import xyz.kiridepapel.fraxianimebackend.dto.IndividualDTO.ChapterDataDTO;
+import xyz.kiridepapel.fraxianimebackend.dtos.IndividualDTO.ChapterDataDTO;
+import xyz.kiridepapel.fraxianimebackend.dtos.PageDTO.ChapterDTO;
+import xyz.kiridepapel.fraxianimebackend.dtos.PageDTO.HomePageDTO;
+import xyz.kiridepapel.fraxianimebackend.interfaces.*;
+import xyz.kiridepapel.fraxianimebackend.services.JkTopServiceImpl;
 import xyz.kiridepapel.fraxianimebackend.utils.CacheUtils;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
 @Component
 @Log
 public class CacheScheduler {
-  // Variables
+  // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
   // Inyección de dependencias
-  @Autowired
-  private JkLfHomeService homeService;
-  @Autowired
-  private LfChapterService chapterService;
-  @Autowired
-  private LfDirectoryService directoryService;
-  @Autowired
-  private JkScheduleService scheduleService;
-  @Autowired
-  private JkTopService topService;
-  @Autowired
-  private CacheUtils cacheUtils;
-  @Autowired
-  private CacheManager cacheManager;
-  // Variables
+  private final IJkLfHomeService iHomeService;
+  private final ILfChapterService iChapterService;
+  private final ILfDirectoryService iDirectoryService;
+  private final IJkScheduleService iScheduleService;
+  private final IJkTopService iTopService;
+  private final CacheUtils cacheUtils;
+  private final CacheManager cacheManager;
+
+  // Constructor
+  public CacheScheduler(IJkLfHomeService iHomeService,
+      ILfChapterService iChapterService, ILfDirectoryService iDirectoryService, IJkScheduleService iScheduleService,
+      IJkTopService iTopService, CacheUtils cacheUtils, CacheManager cacheManager) {
+    this.iHomeService = iHomeService;
+    this.iChapterService = iChapterService;
+    this.iDirectoryService = iDirectoryService;
+    this.iScheduleService = iScheduleService;
+    this.iTopService = iTopService;
+    this.cacheUtils = cacheUtils;
+    this.cacheManager = cacheManager;
+  }
   
   // * PROGRAMACIÓN DE TAREAS
   // 1. 30 minutos: 'Home'
   @Scheduled(fixedRate = 1805000)
-  public void autoUpdateHome() {
+  private void autoUpdateHome() {
     this.updateHome();
   }
   // 2. 7 días: 'Directorio'
   @Scheduled(fixedRate = 604805000)
-  public void autoUpdateDirectory() {
+  private void autoUpdateDirectory() {
     this.updateDirectory();
   }
   // 3. 1 hora: 'Horario'
   @Scheduled(fixedRate = 3605000)
-  public void autoUpdateSchedule() {
+  private void autoUpdateSchedule() {
     this.updateSchedule();
   }
   // 4. 7 días: 'Top'
   @Scheduled(fixedRate = 604805000)
-  public void autoUpdateTop() {
+  private void autoUpdateTop() {
     this.updateActualCacheTop();
   }
   
@@ -77,7 +78,7 @@ public class CacheScheduler {
     log.info("-----------------------------------------------------");
     CacheUtils.deleteFromCache(cacheManager, "home", null, true);
     log.info("Guardando en cache: 'home'");
-    HomePageDTO home = this.homeService.home();
+    HomePageDTO home = this.iHomeService.home();
     log.info("-----------------------------------------------------");
     // Últimos capítulos emitidos
     log.info("-----------------------------------------------------");
@@ -89,9 +90,9 @@ public class CacheScheduler {
     log.info("-----------------------------------------------------");
     CacheUtils.deleteFromCache(cacheManager, "directory", null, true);
     log.info("Guardando en cache: 'directory/options'");
-    this.directoryService.directoryOptions("options");
+    this.iDirectoryService.directoryOptions("options");
     log.info("Guardando en cache: 'directory/?page=1'");
-    this.directoryService.saveLongDirectoryAnimes("?page=1");
+    this.iDirectoryService.saveLongDirectoryAnimes("?page=1");
     log.info("-----------------------------------------------------");
   }
   // 3. Fuerza la actualización de 'Horario'
@@ -99,7 +100,7 @@ public class CacheScheduler {
     log.info("-----------------------------------------------------");
     CacheUtils.deleteFromCache(cacheManager, "schedule", null, true);
     log.info("Guardando en cache: 'schedule'");
-    this.scheduleService.getSchedule("list");
+    this.iScheduleService.getSchedule("list");
     log.info("-----------------------------------------------------");
   }
   // 4. Fuerza la actualización de 'Top'
@@ -109,10 +110,10 @@ public class CacheScheduler {
     CacheUtils.deleteFromCache(cacheManager, "actualYearTop", null, true);
     
     int counter = 0;
-    for (String season : JkTopService.seasonNames) {
+    for (String season : JkTopServiceImpl.seasonNames) {
       String key = actualYear + "-" + season;
       log.info(String.format("%02d", counter++) + ". Guardando en cache: '" + key + "'");
-      this.topService.actualYearCacheTop(String.valueOf(actualYear), season);
+      this.iTopService.actualYearCacheTop(String.valueOf(actualYear), season);
     }
     log.info("-----------------------------------------------------");
   }
@@ -160,7 +161,7 @@ public class CacheScheduler {
 
             // Guarda en caché el capítulo
             log.info(String.format("%02d", counter++) + ". Guardando en cache: '" + url + "' (" + chapterFormatted + ")");
-            this.chapterService.saveLongCacheChapter(url, chapter);
+            this.iChapterService.saveLongCacheChapter(url, chapter);
           } catch (InterruptedException e) {
             log.severe("Error Schedule: " + e.getMessage());
           }

@@ -11,8 +11,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.java.Log;
-import xyz.kiridepapel.fraxianimebackend.entity.SpecialCaseEntity;
-import xyz.kiridepapel.fraxianimebackend.repository.SpecialCaseRepository;
+import xyz.kiridepapel.fraxianimebackend.entities.SpecialCaseEntity;
+import xyz.kiridepapel.fraxianimebackend.repositories.SpecialCaseDaoRepository;
 
 @Component
 @Log
@@ -24,8 +24,19 @@ public class CacheUtils {
   private String providerAnimeLifeUrl;
   // Inyeccion de dependencias
   @Autowired
-  private SpecialCaseRepository specialCaseRepository;
+  private SpecialCaseDaoRepository specialCaseRepository;
   
+  @Cacheable(value = "specialCases", key = "#type")
+  public List<SpecialCaseEntity> getSpecialCases(Character type) {
+    List<SpecialCaseEntity> specialCases = specialCaseRepository.findAll();
+    List<SpecialCaseEntity> specialCasesSolicited = new ArrayList<SpecialCaseEntity>();
+    
+    specialCases.stream().filter(specialCase -> specialCase.getType().equals(type))
+        .forEach(specialCasesSolicited::add);
+
+    return specialCasesSolicited;
+  }
+
   public static <T> T searchFromCache(CacheManager cacheManager, Class<T> type, String cacheName, String cacheKey) {
     Cache cache = cacheManager.getCache(cacheName);
     T chapterCache = cache != null ? cache.get(cacheKey, type) : null;
@@ -48,16 +59,5 @@ public class CacheUtils {
         }
       }
     }
-  }
-  
-  @Cacheable(value = "specialCases", key = "#type")
-  public List<SpecialCaseEntity> getSpecialCases(Character type) {
-    List<SpecialCaseEntity> specialCases = specialCaseRepository.findAll();
-    List<SpecialCaseEntity> specialCasesSolicited = new ArrayList<SpecialCaseEntity>();
-    
-    specialCases.stream().filter(specialCase -> specialCase.getType().equals(type))
-        .forEach(specialCasesSolicited::add);
-
-    return specialCasesSolicited;
   }
 }

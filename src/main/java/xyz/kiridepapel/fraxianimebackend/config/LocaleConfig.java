@@ -2,11 +2,9 @@ package xyz.kiridepapel.fraxianimebackend.config;
 
 import java.util.Locale;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -14,10 +12,14 @@ import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
 @Configuration
-@SuppressWarnings("all")
+@SuppressWarnings("unused")
 public class LocaleConfig implements WebMvcConfigurer {
-  @Autowired
-  private MessageSource messageSource;
+  private final MessageSource messageSource;
+
+  // Constructor
+  public LocaleConfig(MessageSource messageSource) {
+    this.messageSource = messageSource;
+  }
 
   // Guarda en la sesión de cada usuario la configuración de idioma que elija
   @Bean

@@ -17,13 +17,14 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 @Configuration
 @EnableCaching
 public class CacheConfig {
+  // Variables estaticas
   @Value("${REDIS_HOST}")
   private String redisHost;
   @Value("${REDIS_PASSWORD}")
   private String redisPassword;
   @Value("${REDIS_PORT}")
   private int redisPort;
-
+  // Variables estaticas de Cache
   @Value("${HOME_CACHE_TIME}")
   private Integer homeCacheTime;
   @Value("${LAST_CHAPTERS_CACHE_TIME}")
