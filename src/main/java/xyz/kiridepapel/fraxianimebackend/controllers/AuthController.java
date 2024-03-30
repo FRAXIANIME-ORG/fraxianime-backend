@@ -58,7 +58,7 @@ public class AuthController {
   @PostMapping("/register")
   public ResponseEntity<?> register(HttpServletRequest request, @RequestBody(required = true) AuthRequestDTO data) {
     // Validaciones    
-    // DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
+    DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     this.isValidEmail(data.getEmail());
     this.isValidPassword(data.getPassword());
     DataUtils.verifySQLInjection(data.getEmail());

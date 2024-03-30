@@ -142,7 +142,20 @@ public class AnimeUtils {
                 throw new NextTrySearch();
               }
             } catch (NextTrySearch xxxx) {
-              throw new ChapterNotFound(errorMessage);
+              try {
+                // Intenta: one-piece-15 -> one-piece-14-5
+                String url4 = this.urlChapterWithFinal(urlChapter);
+                log.info("[] Trying with final (-final): " + url4);
+                Document doc = tryConnectOrReturnNull(url4, 2);
+                if (doc != null) {
+                  log.info("[] Founded!");
+                  return doc;
+                } else {
+                  throw new NextTrySearch();
+                }
+              } catch (NextTrySearch xxxxx) {
+                throw new ChapterNotFound(errorMessage);
+              }
             }
           }
         }
@@ -203,6 +216,12 @@ public class AnimeUtils {
     int number = Integer.parseInt(urlChapter.replaceAll("^.*-(\\d+)$", "$1")) - 1;
     String urlWithPoint = urlChapter.replaceAll("-(\\d+)$", "-" + String.format("%02d", number) + "-5");
     return urlWithPoint;
+  }
+
+  // Convierte chapter-55 -> chapter-55-final
+  public String urlChapterWithFinal(String urlChapter) {
+    String urlWithFinal = urlChapter.replaceAll("-(\\d+)$", "-final");
+    return urlWithFinal;
   }
   
   // Mapea los casos especiales de nombres o urls (busca en cache en base al type)

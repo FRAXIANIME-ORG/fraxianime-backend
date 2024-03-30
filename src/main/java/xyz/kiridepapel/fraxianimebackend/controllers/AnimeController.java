@@ -185,10 +185,12 @@ public class AnimeController {
   public ResponseEntity<?> chapter(HttpServletRequest request,
       @PathVariable("anime") String anime,
       @PathVariable("chapter") String chapter) {
+        
     // Validaciones
     DataUtils.verifyAllowedOrigin(this.allowedOrigins, request.getHeader("Origin"));
     DataUtils.verifySQLInjection(anime);
     DataUtils.verifySQLInjection(chapter);
+
     // Restricciones cuando el capítulo es XX-X
     if (chapter.contains("-")) {
       Integer chapterNumberPart = Integer.parseInt(chapter.split("-")[0]);
@@ -198,12 +200,15 @@ public class AnimeController {
         return new ResponseEntity<>("El capítulo solicitado no es válido", HttpStatus.BAD_REQUEST);
       }
     };
+
     // Restricciones cuando el capítulo es XX
     if (!chapter.contains("-") && Integer.parseInt(chapter) < 0) {
       return new ResponseEntity<>("El capítulo solicitado no es válido", HttpStatus.BAD_REQUEST);
     }
+
     // Obtener datos
     ChapterDTO chapterInfo = this.iLfChapterService.constructChapter(anime, chapter);
+
     // Respuesta
     if (DataUtils.isNotNullOrEmpty(chapterInfo)) {
       return new ResponseEntity<>(chapterInfo, HttpStatus.OK);

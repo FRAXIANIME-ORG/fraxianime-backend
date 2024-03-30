@@ -242,7 +242,6 @@ public class LfChapterServiceImpl implements ILfChapterService {
         itemLastChapter = episodeList.first();
       }
 
-      // Guardar capítulo actual, primer capítulo y último capítulo
       chapterInfo.setActualChapter(chapter.replace("-", "."));
       chapterInfo.setFirstChapter(this.getChapterItem(itemFirstChapter));
       chapterInfo.setLastChapter(this.getChapterItem(itemLastChapter));
@@ -251,6 +250,7 @@ public class LfChapterServiceImpl implements ILfChapterService {
       if (itemFirstChapter != null && itemLastChapter != null) {
         // * Obtiene y guarda el capítulo anterior y siguiente si es que existen
         Pattern patternNumber = Pattern.compile("-(\\d{1,4})(?:-(\\d+))?/?$");
+
         // Capítulo anterior
         if (chapterInfo.getHavePreviousChapter()) {
           String previousChapterUrl = nearChapters.first().select("a").attr("href").replace(providerAnimeLifeUrl, "");
@@ -258,7 +258,7 @@ public class LfChapterServiceImpl implements ILfChapterService {
 
           String chapterNumber = "";
           if (matcherNumber.find()) {
-            // Si el capitulo es name-anime-12-2, se obtiene 12-2
+            // Si el capitulo es anime-12-2, se obtiene 12-2
             if (matcherNumber.group(2) != null) {
               String chapterGroup = matcherNumber.group(1) + "-" + matcherNumber.group(2);
 
@@ -276,17 +276,17 @@ public class LfChapterServiceImpl implements ILfChapterService {
             } else {
               chapterNumber = String.valueOf(Integer.parseInt(matcherNumber.group(1)));
             }
-          // } else {
-          //   log.info("No have matcherNumber");
           }
-
+  
           // Convierte el número del capítulo a un formato más legible: 11-5 -> 13.5
           chapterNumber = chapterNumber.replace("-", ".");
           chapterInfo.setPreviousChapter(chapterNumber);
         }
+
         // Capítulo siguiente
         if (chapterInfo.getHaveNextChapter() || Float.parseFloat(chapterInfo.getActualChapter()) < Float.parseFloat(chapterInfo.getLastChapter())) {
-          String nextChapterUrl = nearChapters.last().select("a").attr("href").replace(providerAnimeLifeUrl, "");
+          String nextChapterUrl = nearChapters.last().select("a").attr("href");
+          nextChapterUrl = nextChapterUrl.replace(providerAnimeLifeUrl, "").replace("/", "").replace("-final", "");
           Matcher matcherNumber = patternNumber.matcher(nextChapterUrl);
 
           String chapterNumber = "";
@@ -317,7 +317,7 @@ public class LfChapterServiceImpl implements ILfChapterService {
         }
 
         // * Modificaciones especiales del capítulo anterior y siguiente si son necesarias
-        Float actualChapter = Float.parseFloat(chapterInfo.getActualChapter());
+        Float actualChapter = Float.parseFloat(chapterInfo.getActualChapter().replace("-final", ""));
         Float previousChapter = null;
         Float nextChapter = null;
 
@@ -331,27 +331,31 @@ public class LfChapterServiceImpl implements ILfChapterService {
 
           chapterInfo.setPreviousChapter(Float.toString(previousChapter.floatValue()).replace(".0", ""));
         }
+        
         // Capítulo siguiente
-        if (Float.parseFloat(chapterInfo.getActualChapter()) < Float.parseFloat(chapterInfo.getLastChapter())) {
-          // Si no hay capitulo siguiente guardado, usa como siguiente capítulo el actual + 1
-          if (chapterInfo.getNextChapter() == null || chapterInfo.getNextChapter().isEmpty()) {
-            nextChapter = actualChapter + 1;
-            chapterInfo.setNextChapter(Integer.toString(nextChapter.intValue()));
+        if (chapterInfo.getHaveNextChapter()) {
+          if (Float.parseFloat(chapterInfo.getActualChapter()) < Float.parseFloat(chapterInfo.getLastChapter())) {
+            // Si no hay capitulo siguiente guardado, usa como siguiente capítulo el actual + 1
+            if (chapterInfo.getNextChapter() == null || chapterInfo.getNextChapter().isEmpty()) {
+              nextChapter = actualChapter + 1;
+              chapterInfo.setNextChapter(Integer.toString(nextChapter.intValue()));
+            } else {
+              nextChapter = Float.parseFloat(chapterInfo.getNextChapter());
+              log.info("yes: " + nextChapter);
+            }
+            chapterInfo.setHaveNextChapter(true);
+  
+            if (nextChapter > (actualChapter + 1)) {
+              nextChapter = actualChapter + 1;
+              chapterInfo.setNextChapter(Integer.toString(nextChapter.intValue()));
+            } else if (nextChapter < actualChapter) {
+              chapterInfo.setHaveNextChapter(false);
+              chapterInfo.setNextChapter(null);
+            }
           } else {
-            nextChapter = Float.parseFloat(chapterInfo.getNextChapter());
-          }
-          chapterInfo.setHaveNextChapter(true);
-
-          if (nextChapter > (actualChapter + 1)) {
-            nextChapter = actualChapter + 1;
-            chapterInfo.setNextChapter(Integer.toString(nextChapter.intValue()));
-          } else if (nextChapter < actualChapter) {
             chapterInfo.setHaveNextChapter(false);
             chapterInfo.setNextChapter(null);
           }
-        } else {
-          chapterInfo.setHaveNextChapter(false);
-          chapterInfo.setNextChapter(null);
         }
 
         // Fecha del último capítulo

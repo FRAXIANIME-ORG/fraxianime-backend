@@ -168,7 +168,7 @@ public class CacheScheduler {
         }
       } catch (Exception e) {
         log.info("-----------------------------------------------------");
-        log.severe(String.format("%02d", counter) + ". " + e.getMessage());
+        log.severe(String.format("%02d", counter) + ". " + e.getMessage() + " - " + e.getStackTrace() + " - " + e.getCause());
         log.severe(String.format("%02d", counter) + ". Name: " + chapterInfo.getName() + " (" + chapterInfo.getChapter() + ") no se pudo guardar en cache.");
         log.severe(String.format("%02d", counter) + ". Url: " + chapterInfo.getUrl());
         log.info("-----------------------------------------------------");

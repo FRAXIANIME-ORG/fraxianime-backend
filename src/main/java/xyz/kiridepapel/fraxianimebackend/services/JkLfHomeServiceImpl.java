@@ -60,7 +60,7 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
   public HomePageDTO home() {
     Document docAnimesJk = this.dataUtils.simpleConnect(this.providerJkanimeUrl, "Proveedor 1 inactivo");
     Document docScheduleJk = this.dataUtils.simpleConnect(this.providerJkanimeUrl + "horario", "Proveedor 1 inactivo");
-    Document docAnimesLf = this.dataUtils.simpleConnect(this.providerAnimeLifeUrl, "Proveedor 2 inactivo");
+    Document docAnimesLf = this.dataUtils.simpleConnect(this.providerAnimeLifeUrl + "page/1/", "Proveedor 2 inactivo");
     
     // Mapa de casos especiales donde JkAnime se acopla a AnimeLife (normalmente es al revés)
     Map<String, String> mapListTypeJk = new HashMap<>();
@@ -568,29 +568,41 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
 
   // one-piece-1090 -> one-piece/1090
   private String getNameAndChapterFromUrl(String providerUrl, String url) {
-    String newUrl = url.replace(providerUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
+    String newUrl = url.replace(providerUrl, "").replace("/", "");
 
-    // Verifica si la URL termina con el patrón -xx-2
+    // Elimina los ceros a la izquierda del número
+    if (!newUrl.endsWith("final")) {
+      newUrl = newUrl.replaceAll("-(0*)(\\d+)/?$", "/$2");
+    } else {
+      return newUrl.replaceAll("-(0*)(\\d+)-final", "/$2");
+    }
+
+    // Termina con -xx-2
     if (url.matches(".*-\\d{2}-2/?$")) {
       // Extrae el número y lo incrementa
       String numberPart = url.replaceAll("^.*-(\\d{2})-2/?$", "$1");
       try {
         int number = Integer.parseInt(numberPart) + 1;
         newUrl = url.replaceFirst("-\\d{2}-2/?$", "/" + number).replace(providerUrl, "");
-        // log.info("1: " + url + " -> " + newUrl);
+        // log.info("1. Last URL: " + newUrl);
         return newUrl;
       } catch (NumberFormatException e) {
         log.warning("Error parsing number from URL: " + url);
       }
+
+    // Termina con -xx-5
     } else if (url.matches(".*-\\d{1,2}-5/?$")) {
+      // Extrae el número y lo incrementa
       String numberPart = url.replaceAll("^.*-(0*)(\\d{1,2})-5/?$", "$2");
       newUrl = url.replaceFirst("-\\d{1,2}-5/?$", "/" + numberPart + "-5").replace(providerUrl, "");
-      // log.info("2: " + url + " -> " + newUrl);
+      // log.info("2. Last URL: " + newUrl);
       return newUrl;
+    
+    // Es un capítulo normal
     } else {
-      // Si no termina con -xx-2, solo elimina los ceros a la izquierda
+      // Elimina los ceros a la izquierda
       newUrl = url.replace(providerUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
-      // log.info("3: " + url + " -> " + newUrl);
+      // log.info("3. Last URL: " + newUrl);
       return newUrl;
     }
 
@@ -601,18 +613,20 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
       try {
         int number = Integer.parseInt(numberPart) + 1;
         newUrl = url.replaceFirst("-\\d{2}-2/?$", "/" + number);
-        return newUrl.replace(providerUrl, "");
+        newUrl = newUrl.replace(providerUrl, "");
+        // log.info("4. Last URL: " + newUrl);
+        return newUrl;
       } catch (NumberFormatException e) {
         log.warning("Error parsing number from URL: " + url);
       }
     } else {
       // Si no termina con -xx-2, solo elimina los ceros a la izquierda
       newUrl = url.replace(providerUrl, "").replaceAll("-(0*)(\\d+)/?$", "/$2");
+      // log.info("5. Last URL: " + newUrl);
       return newUrl;
     }
 
-
-
+    // log.info("6. Last URL: " + newUrl);
     return newUrl;
   }
 
