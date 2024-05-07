@@ -138,7 +138,7 @@ public class LfAnimeServiceImpl implements ILfAnimeService {
       }
       
       // Establecer todo lo relacionado a los capítulos (info, numeros, fechas, etc.)
-      animeInfo = this.setChaptersInfoAndList(animeInfo, docAnimeLife, isMinDateInAnimeLf, availableInJk);
+      animeInfo = this.setChaptersInfoAndList(search, animeInfo, docAnimeLife, isMinDateInAnimeLf, availableInJk);
 
       // Busca y establece la sinopsis traducida
       animeInfo.setSynopsisEnglish(this.translateService.getTranslatedAndSave(animeInfo.getName(), animeInfo.getSynopsis(), "en"));
@@ -240,7 +240,7 @@ public class LfAnimeServiceImpl implements ILfAnimeService {
     }
   }
 
-  private AnimeInfoDTO setChaptersInfoAndList(AnimeInfoDTO animeInfo, Document docAnimeLife, boolean isMinDateInAnimeLf, boolean availableInJk) {
+  private AnimeInfoDTO setChaptersInfoAndList(String search, AnimeInfoDTO animeInfo, Document docAnimeLife, boolean isMinDateInAnimeLf, boolean availableInJk) {
     try {
       // Lista de capítulos
       Elements chapters = docAnimeLife.body().select(".eplister ul li");
@@ -258,15 +258,16 @@ public class LfAnimeServiceImpl implements ILfAnimeService {
         }
         
         // * 1. Establece la lista de capítulos
-        int index = 0;
         for (Element element : chapters) {
           // Determina el capítulo
           String chapter = element.select(".epl-num").text().trim();
           // Si no es un número, asignarle 1 (Películas, Ovas, etc.)
           if (!chapter.matches("[0-9]+") && !chapter.contains(".")) {
-            chapter = String.valueOf(index + 1);
+            chapter = String.valueOf(1);
           } else {
-            chapter = String.valueOf(Float.parseFloat(chapter)).replace(".0", "");
+            // Caso para los capítulos que son números enteros o decimales: https://animelife.net/one-piece-1100-05/ -> 1100.05
+            String link = element.select("a").attr("href");
+            chapter = link.replace(this.providerAnimeLifeUrl + search + "-", "").replace("/", "").replace("-", ".");
           }
 
           chapterList.add(ChapterDataDTO.builder()
@@ -290,7 +291,7 @@ public class LfAnimeServiceImpl implements ILfAnimeService {
         }
 
         // * 1. Asigna las fechas a la lista de capítulos
-        index = 0;
+        int index = 0;
         String lastChapterDate = null;
         for(ChapterDataDTO element : chapterList) {
           // Si la fecha esta disponible en animeLife o no esta disponible en jkanime
