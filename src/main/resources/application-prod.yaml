@@ -42,7 +42,7 @@ RAPIDAPI_KEY: ${RAPIDAPI_KEY}
 # PROVIDER 1
 PROVIDER_JKANIME_URL: https://jkanime.org/
 # PROVIDER 2
-PROVIDER_ANIMELIFE_URL: http://animelife.net/
+PROVIDER_ANIMELIFE_URL: https://animelife.net/
 # PROVIDER 3 (no usado)
 PROVIDER_ANIMEYT_URL: https://animeyt.es/
 # PROVIDER 4 (no usado)
