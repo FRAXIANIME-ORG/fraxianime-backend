@@ -36,7 +36,10 @@ public class DataUtils {
   // Conectar a una URL con JSoup
   public Document simpleConnect(String url, String errorMessage) {
     try {
-      return Jsoup.connect(url).get();
+      return Jsoup.connect(url)
+        .userAgent("Mozilla/5.0")
+        .timeout(30000)
+        .get();
     } catch (Exception x) {
       throw new ConnectionFailed(errorMessage);
     }

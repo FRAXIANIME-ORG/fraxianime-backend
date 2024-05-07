@@ -61,7 +61,10 @@ public class AnimeUtils {
   
   public static Document tryConnectOrReturnNull(String urlAnimeInfo, Integer provider) {
     try {
-      Document document = Jsoup.connect(urlAnimeInfo).get();
+      Document document = Jsoup.connect(urlAnimeInfo)
+        .userAgent("Mozilla/5.0")
+        .timeout(30000)
+        .get();
 
       // JkAnime
       if (provider == 1) {
