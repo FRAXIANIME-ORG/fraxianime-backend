@@ -24,6 +24,7 @@ import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 @CrossOrigin(
   origins = {
     "https://fraxianime.vercel.app",
+    "https://heatheranime.vercel.app",
     "http://localhost:4200",
   }, allowedHeaders = "**")
 public class AnimeController {
@@ -34,8 +35,10 @@ public class AnimeController {
   private String providerJkanimeUrl;
   @Value("${PROVIDER_ANIMELIFE_URL}")
   private String providerAnimeLifeUrl;
-  @Value("${FRONTEND_URL}")
-  private String frontendUrl;
+  @Value("${FRONTEND_URL1}")
+  private String frontendUrl1;
+  @Value("${FRONTEND_URL2}")
+  private String frontendUrl2;
   // Inyección de dependencias (instanciadas en el constructor para evitar problemas de reflexión)
   private final IJkLfHomeService iJkLfHomeService;
   private final ILfDirectoryService iLfDirectoryService;
@@ -66,7 +69,7 @@ public class AnimeController {
   // Inicialización
   @PostConstruct
   private void init() {
-    this.allowedOrigins = Arrays.asList(frontendUrl);
+    this.allowedOrigins = Arrays.asList(frontendUrl1, frontendUrl2);
     this.allowedSeasons = Arrays.asList("actual", "spring", "summer", "fall", "winter");
   }
 

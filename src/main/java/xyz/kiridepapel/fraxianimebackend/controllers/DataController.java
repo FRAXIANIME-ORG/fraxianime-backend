@@ -33,14 +33,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 @CrossOrigin(
   origins = {
     "https://fraxianime.vercel.app",
+    "https://heatheranime.vercel.app",
     "http://localhost:4200",
   }, allowedHeaders = "**")
 public class DataController {
   // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
-  @Value("${FRONTEND_URL}")
-  private String frontendUrl;
+  @Value("${FRONTEND_URL1}")
+  private String frontendUrl1;
+  @Value("${FRONTEND_URL2}")
+  private String frontendUrl2;
   // Variables
   private List<String> allowedOrigins;
   private List<String> allowedDataNames;
@@ -55,7 +58,7 @@ public class DataController {
   // Inicialización
   @PostConstruct
   private void init() {
-    this.allowedOrigins = List.of(frontendUrl);
+    this.allowedOrigins = List.of(frontendUrl1, frontendUrl2);
     this.allowedDataNames = List.of(
       "translations",
       "specialCases"

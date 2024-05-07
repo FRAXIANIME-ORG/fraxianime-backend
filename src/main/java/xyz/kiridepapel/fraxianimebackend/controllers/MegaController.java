@@ -23,13 +23,16 @@ import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 @CrossOrigin(
   origins = {
     "https://fraxianime.vercel.app",
+    "https://heatheranime.vercel.app",
     "http://localhost:4200",
   }, allowedHeaders = "**")
 @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 public class MegaController {
   // Variables estaticas
-  @Value("${FRONTEND_URL}")
-  private String frontendUrl;
+  @Value("${FRONTEND_URL1}")
+  private String frontendUrl1;
+  @Value("${FRONTEND_URL2}")
+  private String frontendUrl2;
   // Variables
   private List<String> allowedOrigins;
   // Inyección de dependencias
@@ -43,7 +46,7 @@ public class MegaController {
   // Inicialización
   @PostConstruct
   public void init() {
-    this.allowedOrigins = List.of(frontendUrl);
+    this.allowedOrigins = List.of(frontendUrl1, frontendUrl2);
   }
 
   @GetMapping("/validate")
