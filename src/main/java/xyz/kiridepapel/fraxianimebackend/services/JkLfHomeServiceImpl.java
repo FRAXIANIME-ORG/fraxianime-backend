@@ -59,23 +59,23 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
   @Cacheable(value = "home", key = "'animes'")
   public HomePageDTO home() {
     Document docAnimesPv1 = this.dataUtils.simpleConnect(this.provider1, "Proveedor 1 inactivo");
-    Document docSchedulePv1 = this.dataUtils.simpleConnect(this.provider1 + "horario", "Proveedor 1 inactivo");
-    Document docAnimesPv2 = this.dataUtils.simpleConnect(this.provider2, "Proveedor 2 inactivo");
+    // Document docSchedulePv1 = this.dataUtils.simpleConnect(this.provider1 + "horario", "Proveedor 1 inactivo");
+    // Document docAnimesPv2 = this.dataUtils.simpleConnect(this.provider2, "Proveedor 2 inactivo");
     
     // Mapa de casos especiales donde JkAnime se acopla a AnimeLife (normalmente es al revés)
     Map<String, String> mapListTypeJk = new HashMap<>();
     this.cacheUtils.getSpecialCases('k').forEach(sce -> mapListTypeJk.put(sce.getOriginal(), sce.getMapped()));
 
     // Listas de animes programados y próximos animes programados
-    List<ChapterDataDTO> animesProgrammingPv2 = this.animesProgrammingPv2(docAnimesPv2, docAnimesPv1, mapListTypeJk);
+    // List<ChapterDataDTO> animesProgrammingPv2 = this.animesProgrammingPv2(docAnimesPv2, docAnimesPv1, mapListTypeJk);
     List<ChapterDataDTO> donghuasProgrammingPv1 = this.donghuasProgrammingPv1(docAnimesPv1, mapListTypeJk);
-    List<ChapterDataDTO> nextAnimesProgrammingPv1 = this.nextAnimesProgrammingPv1(docSchedulePv1, mapListTypeJk);
+    // List<ChapterDataDTO> nextAnimesProgrammingPv1 = this.nextAnimesProgrammingPv1(docSchedulePv1, mapListTypeJk);
 
     HomePageDTO animes = HomePageDTO.builder()
         .sliderAnimes(this.sliderAnimes(docAnimesPv1))
         .ovasOnasSpecials(this.ovasOnasSpecials(docAnimesPv1))
-        .animesProgramming(this.changeImagesInAnimesProgramming(animesProgrammingPv2, nextAnimesProgrammingPv1))
-        .nextAnimesProgramming(this.removeNextAnimesProgrammingIfWasUploaded(animesProgrammingPv2, nextAnimesProgrammingPv1))
+        // .animesProgramming(this.changeImagesInAnimesProgramming(animesProgrammingPv2, nextAnimesProgrammingPv1))
+        // .nextAnimesProgramming(this.removeNextAnimesProgrammingIfWasUploaded(animesProgrammingPv2, nextAnimesProgrammingPv1))
         .donghuasProgramming(donghuasProgrammingPv1)
         .topAnimes(this.topAnimes(docAnimesPv1))
         .latestAddedAnimes(this.latestAddedAnimes(docAnimesPv1))
