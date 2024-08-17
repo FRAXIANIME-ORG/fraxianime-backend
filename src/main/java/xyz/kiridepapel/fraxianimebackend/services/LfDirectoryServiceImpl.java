@@ -27,10 +27,10 @@ public class LfDirectoryServiceImpl implements ILfDirectoryService {
   // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
-  @Value("${PROVIDER_JKANIME_URL}")
-  private String providerJkanimeUrl;
-  @Value("${PROVIDER_ANIMELIFE_URL}")
-  private String providerAnimeLifeUrl;
+  @Value("${PROVIDER_1}")
+  private String provider1;
+  @Value("${PROVIDER_2}")
+  private String provider2;
   // Variables
   private List<String> removeNamesList = List.of(
     // Varios
@@ -76,7 +76,7 @@ public class LfDirectoryServiceImpl implements ILfDirectoryService {
 
   @Cacheable(value = "directory", key = "#options")
   public DirectoryOptionsDTO directoryOptions(String options) {
-    Document docAnimeLife = AnimeUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime"), 2);
+    Document docAnimeLife = AnimeUtils.tryConnectOrReturnNull((this.provider2 + "anime"), 2);
 
     if (docAnimeLife == null) {
       throw new DataNotFoundException("No se pudo conectar con los proveedores");
@@ -140,7 +140,7 @@ public class LfDirectoryServiceImpl implements ILfDirectoryService {
   }
 
   private List<AnimeDataDTO> directoryAnimes(String uri) {
-    Document docAnimeLife = AnimeUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + uri), 2);
+    Document docAnimeLife = AnimeUtils.tryConnectOrReturnNull((this.provider2 + "anime/" + uri), 2);
 
     if (docAnimeLife == null) {
       throw new DataNotFoundException("No se pudo conectar con los proveedores");
@@ -167,7 +167,7 @@ public class LfDirectoryServiceImpl implements ILfDirectoryService {
       // Casos especiales manipulados
       name = AnimeUtils.removeRareCharactersFromName(name);
       imgUrl = imgUrl.replace("?resize=247,350", "");
-      url = url.replace((providerAnimeLifeUrl + "anime/"), "").replaceAll("/$", "");
+      url = url.replace((provider2 + "anime/"), "").replaceAll("/$", "");
       state = state.replace("Completada", "Finalizado");
       type = type.replace("TV", "Anime");
       

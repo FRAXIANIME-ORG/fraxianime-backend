@@ -41,13 +41,13 @@ FIREBASE_WEP_API_KEY: ${FIREBASE_WEP_API_KEY}
 RAPIDAPI_KEY: ${RAPIDAPI_KEY}
 
 # PROVIDER 1
-PROVIDER_JKANIME_URL: https://jkanime.org/
+PROVIDER_1: https://jkanime.org/
 # PROVIDER 2
-PROVIDER_ANIMELIFE_URL: https://animelife.net/
+PROVIDER_2: https://animelife.net/
 # PROVIDER 3 (no usado)
-PROVIDER_ANIMEYT_URL: https://animeyt.es/
+PROVIDER_3: https://animeyt.es/
 # PROVIDER 4 (no usado)
-PROVIDER_ANIMEFLV_URL: https://animeflv.com.ru/anime/
+PROVIDER_4: https://animeflv.com.ru/anime/
 
 server:
   port: 8080

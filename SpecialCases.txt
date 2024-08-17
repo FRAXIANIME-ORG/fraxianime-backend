@@ -1,0 +1,30 @@
+0. "Nothing"
+1. JK Name
+2. LF Name
+3. JK Url
+4. LF Url
+5. Chapter Number
+
+1. Forzar cambio completo en JkAnime [JkAnime != AnimeLife (base)]
+	- 'j': (4), (3) ! 1. URL Anime
+	- 'k': (3), (4) ! 1. Name Anime
+	- 'k': (1), (2) ? 1. URL Anime
+
+2. Forzar cambio completo en AnimeLife [AnimeLife != JkAnime (base)]
+	- 'n': (2), (1) ? 4. Name Ambos
+	- 'a': (3), (4) ? 2. URL Anime
+	- 's': (4), (3) ? 2. URL Anime
+	- 'c': (3), (4) ? 3. URL Capitulo
+
+3. Forzar cambio en un capítulo tiene URL diferente del resto en AnimeLife
+	- 'z': (3_5), (4_5) ! 1. Url_Chapter
+	- 's': (4), (3) ! 1. Url Chapter
+
+1. Nombre en JkAnime: 
+3. Url en JkAnime: 
+2. Nombre en AnimeLife: 
+4. Url en AnimeLife: 
+
+change_name: true
+change_url_anime: false
+change_url_chapter: true

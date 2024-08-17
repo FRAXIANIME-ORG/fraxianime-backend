@@ -27,8 +27,8 @@ public class JkTopServiceImpl implements IJkTopService {
   // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
-  @Value("${PROVIDER_JKANIME_URL}")
-  private String providerJkanimeUrl;
+  @Value("${PROVIDER_1}")
+  private String provider1;
   // Variables
   public static final List<String> seasonNames = List.of(
     "actual",
@@ -78,7 +78,7 @@ public class JkTopServiceImpl implements IJkTopService {
 
   public TopDTO constructTop(String year, String season) {
     // Armar la URL
-    String uri = this.providerJkanimeUrl;
+    String uri = this.provider1;
     Integer actualYear = DataUtils.getLocalDateTimeNow(this.isProduction).getYear();
     if (year.equals(actualYear.toString()) && season.isEmpty()) {
       uri += "top";

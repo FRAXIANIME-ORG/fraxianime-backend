@@ -20,8 +20,8 @@ public class CacheUtils {
   // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
-  @Value("${PROVIDER_ANIMELIFE_URL}")
-  private String providerAnimeLifeUrl;
+  @Value("${PROVIDER_2}")
+  private String provider2;
   // Inyeccion de dependencias
   @Autowired
   private SpecialCaseDaoRepository specialCaseRepository;

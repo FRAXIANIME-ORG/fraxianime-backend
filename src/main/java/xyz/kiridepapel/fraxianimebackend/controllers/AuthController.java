@@ -31,7 +31,6 @@ import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 @CrossOrigin(
   origins = {
     "https://fraxianime.vercel.app",
-    "https://heatheranime.vercel.app",
     "http://localhost:4200",
   }, allowedHeaders = "**")
 @SuppressWarnings("unused")

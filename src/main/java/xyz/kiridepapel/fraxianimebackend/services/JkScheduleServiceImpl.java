@@ -30,8 +30,8 @@ public class JkScheduleServiceImpl implements IJkScheduleService {
   // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
-  @Value("${PROVIDER_JKANIME_URL}")
-  private String providerJkAnimeUrl;
+  @Value("${PROVIDER_1}")
+  private String provider1;
   // Variables
   private Map<String, String> daysOfWeek;
   // Inyección de dependencias
@@ -60,7 +60,7 @@ public class JkScheduleServiceImpl implements IJkScheduleService {
 
   @Cacheable(value = "schedule", key = "#keyName")
   public ScheduleDTO getSchedule(String keyName) {
-    Document docJkAnime = AnimeUtils.tryConnectOrReturnNull((this.providerJkAnimeUrl + "horario"), 1);
+    Document docJkAnime = AnimeUtils.tryConnectOrReturnNull((this.provider1 + "horario"), 1);
     if (docJkAnime == null) {
       throw new DataNotFoundException("No se pudo conectar con los proveedores");
     }

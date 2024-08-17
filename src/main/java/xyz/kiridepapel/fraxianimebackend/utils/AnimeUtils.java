@@ -25,8 +25,8 @@ import xyz.kiridepapel.fraxianimebackend.exceptions.DataExceptions.NextTrySearch
 @Log
 public class AnimeUtils {
   // Variables estaticas
-  @Value("${PROVIDER_ANIMELIFE_URL}")
-  private String providerAnimeLifeUrl;
+  @Value("${PROVIDER_2}")
+  private String provider2;
   // Variables
   private List<String> specialCases;
   private List<String> animesWithoutZeroCases;
@@ -297,7 +297,7 @@ public class AnimeUtils {
       urlChapter = urlChapterZeroCases(urlChapter);
     }
 
-    if (this.chapterScriptCases.contains(urlChapter.replace(this.providerAnimeLifeUrl, "")) && urlChapter.contains("-2")) {
+    if (this.chapterScriptCases.contains(urlChapter.replace(this.provider2, "")) && urlChapter.contains("-2")) {
       urlChapter = urlChapterWithScript(urlChapter);
     }
 

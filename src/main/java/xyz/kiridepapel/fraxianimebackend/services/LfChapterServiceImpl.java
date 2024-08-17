@@ -37,8 +37,8 @@ public class LfChapterServiceImpl implements ILfChapterService {
   // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
-  @Value("${PROVIDER_ANIMELIFE_URL}")
-  private String providerAnimeLifeUrl;
+  @Value("${PROVIDER_2}")
+  private String provider2;
   // Variables
   private List<String> ignoreSearchChapterCases;
   private List<String> ignoreCases;
@@ -86,7 +86,7 @@ public class LfChapterServiceImpl implements ILfChapterService {
 
       // Modifica la URL si es necesario (casos especiales 'c')
       String modifiedUrlChapter = this.animeUtils.specialNameOrUrlCases(null, url, 'c', "constructChapter()");
-      modifiedUrlChapter = this.providerAnimeLifeUrl + modifiedUrlChapter;
+      modifiedUrlChapter = this.provider2 + modifiedUrlChapter;
       modifiedUrlChapter = this.animeUtils.specialChapterCases(modifiedUrlChapter, url, chapter);
 
       return this.findChapter(modifiedUrlChapter, chapter);
@@ -229,7 +229,7 @@ public class LfChapterServiceImpl implements ILfChapterService {
       Element itemLastChapter = null;
 
       // Si no está en la lista de casos especiales: busca el primer y último elemento de forma dinámica
-      if (!this.ignoreSearchChapterCases.contains(DataUtils.getNameFromUrl(this.providerAnimeLifeUrl, modifiedUrlChapter))) {
+      if (!this.ignoreSearchChapterCases.contains(DataUtils.getNameFromUrl(this.provider2, modifiedUrlChapter))) {
         itemFirstChapter = episodeList.stream()
             .min((e1, e2) -> Float.compare(Float.parseFloat(getChapterItem(e1)), Float.parseFloat(getChapterItem(e2))))
             .orElse(null);
@@ -253,7 +253,7 @@ public class LfChapterServiceImpl implements ILfChapterService {
 
         // Capítulo anterior
         if (chapterInfo.getHavePreviousChapter()) {
-          String previousChapterUrl = nearChapters.first().select("a").attr("href").replace(providerAnimeLifeUrl, "");
+          String previousChapterUrl = nearChapters.first().select("a").attr("href").replace(provider2, "");
           Matcher matcherNumber = patternNumber.matcher(previousChapterUrl);
 
           String chapterNumber = "";
@@ -286,7 +286,7 @@ public class LfChapterServiceImpl implements ILfChapterService {
         // Capítulo siguiente
         if (chapterInfo.getHaveNextChapter() || Float.parseFloat(chapterInfo.getActualChapter()) < Float.parseFloat(chapterInfo.getLastChapter())) {
           String nextChapterUrl = nearChapters.last().select("a").attr("href");
-          nextChapterUrl = nextChapterUrl.replace(providerAnimeLifeUrl, "").replace("/", "").replace("-final", "");
+          nextChapterUrl = nextChapterUrl.replace(provider2, "").replace("/", "").replace("-final", "");
           Matcher matcherNumber = patternNumber.matcher(nextChapterUrl);
 
           String chapterNumber = "";

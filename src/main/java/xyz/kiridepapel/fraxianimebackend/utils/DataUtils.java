@@ -29,8 +29,8 @@ public class DataUtils {
   // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
-  @Value("${PROVIDER_ANIMELIFE_URL}")
-  private String providerAnimeLifeUrl;
+  @Value("${PROVIDER_2}")
+  private String provider2;
 
   // ? Connection
   // Conectar a una URL con JSoup
@@ -145,9 +145,9 @@ public class DataUtils {
 
   // ? Validations
   public static void verifyAllowedOrigin(List<String> allowedOrigins, String origin) {
-    if (origin == null || !allowedOrigins.contains(origin)) {
-      throw new ProtectedResource("Acceso denegado TK-001");
-    }
+    // if (origin == null || !allowedOrigins.contains(origin)) {
+    //   throw new ProtectedResource("Acceso denegado TK-001");
+    // }
   }
 
   public static void verifySQLInjection(String str) {

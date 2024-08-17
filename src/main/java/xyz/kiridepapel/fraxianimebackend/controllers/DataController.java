@@ -33,7 +33,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 @CrossOrigin(
   origins = {
     "https://fraxianime.vercel.app",
-    "https://heatheranime.vercel.app",
     "http://localhost:4200",
   }, allowedHeaders = "**")
 public class DataController {

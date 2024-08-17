@@ -78,5 +78,20 @@
     "name": "PROVIDER_ANIMEFLV_URL",
     "type": "java.lang.String",
     "description": "A description for 'PROVIDER_ANIMEFLV_URL'"
+  },
+  {
+    "name": "REDIS_USERNAME",
+    "type": "java.lang.String",
+    "description": "A description for 'REDIS_USERNAME'"
+  },
+  {
+    "name": "FRONTEND_URL1",
+    "type": "java.lang.String",
+    "description": "A description for 'FRONTEND_URL1'"
+  },
+  {
+    "name": "FRONTEND_URL2",
+    "type": "java.lang.String",
+    "description": "A description for 'FRONTEND_URL2'"
   }
 ]}

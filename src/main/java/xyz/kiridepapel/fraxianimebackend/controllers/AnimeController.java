@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
@@ -19,22 +20,24 @@ import xyz.kiridepapel.fraxianimebackend.exceptions.AnimeExceptions.InvalidSearc
 import xyz.kiridepapel.fraxianimebackend.interfaces.*;
 import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
 @RestController
 @RequestMapping("/api/v1/anime")
 @CrossOrigin(
   origins = {
     "https://fraxianime.vercel.app",
-    "https://heatheranime.vercel.app",
     "http://localhost:4200",
   }, allowedHeaders = "**")
 public class AnimeController {
   // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
-  @Value("${PROVIDER_JKANIME_URL}")
-  private String providerJkanimeUrl;
-  @Value("${PROVIDER_ANIMELIFE_URL}")
-  private String providerAnimeLifeUrl;
+  @Value("${PROVIDER_1}")
+  private String provider1;
+  @Value("${PROVIDER_2}")
+  private String provider2;
   @Value("${FRONTEND_URL1}")
   private String frontendUrl1;
   @Value("${FRONTEND_URL2}")
@@ -88,6 +91,19 @@ public class AnimeController {
 
     String greeting = msg.getMessage("greeting", null, locale);
     return new ResponseEntity<>(greeting, HttpStatus.OK);
+  }
+
+  @GetMapping("/test")
+  public ResponseEntity<?> test(HttpServletRequest request) {
+    try {
+      Document document = Jsoup.connect(this.provider2)
+        .userAgent("Mozilla/5.0")
+        .timeout(30000)
+        .get();
+      return new ResponseEntity<>(document, HttpStatus.OK);
+    } catch (Exception x) {
+      return new ResponseEntity<>(x.getMessage(), HttpStatus.BAD_REQUEST);
+    }
   }
 
   @GetMapping("/home")

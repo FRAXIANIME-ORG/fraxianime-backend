@@ -40,10 +40,10 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
   // Variables estaticas
   @Value("${APP_PRODUCTION}")
   private Boolean isProduction;
-  @Value("${PROVIDER_JKANIME_URL}")
-  private String providerJkanimeUrl;
-  @Value("${PROVIDER_ANIMELIFE_URL}")
-  private String providerAnimeLifeUrl;
+  @Value("${PROVIDER_1}")
+  private String provider1;
+  @Value("${PROVIDER_2}")
+  private String provider2;
   // Inyección de dependencias
   private CacheUtils cacheUtils;
   private DataUtils dataUtils;
@@ -58,30 +58,30 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
 
   @Cacheable(value = "home", key = "'animes'")
   public HomePageDTO home() {
-    Document docAnimesJk = this.dataUtils.simpleConnect(this.providerJkanimeUrl, "Proveedor 1 inactivo");
-    Document docScheduleJk = this.dataUtils.simpleConnect(this.providerJkanimeUrl + "horario", "Proveedor 1 inactivo");
-    Document docAnimesLf = this.dataUtils.simpleConnect(this.providerAnimeLifeUrl + "page/1/", "Proveedor 2 inactivo");
+    Document docAnimesPv1 = this.dataUtils.simpleConnect(this.provider1, "Proveedor 1 inactivo");
+    Document docSchedulePv1 = this.dataUtils.simpleConnect(this.provider1 + "horario", "Proveedor 1 inactivo");
+    Document docAnimesPv2 = this.dataUtils.simpleConnect(this.provider2, "Proveedor 2 inactivo");
     
     // Mapa de casos especiales donde JkAnime se acopla a AnimeLife (normalmente es al revés)
     Map<String, String> mapListTypeJk = new HashMap<>();
     this.cacheUtils.getSpecialCases('k').forEach(sce -> mapListTypeJk.put(sce.getOriginal(), sce.getMapped()));
 
     // Listas de animes programados y próximos animes programados
-    List<ChapterDataDTO> lfAnimesProgramming = this.lfAnimesProgramming(docAnimesLf, docAnimesJk, mapListTypeJk);
-    List<ChapterDataDTO> jkDonghuasProgramming = this.jkDonghuasProgramming(docAnimesJk, mapListTypeJk);
-    List<ChapterDataDTO> jkNextAnimesProgramming = this.jkNextAnimesProgramming(docScheduleJk, mapListTypeJk);
+    List<ChapterDataDTO> animesProgrammingPv2 = this.animesProgrammingPv2(docAnimesPv2, docAnimesPv1, mapListTypeJk);
+    List<ChapterDataDTO> donghuasProgrammingPv1 = this.donghuasProgrammingPv1(docAnimesPv1, mapListTypeJk);
+    List<ChapterDataDTO> nextAnimesProgrammingPv1 = this.nextAnimesProgrammingPv1(docSchedulePv1, mapListTypeJk);
 
     HomePageDTO animes = HomePageDTO.builder()
-        .sliderAnimes(this.sliderAnimes(docAnimesJk))
-        .ovasOnasSpecials(this.ovasOnasSpecials(docAnimesJk))
-        .animesProgramming(this.changeImagesInAnimesProgramming(lfAnimesProgramming, jkNextAnimesProgramming))
-        .nextAnimesProgramming(this.removeNextAnimesProgrammingIfWasUploaded(lfAnimesProgramming, jkNextAnimesProgramming))
-        .donghuasProgramming(jkDonghuasProgramming)
-        .topAnimes(this.topAnimes(docAnimesJk))
-        .latestAddedAnimes(this.latestAddedAnimes(docAnimesJk))
+        .sliderAnimes(this.sliderAnimes(docAnimesPv1))
+        .ovasOnasSpecials(this.ovasOnasSpecials(docAnimesPv1))
+        .animesProgramming(this.changeImagesInAnimesProgramming(animesProgrammingPv2, nextAnimesProgrammingPv1))
+        .nextAnimesProgramming(this.removeNextAnimesProgrammingIfWasUploaded(animesProgrammingPv2, nextAnimesProgrammingPv1))
+        .donghuasProgramming(donghuasProgrammingPv1)
+        .topAnimes(this.topAnimes(docAnimesPv1))
+        .latestAddedAnimes(this.latestAddedAnimes(docAnimesPv1))
         .build();
 
-    animes.setLatestAddedList(this.latestAddedList(docAnimesJk, animes.getLatestAddedAnimes()));
+    animes.setLatestAddedList(this.latestAddedList(docAnimesPv1, animes.getLatestAddedAnimes()));
     animes.setLatestAddedAnimes(this.removeOnasFromLatestAddedAnimes(animes.getLatestAddedAnimes()));
 
     return animes;
@@ -97,7 +97,7 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
       ChapterDataDTO anime = ChapterDataDTO.builder()
           .name(element.select(".hero__text h2").text())
           .imgUrl(element.attr("data-setbg"))
-          .url(element.select(".hero__text a").attr("href").replace(providerJkanimeUrl, "").replaceFirst("/$", ""))
+          .url(element.select(".hero__text a").attr("href").replace(provider1, "").replaceFirst("/$", ""))
           .build();
 
       String[] urlSplit = anime.getUrl().split("/");
@@ -118,7 +118,7 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
       AnimeDataDTO anime = AnimeDataDTO.builder()
           .name(element.select(".anime__item__text a").text())
           .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
-          .url(element.select("a").attr("href").replace(providerJkanimeUrl, "").split("/")[0].trim())
+          .url(element.select("a").attr("href").replace(provider1, "").split("/")[0].trim())
           .type(element.select(".anime__item__text ul li").text())
           .build();
 
@@ -129,74 +129,84 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
   }
 
   // AnimeLife: Animes programados
-  private List<ChapterDataDTO> lfAnimesProgramming(Document docAnimesLf, Document docAnimesJk, Map<String, String> mapListTypeJk) {
+  private List<ChapterDataDTO> animesProgrammingPv2(Document docAnimesPv2, Document docAnimesPv1, Map<String, String> mapListTypeJk) {
     // Lista de animes programados en AnimeLife
-    Elements elementsAnimeLife = docAnimesLf.body().select(".excstf").first().select(".bs");
+    // Elements elementsAnimeLife = docAnimesPv2.body().select(".excstf").first().select(".bs");
+    Element contenedor = docAnimesPv2.body().getElementById("sub-latest-releases");
+
+    if (contenedor == null) {
+      log.warning("No se encontraron animes programados en el Proveedor 2");
+      return new ArrayList<>();
+    }
+    
+    Elements divsConTooltip = contenedor.select("div[data-tooltip-id]");
+
+    log.info("Cantidad de animes programados: " + divsConTooltip.size());
 
     // Mapa de animes programados en JkAnime
-    Map<String, ChapterDataDTO> listJkAnime = this.jkAnimesProgramming(docAnimesJk, mapListTypeJk);
+    Map<String, ChapterDataDTO> listAnimesPv1 = this.jkAnimesProgramming(docAnimesPv1, mapListTypeJk);
 
     // lista de animes en Animelife (utiliza el mapa de los animes de JkAnime para compararlos y usar las fechas y las imagenes de JkAnime)
-    List<ChapterDataDTO> listLife = new ArrayList<>();
+    List<ChapterDataDTO> listAnimesPv2 = new ArrayList<>();
 
-    // Mapa en base a la combinacion de los casos especiales 's' y 'n' (h) para AnimeLife
-    Map<String, String> mapListTypeLf = new HashMap<>();
-    List<SpecialCaseEntity> homeList = this.cacheUtils.getSpecialCases('s');
-    homeList.addAll(this.cacheUtils.getSpecialCases('n'));
-    homeList.forEach(hsce -> mapListTypeLf.put(hsce.getOriginal(), hsce.getMapped()));
+    // // Mapa en base a la combinacion de los casos especiales 's' y 'n' (h) para AnimeLife
+    // Map<String, String> mapListTypeLf = new HashMap<>();
+    // List<SpecialCaseEntity> homeList = this.cacheUtils.getSpecialCases('s');
+    // homeList.addAll(this.cacheUtils.getSpecialCases('n'));
+    // homeList.forEach(hsce -> mapListTypeLf.put(hsce.getOriginal(), hsce.getMapped()));
 
-    // Recorre, guarda y compara los animes de AnimeLife con los de JkAnime
-    int index = 0;
-    for (Element item : elementsAnimeLife) {
-      String url = getNameAndChapterFromUrl(this.providerAnimeLifeUrl, item.select(".bsx a").attr("href"));
+    // // Recorre, guarda y compara los animes de AnimeLife con los de JkAnime
+    // int index = 0;
+    // for (Element item : elementsAnimeLife) {
+    //   String url = getNameAndChapterFromUrl(this.provider2, item.select(".bsx a").attr("href"));
 
-      if (url.contains("/")) {
-        String chapter = item.select(".epx").text().replace("Ep 0", "").replace("Ep ", "").trim();
+    //   if (url.contains("/")) {
+    //     String chapter = item.select(".epx").text().replace("Ep 0", "").replace("Ep ", "").trim();
 
-        if (chapter != null && !chapter.isEmpty()) {
-          // * Crea el objeto del anime con los datos obtenidos
-          ChapterDataDTO anime = ChapterDataDTO.builder()
-              .name(item.select(".tt").first().childNodes().stream()
-                  .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
-                  .map(Node::toString)
-                  .collect(Collectors.joining()).trim())
-              .imgUrl(item.select("img").attr("src").trim().replace("?resize=247,350", ""))
-              .type(item.select(".typez").text().trim().replace("TV", "Anime"))
-              .chapter(chapter)
-              .url(url)
-              .build();
+    //     if (chapter != null && !chapter.isEmpty()) {
+    //       // * Crea el objeto del anime con los datos obtenidos
+    //       ChapterDataDTO anime = ChapterDataDTO.builder()
+    //           .name(item.select(".tt").first().childNodes().stream()
+    //               .filter(node -> !(node instanceof Element && ((Element) node).tag().getName().equals("h2")))
+    //               .map(Node::toString)
+    //               .collect(Collectors.joining()).trim())
+    //           .imgUrl(item.select("img").attr("src").trim().replace("?resize=247,350", ""))
+    //           .type(item.select(".typez").text().trim().replace("TV", "Anime"))
+    //           .chapter(chapter)
+    //           .url(url)
+    //           .build();
           
-          // * Define los casos especiales de nombres y URLs
-          anime = this.defineSpecialCases(mapListTypeLf, anime, 'H');
+    //       // * Define los casos especiales de nombres y URLs
+    //       anime = this.defineSpecialCases(mapListTypeLf, anime, 'H');
           
-          // * Toma la imagen y la fecha de JkAnime si es que el anime está en JkAnime, si no,
-          // * asigna una fecha a partir de la posición en la lista de animes de AnimeLife
-          if (listJkAnime.containsKey(anime.getName())) {
-            // Si el anime está en Jkanime, usa la fecha y la imagen de Jkanime
-            anime.setImgUrl(listJkAnime.get(anime.getName()).getUrl());
-            anime.setDate(this.formatPastChapterDate(listJkAnime.get(anime.getName()).getDate()));
-            anime.setState(true);
-          } else {
-            // Si el anime no está en Jkanime, asigna una fecha a partir de la posición en la lista de animes de AnimeLife
-            if (index <= 10)
-              anime.setDate("Hoy");
-            else if (index <= 15)
-              anime.setDate("Ayer");
-            else if (index <= 20)
-              anime.setDate("Hace 2 días");
-            else if (index <= 25)
-              anime.setDate("Hace 3 días");
-            anime.setState(false);
-          }
+    //       // * Toma la imagen y la fecha de JkAnime si es que el anime está en JkAnime, si no,
+    //       // * asigna una fecha a partir de la posición en la lista de animes de AnimeLife
+    //       if (listAnimesPv1.containsKey(anime.getName())) {
+    //         // Si el anime está en Jkanime, usa la fecha y la imagen de Jkanime
+    //         anime.setImgUrl(listAnimesPv1.get(anime.getName()).getUrl());
+    //         anime.setDate(this.formatPastChapterDate(listAnimesPv1.get(anime.getName()).getDate()));
+    //         anime.setState(true);
+    //       } else {
+    //         // Si el anime no está en Jkanime, asigna una fecha a partir de la posición en la lista de animes de AnimeLife
+    //         if (index <= 10)
+    //           anime.setDate("Hoy");
+    //         else if (index <= 15)
+    //           anime.setDate("Ayer");
+    //         else if (index <= 20)
+    //           anime.setDate("Hace 2 días");
+    //         else if (index <= 25)
+    //           anime.setDate("Hace 3 días");
+    //         anime.setState(false);
+    //       }
   
-          listLife.add(anime);
-        }
+    //       listAnimesPv2.add(anime);
+    //     }
 
-        index++;
-      }
-    }
+    //     index++;
+    //   }
+    // }
 
-    return sortAnimeList(listLife, true);
+    return sortAnimeList(listAnimesPv2, true);
   }
 
   // Define los casos especiales de los nombres y las URLs de 'Animes programados' de AnimeLife
@@ -204,21 +214,21 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
     // Elimina caracteres raros del nombre
     anime.setName(AnimeUtils.removeRareCharactersFromName(anime.getName()));
     // Nombres de casos especiales
-    anime.setName(this.animeUtils.specialNameOrUrlCases(mapListH, anime.getName(), type, "lfAnimesProgramming()"));
+    anime.setName(this.animeUtils.specialNameOrUrlCases(mapListH, anime.getName(), type, "animesProgrammingPv2()"));
     // Elimina "Movie" del nombre
     anime.setName(anime.getName().replace("Movie", "").trim());
     // URLs de casos especiales
-    anime.setUrl(this.animeUtils.specialNameOrUrlCases(mapListH, anime.getUrl(), type, "lfAnimesProgramming()"));
+    anime.setUrl(this.animeUtils.specialNameOrUrlCases(mapListH, anime.getUrl(), type, "animesProgrammingPv2()"));
 
     return anime;
   }
 
   // JkAnime: Animes programados
-  private Map<String, ChapterDataDTO> jkAnimesProgramming(Document docAnimesJk, Map<String, String> mapListTypeJk) {
+  private Map<String, ChapterDataDTO> jkAnimesProgramming(Document docAnimesPv1, Map<String, String> mapListTypeJk) {
     // Lista de animes programados en JkAnime
-    Elements elementsJkAnime = docAnimesJk.body().select(".listadoanime-home .anime_programing a");
+    Elements elementsJkAnime = docAnimesPv1.body().select(".listadoanime-home .anime_programing a");
     // Mapa para guardar los animes de JkAnime (key: Nombre, Value: Datos del anime)
-    Map<String, ChapterDataDTO> listJkAnime = new HashMap<>();
+    Map<String, ChapterDataDTO> listAnimesPv1 = new HashMap<>();
 
     // Fecha exacta con tiempo UTC y 5 horas menos si esta en produccion (Hora de Perú)
     String format = "dd/MM/yyyy";
@@ -253,18 +263,18 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
           .url(this.animeUtils.specialNameOrUrlCases(mapListTypeJk, url, 'k', "jkAnimesProgramming()"))
           .build();
       
-      listJkAnime.put(data.getName(), data);
+      listAnimesPv1.put(data.getName(), data);
     }
 
-    return listJkAnime;
+    return listAnimesPv1;
   }
 
   // JkAnime: Próximos animes programados
-  private List<ChapterDataDTO> jkNextAnimesProgramming(Document docAnimesJk, Map<String, String> mapListTypeJk) {
+  private List<ChapterDataDTO> nextAnimesProgrammingPv1(Document docAnimesPv1, Map<String, String> mapListTypeJk) {
     // Elimina el ultimo elemento (filtro)
-    Elements elements = docAnimesJk.select(".box.semana");
+    Elements elements = docAnimesPv1.select(".box.semana");
     elements.remove(elements.size() - 1);
-    List<ChapterDataDTO> jkNextAnimesProgramming = new ArrayList<>();
+    List<ChapterDataDTO> nextAnimesProgrammingPv1 = new ArrayList<>();
 
     // Obtener el indice del dia actual
     Integer startIndex = -1;
@@ -322,16 +332,16 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
         if (index < startIndex) {
           tempLastAnimes.add(anime);
         } else {
-          jkNextAnimesProgramming.add(anime);
+          nextAnimesProgrammingPv1.add(anime);
         }
       }
 
       index++;
     }
 
-    jkNextAnimesProgramming.addAll(tempLastAnimes);
+    nextAnimesProgrammingPv1.addAll(tempLastAnimes);
 
-    return sortAnimeList(jkNextAnimesProgramming, false);
+    return sortAnimeList(nextAnimesProgrammingPv1, false);
   }
 
   // Cambia las imagenes de 'Animes programados' por las imagenes de 'Próximos animes programados'
@@ -411,14 +421,14 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
   }
 
   // JkAnime: Donghuas programados
-  private List<ChapterDataDTO> jkDonghuasProgramming(Document document, Map<String, String> mapListTypeJk) {
+  private List<ChapterDataDTO> donghuasProgrammingPv1(Document document, Map<String, String> mapListTypeJk) {
     Elements elementsJkAnime = document.select(".donghuas_programing a.bloqq");
     List<ChapterDataDTO> lastChapters = new ArrayList<>();
 
     String year = String.valueOf(LocalDate.now().getYear());
     for (Element item : elementsJkAnime) {
       String name = item.select(".anime__sidebar__comment__item__text h5").text();
-      String url = item.select("a").attr("href").replace(providerJkanimeUrl, "");
+      String url = item.select("a").attr("href").replace(provider1, "");
       String date = item.select(".anime__sidebar__comment__item__text span").first().text().trim();
 
       date = date.equals("Hoy") || date.equals("Ayer")
@@ -456,7 +466,7 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
         .imgUrl(firstTop.select(".anime__item__pic").attr("data-setbg"))
         .likes(Integer.parseInt(firstTop.select(".vc").text().trim()))
         .position(Integer.parseInt(firstTop.select(".ep").text().trim()))
-        .url(firstTop.select("a").attr("href").replace(providerJkanimeUrl, "").replaceFirst("/$", ""))
+        .url(firstTop.select("a").attr("href").replace(provider1, "").replaceFirst("/$", ""))
         .build();
     topAnimes.add(firstAnime);
 
@@ -467,7 +477,7 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
           .imgUrl(element.select(".anime__item__pic__fila4").attr("data-setbg"))
           .likes(Integer.parseInt(element.select(".vc").text()))
           .position(Integer.parseInt(element.select(".anime__item__pic__fila4 div").first().text().trim().replaceFirst("/$", "")))
-          .url(element.attr("href").replace(providerJkanimeUrl, ""))
+          .url(element.attr("href").replace(provider1, ""))
           .build();
 
       topAnimes.add(anime);
@@ -485,7 +495,7 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
       AnimeDataDTO anime = AnimeDataDTO.builder()
         .name(element.select(".anime__item__text h5 a").text())
         .imgUrl(element.select(".anime__item__pic").attr("data-setbg"))
-        .url(element.select("a").attr("href").replace(providerJkanimeUrl, "").replaceFirst("/$", ""))
+        .url(element.select("a").attr("href").replace(provider1, "").replaceFirst("/$", ""))
         .state(element.select(".anime__item__text ul li").first().text().replace("Por estrenar", "Proximamente"))
         .type(element.select(".anime__item__text ul li").last().text())
         .build();
@@ -528,7 +538,7 @@ public class JkLfHomeServiceImpl implements IJkLfHomeService {
         // Si es un anime
         LinkDTO anime = LinkDTO.builder()
           .name(name)
-          .url(element.select("a").attr("href").replace(providerJkanimeUrl, "").replaceFirst("/$", ""))
+          .url(element.select("a").attr("href").replace(provider1, "").replaceFirst("/$", ""))
           .build();
   
         latestAddedList.add(anime);

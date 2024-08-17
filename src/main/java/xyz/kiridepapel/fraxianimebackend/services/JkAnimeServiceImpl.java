@@ -26,8 +26,8 @@ import xyz.kiridepapel.fraxianimebackend.utils.DataUtils;
 @Service
 public class JkAnimeServiceImpl implements IJkAnimeService {
   // Variables estaticas
-  @Value("${PROVIDER_JKANIME_URL}")
-  private String providerJkanimeUrl;
+  @Value("${PROVIDER_1}")
+  private String provider1;
   // Variables
   private Map<String, String> tradMap;
   private Map<String, String> specialAltTitles;
@@ -227,7 +227,7 @@ public class JkAnimeServiceImpl implements IJkAnimeService {
           String[] parts = item.text().split("\\(");
           
           String name = parts[0].trim();
-          String url = item.attr("href").replace(this.providerJkanimeUrl, "").replace("/", "");
+          String url = item.attr("href").replace(this.provider1, "").replace("/", "");
           name = this.animeUtils.specialNameOrUrlCases(specialCases, name, 'k', "getHistoryJK()");
           url = this.animeUtils.specialNameOrUrlCases(specialCases, url, 'k', "getHistoryJK()");
 

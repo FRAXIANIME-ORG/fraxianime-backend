@@ -23,8 +23,8 @@ import xyz.kiridepapel.fraxianimebackend.utils.CacheUtils;
 @Log
 public class LfSearchServiceImpl implements ILfSearchService {
   // Variables estaticas
-  @Value("${PROVIDER_ANIMELIFE_URL}")
-  private String providerAnimeLifeUrl;
+  @Value("${PROVIDER_2}")
+  private String provider2;
   // Inyección de dependencias
   private final CacheUtils cacheUtils;
   private final AnimeUtils animeUtils;
@@ -38,7 +38,7 @@ public class LfSearchServiceImpl implements ILfSearchService {
   public SearchDTO searchAnimes(String anime, Integer page) {
     try {
       anime = this.verySpecialAndManuallyCases(anime);
-      String searchUrl = this.providerAnimeLifeUrl + "page/" + page + "/?s="
+      String searchUrl = this.provider2 + "page/" + page + "/?s="
           + anime.replace(":", "%3A").replace("_", "+");
 
       SearchDTO searchDTO = new SearchDTO();
@@ -67,7 +67,7 @@ public class LfSearchServiceImpl implements ILfSearchService {
           // Casos especiales manipulados
           name = AnimeUtils.removeRareCharactersFromName(name);
           imgUrl = imgUrl.replace("?resize=247,350", "");
-          url = url.replace((providerAnimeLifeUrl + "anime/"), "").replaceAll("/$", "");
+          url = url.replace((provider2 + "anime/"), "").replaceAll("/$", "");
           state = state.replace("Completada", "Finalizado");
           type = type.replace("TV", "Anime");
 

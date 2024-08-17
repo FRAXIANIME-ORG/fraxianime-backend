@@ -30,10 +30,10 @@ import xyz.kiridepapel.fraxianimebackend.exceptions.DataExceptions.DataNotFoundE
 @Log
 public class LfAnimeServiceImpl implements ILfAnimeService {
   // Variables estaticas
-  @Value("${PROVIDER_JKANIME_URL}")
-  private String providerJkanimeUrl;
-  @Value("${PROVIDER_ANIMELIFE_URL}")
-  private String providerAnimeLifeUrl;
+  @Value("${PROVIDER_1}")
+  private String provider1;
+  @Value("${PROVIDER_2}")
+  private String provider2;
   // Variables
   private Map<String, String> tradMap;
   private Map<String, String> specialKeys;
@@ -96,8 +96,8 @@ public class LfAnimeServiceImpl implements ILfAnimeService {
       // Buscar en AnimeLife y JkAnime
       String animeUrlJk = this.animeUtils.specialNameOrUrlCases(null, search, 'j', "animeInfo()");
       String animeUrlLf = this.animeUtils.specialNameOrUrlCases(null, search, 'a', "animeInfo()");
-      Document docJkanime = AnimeUtils.tryConnectOrReturnNull((this.providerJkanimeUrl + animeUrlJk), 1);
-      Document docAnimeLife = AnimeUtils.tryConnectOrReturnNull((this.providerAnimeLifeUrl + "anime/" + animeUrlLf), 2);
+      Document docJkanime = AnimeUtils.tryConnectOrReturnNull((this.provider1 + animeUrlJk), 1);
+      Document docAnimeLife = AnimeUtils.tryConnectOrReturnNull((this.provider2 + "anime/" + animeUrlLf), 2);
 
       // Si no se encuentra el anime en AnimeLife, devolver un error
       Element mainAnimeLife = docAnimeLife.body().select(".wrapper").first();
@@ -208,7 +208,7 @@ public class LfAnimeServiceImpl implements ILfAnimeService {
           for (Element link : links) {
             subData.add(LinkDTO.builder()
               .name(link.text().trim())
-              .url(link.attr("href").replace(this.providerAnimeLifeUrl, ""))
+              .url(link.attr("href").replace(this.provider2, ""))
               .build());
           }
 
@@ -229,7 +229,7 @@ public class LfAnimeServiceImpl implements ILfAnimeService {
       for(Element genre : docAnimeLife.select(".genxed a")) {
         genres.add(LinkDTO.builder()
           .name(genre.text().trim())
-          .url(genre.attr("href").replace(this.providerAnimeLifeUrl, ""))
+          .url(genre.attr("href").replace(this.provider2, ""))
           .build());
       }
       data.put("genres", genres);
@@ -267,7 +267,7 @@ public class LfAnimeServiceImpl implements ILfAnimeService {
           } else {
             // Caso para los capítulos que son números enteros o decimales: https://animelife.net/one-piece-1100-05/ -> 1100.05
             String link = element.select("a").attr("href");
-            chapter = link.replace(this.providerAnimeLifeUrl + search + "-", "").replace("/", "").replace("-", ".");
+            chapter = link.replace(this.provider2 + search + "-", "").replace("/", "").replace("-", ".");
           }
 
           chapterList.add(ChapterDataDTO.builder()

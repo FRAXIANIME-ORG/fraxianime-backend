@@ -18,7 +18,6 @@ public class WebSecurityConfig {
   // Variables
   private static final String[] ALLOWED_ORIGINS = {
     "https://fraxianime.vercel.app",
-    "https://heatheranime.vercel.app",
     "http://localhost:4200"
   };
 
