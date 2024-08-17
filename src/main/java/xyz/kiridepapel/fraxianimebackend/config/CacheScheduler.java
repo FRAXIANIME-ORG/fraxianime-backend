@@ -54,12 +54,12 @@ public class CacheScheduler {
   // 2. 7 días: 'Directorio'
   @Scheduled(fixedRate = 604805000)
   private void autoUpdateDirectory() {
-    this.updateDirectory();
+    // this.updateDirectory();
   }
   // 3. 1 hora: 'Horario'
   @Scheduled(fixedRate = 3605000)
   private void autoUpdateSchedule() {
-    this.updateSchedule();
+    // this.updateSchedule();
   }
   // 4. 7 días: 'Top'
   @Scheduled(fixedRate = 604805000)
