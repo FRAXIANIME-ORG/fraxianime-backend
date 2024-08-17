@@ -145,9 +145,9 @@ public class DataUtils {
 
   // ? Validations
   public static void verifyAllowedOrigin(List<String> allowedOrigins, String origin) {
-    // if (origin == null || !allowedOrigins.contains(origin)) {
-    //   throw new ProtectedResource("Acceso denegado TK-001");
-    // }
+    if (origin == null || !allowedOrigins.contains(origin)) {
+      throw new ProtectedResource("Acceso denegado TK-001");
+    }
   }
 
   public static void verifySQLInjection(String str) {
