@@ -1,23 +1,55 @@
-## Variables de entorno
+# Fraxianime Backend
 
-- export POSTGRES_USER=
-- export POSTGRES_PASSWORD=
-- export POSTGRES_DB=
-#
+A Node.js API for anime information, built with Express.js and Playwright for scraping data.
 
-- export JWT_SECRET_KEY=
-- export JWT_EXPIRATION_TIME=604800000
-#
+## Features
 
-- export REDIS_HOST=redis
-- export REDIS_PORT=6379
-- export REDIS_PASSWORD=
-#
+- Get latest anime updates from the provider
+- Redirect to specific anime episodes
 
-- export APP_SECRET=
-- export RAPIDAPI_KEY=
+## API Endpoints
 
-> 1. https://rapidapi.com/microsoft-azure-org-microsoft-cognitive-services/api/microsoft-translator-text/
+- `GET /api/animes` - Get a list of latest anime updates
+- `GET /api/animes/:animeName/:episode` - Redirect to a specific anime episode
 
-## Documentación
+## Installation
 
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Create a `.env` file with the following variables:
+   ```
+   PORT=3000
+   PROVIDER_URL=https://jkanime.net
+   ```
+
+## Usage
+
+### Development
+```
+npm run dev
+```
+
+### Production
+```
+npm start
+```
+
+## Project Structure
+
+```
+fraxianime-backend/
+├── src/
+│   ├── controllers/
+│   │   └── animeController.mjs
+│   ├── services/
+│   │   └── animeService.mjs
+│   └── routes/
+│       └── animeRoutes.mjs
+├── .env
+├── package.json
+├── README.md
+└── server.mjs
+``` 
